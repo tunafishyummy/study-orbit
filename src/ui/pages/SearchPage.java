@@ -19,6 +19,7 @@ public class SearchPage extends JPanel {
     private final DefaultListModel<Note> listModel = new DefaultListModel<>();
     private final JList<Note> list = new JList<>(listModel);
     private final JLabel status = new JLabel();
+    private String filter = "All";
 
     public SearchPage() {
         manager = AppData.get();
@@ -70,15 +71,18 @@ public class SearchPage extends JPanel {
         JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         filters.setOpaque(false);
         filters.setAlignmentX(Component.LEFT_ALIGNMENT);
+        ButtonGroup group = new ButtonGroup();
         for (String name : new String[]{"All", "Notes", "Flashcards"}) {
             JToggleButton button = new JToggleButton(name);
-            button.setFont(Theme.BODY);
-            button.setForeground(Theme.TEXT);
-            button.setBackground(Theme.SURFACE);
-            button.setFocusPainted(false);
-            button.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(Theme.BORDER),
-                    BorderFactory.createEmptyBorder(5, 14, 5, 14)));
+            styleFilter(button);
+            if (name.equals("All")) {
+                button.setSelected(true);
+            }
+            button.addActionListener(e -> {
+                filter = name;
+                refresh();
+            });
+            group.add(button);
             filters.add(button);
         }
         filters.add(courseBox);
@@ -134,6 +138,12 @@ public class SearchPage extends JPanel {
     }
 
     private void refresh() {
+        if ("Flashcards".equals(filter)) {
+            listModel.clear();
+            status.setText("No flashcards yet.");
+            return;
+        }
+
         String query = searchField.getText().trim().toLowerCase();
         String course = (String) courseBox.getSelectedItem();
         listModel.clear();
@@ -146,6 +156,7 @@ public class SearchPage extends JPanel {
             }
             listModel.addElement(note);
         }
+
         if (listModel.isEmpty()) {
             status.setText("No matches found.");
         } else if (listModel.size() == 1) {
@@ -176,5 +187,15 @@ public class SearchPage extends JPanel {
             course = "No course";
         }
         return note.getTitle() + "  -  " + course;
+    }
+
+    private void styleFilter(JToggleButton button) {
+        button.setFont(Theme.BODY);
+        button.setForeground(Theme.TEXT);
+        button.setBackground(Theme.SURFACE);
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Theme.BORDER),
+                BorderFactory.createEmptyBorder(5, 14, 5, 14)));
     }
 }
