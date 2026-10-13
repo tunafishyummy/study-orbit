@@ -87,6 +87,18 @@ public class SchedulePage extends JPanel {
         }
     }
 
+    private JButton arrowButton(String text) {
+        JButton button = new JButton(text);
+        button.setBackground(Theme.ARROW);
+        button.setForeground(Color.WHITE);
+        button.setFont(Theme.BODY);
+        button.setFocusPainted(false);
+        button.setOpaque(true);
+        button.setBorderPainted(false);
+        button.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
+        return button;
+    }
+
     private JPanel scheduleCard() {
         JPanel card = new RoundedPanel(Theme.SURFACE, 24);
         card.setLayout(new BorderLayout(0, 16));
@@ -112,8 +124,8 @@ public class SchedulePage extends JPanel {
 
         JPanel weekHeader = new JPanel(new BorderLayout());
         weekHeader.setOpaque(false);
-        JButton previous = Theme.button("<");
-        JButton next = Theme.button(">");
+        JButton previous = arrowButton("<");
+        JButton next = arrowButton(">");
         JLabel range = new JLabel("October 4 - 10, 2026", SwingConstants.CENTER);
         range.setFont(new Font("SansSerif", Font.BOLD, 24));
         range.setForeground(Theme.TEXT);
