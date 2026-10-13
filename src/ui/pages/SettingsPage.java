@@ -12,10 +12,6 @@ import java.awt.*;
 public class SettingsPage extends JPanel {
     private final Runnable onThemeChange;
 
-    public SettingsPage() {
-        this(() -> {});
-    }
-
     public SettingsPage(Runnable onThemeChange) {
         this.onThemeChange = onThemeChange;
         setBackground(Theme.BG);

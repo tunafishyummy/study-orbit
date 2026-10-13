@@ -6,19 +6,29 @@ import ui.pages.*;
 
 public class StudyOrbitApp extends JFrame {
 
-    private final CardLayout pageLayout = new CardLayout();
-    private final JPanel pages = new JPanel(pageLayout);
-    private final CardLayout appLayout = new CardLayout();
-    private final JPanel app = new JPanel(appLayout);
+    private CardLayout pageLayout;
+    private JPanel pages;
+    private String currentPage = "Dashboard";
 
     public StudyOrbitApp() {
         setTitle("Study Orbit");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(1000, 620);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout());
-        setBackground(Theme.BG);
+        setContentPane(buildContent(true));
+    }
 
+    // builds the whole screen again so a palette change reaches every component
+    public void rebuild() {
+        Theme.apply();
+        setContentPane(buildContent(false));
+        revalidate();
+        repaint();
+    }
+
+    private JPanel buildContent(boolean withSplash) {
+        pageLayout = new CardLayout();
+        pages = new JPanel(pageLayout);
         pages.setBackground(Theme.BG);
         pages.add(new DashboardPage(), "Dashboard");
         pages.add(new CoursesPage(), "Courses");
@@ -28,20 +38,33 @@ public class StudyOrbitApp extends JFrame {
         pages.add(new SchedulePage(), "Schedule");
         pages.add(new SearchPage(), "Search");
         pages.add(new ProgressPage(), "Progress");
-        pages.add(new SettingsPage(), "Settings");
+        pages.add(new SettingsPage(this::rebuild), "Settings");
 
         JPanel dashboard = new JPanel(new BorderLayout());
         dashboard.setBackground(Theme.BG);
-        dashboard.add(new NavBar(name -> pageLayout.show(pages, name)), BorderLayout.WEST);
+        dashboard.add(new NavBar(name -> {
+            currentPage = name;
+            pageLayout.show(pages, name);
+        }, currentPage), BorderLayout.WEST);
         dashboard.add(pages, BorderLayout.CENTER);
 
+        CardLayout appLayout = new CardLayout();
+        JPanel app = new JPanel(appLayout);
         app.setBackground(Theme.BG);
-        app.add(new SplashPage(() -> {
-            appLayout.show(app, "Dashboard");
-            pageLayout.show(pages, "Dashboard");
-        }), "Splash");
+        if (withSplash) {
+            app.add(new SplashPage(() -> {
+                currentPage = "Dashboard";
+                appLayout.show(app, "Dashboard");
+                pageLayout.show(pages, "Dashboard");
+            }), "Splash");
+        }
         app.add(dashboard, "Dashboard");
-        appLayout.show(app, "Splash");
-        add(app, BorderLayout.CENTER);
+        if (withSplash) {
+            appLayout.show(app, "Splash");
+        } else {
+            appLayout.show(app, "Dashboard");
+            pageLayout.show(pages, currentPage);
+        }
+        return app;
     }
 }
