@@ -10,6 +10,8 @@ if not "%BUILD_RESULT%"=="0" (
   echo Build failed
   exit /b 1
 )
+if exist "out\assets" rmdir /s /q "out\assets"
+xcopy /s /y /q "src\assets" "out\assets\" >nul
 echo Build successful
 exit /b 0
 
