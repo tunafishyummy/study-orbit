@@ -115,8 +115,14 @@ public final class Theme {
 
     public static JButton button(String text) {
         JButton b = new JButton(text);
+        b.setBackground(SURFACE);
+        b.setForeground(TEXT);
         b.setFont(BODY);
         b.setFocusPainted(false);
+        b.setOpaque(true);
+        b.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER),
+                BorderFactory.createEmptyBorder(7, 15, 7, 15)));
         return b;
     }
 
