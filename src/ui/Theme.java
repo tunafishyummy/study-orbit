@@ -7,12 +7,13 @@ public final class Theme {
     // palette values, dark is the figma look and light keeps the original colors
     public static Color BG;
     public static Color SURFACE;
-    public static Color NAVBAR;
-    public static Color NAVBAR_SELECTED;
     public static Color TEXT;
     public static Color MUTED;
     public static Color BORDER;
     public static Color SELECT;
+    public static final Color NAVBAR = new Color(0x27235C);
+    public static final Color NAVBAR_SELECTED = new Color(0x3B3580);
+    public static final Color NAVBAR_TEXT = Color.WHITE;
     public static final Color PRIMARY = new Color(0x4F46E5);
     public static final Color SUCCESS = new Color(0x22C55E);
     public static final Color WARNING = new Color(0xF59E0B);
@@ -40,8 +41,6 @@ public final class Theme {
         if (dark) {
             BG = new Color(0x171717);
             SURFACE = new Color(0x2D2D2D);
-            NAVBAR = new Color(0x27235C);
-            NAVBAR_SELECTED = new Color(0x3B3580);
             TEXT = new Color(0xFFFFFF);
             MUTED = new Color(0xA1A1AA);
             BORDER = new Color(0x3F3F46);
@@ -49,8 +48,6 @@ public final class Theme {
         } else {
             BG = new Color(0xF5F7FB);
             SURFACE = new Color(0xFFFFFF);
-            NAVBAR = new Color(0xFFFFFF);
-            NAVBAR_SELECTED = new Color(0xE0E7FF);
             TEXT = new Color(0x1F2937);
             MUTED = new Color(0x6B7280);
             BORDER = new Color(0xE5E7EB);
@@ -75,7 +72,7 @@ public final class Theme {
         UIManager.put("ScrollPane.background", BG);
         UIManager.put("Viewport.background", SURFACE);
         UIManager.put("CheckBox.foreground", TEXT);
-        UIManager.put("ToggleButton.select", NAVBAR_SELECTED);
+        UIManager.put("ToggleButton.select", SELECT);
         UIManager.put("OptionPane.background", SURFACE);
         UIManager.put("OptionPane.messageForeground", TEXT);
     }

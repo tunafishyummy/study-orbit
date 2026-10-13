@@ -30,7 +30,7 @@ public class NavBar extends JPanel {
 
         JLabel name = new JLabel("Study Orbit");
         name.setFont(Theme.BODY);
-        name.setForeground(Theme.TEXT);
+        name.setForeground(Theme.NAVBAR_TEXT);
         name.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         add(Box.createVerticalStrut(10));
@@ -39,21 +39,61 @@ public class NavBar extends JPanel {
         add(name);
         add(Box.createVerticalStrut(12));
 
-        ButtonGroup group = new ButtonGroup();
         for (String page : PAGES) {
-            JToggleButton btn = new JToggleButton(page);
-            btn.setForeground(Theme.TEXT);
-            btn.setBackground(Theme.NAVBAR);
-            btn.setFocusPainted(false);
-            btn.setBorderPainted(false);
-            btn.setAlignmentX(Component.CENTER_ALIGNMENT);
-            btn.setMaximumSize(new Dimension(94, 35));
-            btn.addActionListener(e -> onNavigate.accept(page));
-            group.add(btn);
-            add(btn);
+            final NavButton button = new NavButton(page);
+            button.setAlignmentX(Component.CENTER_ALIGNMENT);
+            button.setMaximumSize(new Dimension(94, 35));
+            button.addActionListener(e -> {
+                select(page);
+                onNavigate.accept(page);
+            });
+            add(button);
             add(Box.createVerticalStrut(5));
+        }
 
-            if (page.equals(selectedPage)) btn.setSelected(true);
+        select(selectedPage);
+    }
+
+    private void select(String page) {
+        for (Component component : getComponents()) {
+            if (component instanceof NavButton) {
+                NavButton button = (NavButton) component;
+                button.setActive(button.page.equals(page));
+            }
+        }
+    }
+
+    // a nav item that paints its own chip so the bar stays dark in both themes
+    private class NavButton extends JButton {
+        private final String page;
+        private boolean active;
+
+        NavButton(String page) {
+            super(page);
+            this.page = page;
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setFont(Theme.BODY);
+            setForeground(Theme.NAVBAR_TEXT);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+        }
+
+        void setActive(boolean value) {
+            active = value;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            if (active) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Theme.NAVBAR_SELECTED);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2.dispose();
+            }
+            super.paintComponent(g);
         }
     }
 }
