@@ -1,64 +1,84 @@
 package ui.pages;
 
+import ui.Theme;
+
+import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import javax.swing.*;
 
+// Screen 3, the student dashboard
 public class DashboardPage extends JPanel {
 
     private final JLabel dateLabel = new JLabel();
     private final JLabel timeLabel = new JLabel();
 
     public DashboardPage() {
-        setLayout(new BorderLayout());
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        setBackground(Theme.BG);
+        setLayout(new BorderLayout(0, 16));
+        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 
-        // top left: title, date, time
-        JLabel title = new JLabel("Dashboard");
-        title.setFont(title.getFont().deriveFont(Font.BOLD, 28f));
-
-        JPanel header = new JPanel();
-        header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
-        header.add(title);
-        header.add(dateLabel);
-        header.add(timeLabel);
-        add(header, BorderLayout.NORTH);
+        add(header(), BorderLayout.NORTH);
+        add(cards(), BorderLayout.CENTER);
 
         updateClock();
-        new Timer(1000, e -> updateClock()).start();  // refresh every second
+        new Timer(1000, e -> updateClock()).start();
+    }
 
-        // first three rectangles: next class, cards due today, current streak
-        JPanel topRow = new JPanel(new GridLayout(1, 3, 10, 10));
+    private JPanel header() {
+        JPanel header = new JPanel();
+        header.setOpaque(false);
+        header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
+
+        JLabel title = Theme.header("Dashboard");
+        title.setAlignmentX(Component.LEFT_ALIGNMENT);
+        dateLabel.setFont(Theme.BODY);
+        dateLabel.setForeground(Theme.TEXT);
+        dateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        timeLabel.setFont(Theme.BODY);
+        timeLabel.setForeground(Theme.MUTED);
+        timeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        header.add(title);
+        header.add(Box.createVerticalStrut(6));
+        header.add(dateLabel);
+        header.add(timeLabel);
+        return header;
+    }
+
+    private JPanel cards() {
+        JPanel topRow = new JPanel(new GridLayout(1, 3, 16, 16));
+        topRow.setOpaque(false);
         topRow.add(section("Next class"));
         topRow.add(section("Cards due today"));
         topRow.add(section("Current Streak"));
 
-        // Second two rectangles: upcoming deadlines, recent notes
-        JPanel bottomRow = new JPanel(new GridLayout(1, 2, 10, 10));
+        JPanel bottomRow = new JPanel(new GridLayout(1, 2, 16, 16));
+        bottomRow.setOpaque(false);
         bottomRow.add(section("Upcoming deadlines"));
         bottomRow.add(section("Recent notes"));
 
-        JPanel sections = new JPanel(new GridLayout(2, 1, 10, 10));
-        sections.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-        sections.add(topRow);
-        sections.add(bottomRow);
-        add(sections, BorderLayout.CENTER);
+        JPanel rows = new JPanel(new GridLayout(2, 1, 16, 16));
+        rows.setOpaque(false);
+        rows.add(topRow);
+        rows.add(bottomRow);
+        return rows;
     }
 
-
     private JPanel section(String title) {
-        JPanel box = new JPanel(new BorderLayout());
-        box.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.GRAY),
-                BorderFactory.createEmptyBorder(10, 10, 10, 10)));
-        box.add(new JLabel(title), BorderLayout.NORTH);
-        return box;
+        JPanel card = Theme.card();
+        card.setLayout(new BorderLayout());
+
+        JLabel heading = new JLabel(title);
+        heading.setFont(Theme.HEADING);
+        heading.setForeground(Theme.TEXT);
+        card.add(heading, BorderLayout.NORTH);
+        return card;
     }
 
     private void updateClock() {
         LocalDateTime now = LocalDateTime.now();
-        dateLabel.setText(now.format(DateTimeFormatter.ofPattern("EEEE, MMMM d")));  // Tuesday, October 13
-        timeLabel.setText(now.format(DateTimeFormatter.ofPattern("h:mm a")));        // 10:26 AM
+        dateLabel.setText(now.format(DateTimeFormatter.ofPattern("EEEE, MMMM d")));
+        timeLabel.setText(now.format(DateTimeFormatter.ofPattern("h:mm a")));
     }
 }

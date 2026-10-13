@@ -1,13 +1,18 @@
 package ui.pages;
 
-import java.awt.*;
-import javax.swing.*;
+import ui.Theme;
 
+import javax.swing.*;
+import java.awt.*;
+
+// Screen 7, quizzes
 public class QuizzesPage extends JPanel {
 
     public QuizzesPage() {
+        setBackground(Theme.BG);
         setLayout(new BorderLayout());
+        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 
-        add(new JLabel("Quizzes", SwingConstants.CENTER), BorderLayout.CENTER);
+        add(Theme.header("Quizzes"), BorderLayout.NORTH);
     }
 }
