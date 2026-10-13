@@ -8,6 +8,8 @@ import java.awt.*;
 
 // Screen 1, the welcome page
 public class SplashPage extends JPanel {
+    private static final int TITLE_LINE_SPACING = -30;
+
     public SplashPage(Runnable onContinue) {
         setBackground(Theme.BG);
         setLayout(new BorderLayout());
@@ -15,47 +17,55 @@ public class SplashPage extends JPanel {
         JPanel left = new JPanel();
         left.setOpaque(false);
         left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
-        left.setBorder(BorderFactory.createEmptyBorder(0, 60, 0, 0));
+        left.setBorder(BorderFactory.createEmptyBorder(0, 24, 0, 24));
 
-        JLabel title = new JLabel("Study Orbit");
-        title.setFont(Theme.font(Font.PLAIN, 68));
-        title.setForeground(Theme.TEXT);
-        title.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JPanel title = new JPanel();
+        title.setOpaque(false);
+        title.setLayout(new BoxLayout(title, BoxLayout.Y_AXIS));
+        JLabel study = new JLabel("Study");
+        JLabel orbit = new JLabel("Orbit");
+        for (JLabel line : new JLabel[] {study, orbit}) {
+            line.setFont(Theme.font(Font.PLAIN, 90));
+            line.setForeground(Theme.TEXT);
+            line.setAlignmentX(Component.CENTER_ALIGNMENT);
+            title.add(line);
+            if (line == study) {
+                title.add(Box.createVerticalStrut(TITLE_LINE_SPACING));
+            }
+        }
 
         JLabel motto = new JLabel("An All-Around Learning Tool Built for Students");
         motto.setFont(Theme.font(Font.PLAIN, 16));
         motto.setForeground(Theme.MUTED);
-        motto.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel profile = new JLabel("No selected profile");
         profile.setFont(Theme.font(Font.BOLD, 18));
         profile.setForeground(Theme.TEXT);
-        profile.setAlignmentX(Component.LEFT_ALIGNMENT);
-
         Chevron chevron = new Chevron();
-        chevron.setAlignmentX(Component.LEFT_ALIGNMENT);
-
         JButton continueButton = new JButton("Continue");
         continueButton.setFont(Theme.font(Font.PLAIN, 20));
-        continueButton.setForeground(Theme.MUTED);
+        continueButton.setForeground(new Color(0x606060));
         continueButton.setBackground(Theme.BG);
         continueButton.setContentAreaFilled(false);
         continueButton.setBorderPainted(false);
         continueButton.setFocusPainted(false);
         continueButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        continueButton.setAlignmentX(Component.LEFT_ALIGNMENT);
         continueButton.addActionListener(e -> onContinue.run());
 
+        JPanel controls = new JPanel();
+        controls.setOpaque(false);
+        controls.setLayout(new BoxLayout(controls, BoxLayout.Y_AXIS));
+        controls.add(centered(profile));
+        controls.add(centered(chevron));
+        controls.add(Box.createVerticalStrut(14));
+        controls.add(centered(continueButton));
+
         left.add(Box.createVerticalGlue());
-        left.add(title);
-        left.add(Box.createVerticalStrut(16));
-        left.add(motto);
-        left.add(Box.createVerticalStrut(38));
-        left.add(profile);
-        left.add(Box.createVerticalStrut(6));
-        left.add(chevron);
-        left.add(Box.createVerticalStrut(26));
-        left.add(continueButton);
+        left.add(centered(title));
+        left.add(Box.createVerticalStrut(12));
+        left.add(centered(motto));
+        left.add(Box.createVerticalStrut(58));
+        left.add(controls);
         left.add(Box.createVerticalGlue());
 
         JPanel art = new JPanel(new BorderLayout());
@@ -64,6 +74,14 @@ public class SplashPage extends JPanel {
 
         add(left, BorderLayout.WEST);
         add(art, BorderLayout.CENTER);
+    }
+
+    private static JPanel centered(Component component) {
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        row.setOpaque(false);
+        row.add(component);
+        row.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return row;
     }
 
     // paints the logo at the bottom right so the page edge crops its bottom

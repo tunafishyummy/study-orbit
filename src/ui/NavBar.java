@@ -24,7 +24,7 @@ public class NavBar extends JPanel {
         JLabel logo = new JLabel();
         Image image = Assets.image("images/LogoNavbar.png");
         if (image != null) {
-            int logoSize = 56;
+            int logoSize = 40;
             logo.setIcon(new Icon() {
                 @Override
                 public int getIconWidth() {
