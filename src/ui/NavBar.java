@@ -1,3 +1,5 @@
+package ui;
+
 import java.awt.*;
 import java.util.function.Consumer;
 import javax.swing.*;
@@ -33,4 +35,4 @@ public class NavBar extends JPanel {
             if (page.equals("Dashboard")) btn.setSelected(true);
         }
     }
-} //a
+}

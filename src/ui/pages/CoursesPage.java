@@ -1,3 +1,5 @@
+package ui.pages;
+
 import java.awt.*;
 import javax.swing.*;
 
@@ -8,4 +10,4 @@ public class CoursesPage extends JPanel {
 
         add(new JLabel("Courses", SwingConstants.CENTER), BorderLayout.CENTER);
     }
-} // a
+}
