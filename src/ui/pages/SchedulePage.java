@@ -21,7 +21,7 @@ public class SchedulePage extends JPanel {
 
         viewPanel.setOpaque(false);
         viewPanel.add(scheduleCard(), "Schedule");
-        viewPanel.add(emptyCard(), "Deadlines");
+        viewPanel.add(deadlinesCard(), "Deadlines");
         add(viewPanel, BorderLayout.CENTER);
     }
 
@@ -62,10 +62,59 @@ public class SchedulePage extends JPanel {
         return card;
     }
 
-    private JPanel emptyCard() {
+    private JPanel deadlinesCard() {
         JPanel card = Theme.card();
-        card.setLayout(new BorderLayout());
+        card.setLayout(new BorderLayout(0, 8));
+
+        JLabel heading = new JLabel("Deadlines");
+        heading.setFont(Theme.HEADING);
+        heading.setForeground(Theme.TEXT);
+        card.add(heading, BorderLayout.NORTH);
+
+        JPanel list = new JPanel();
+        list.setOpaque(false);
+        list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
+        list.add(deadlineRow("OOP Concept Proposal", "CS 002", "Due Friday", "Due soon", Theme.WARNING));
+        list.add(Box.createVerticalStrut(10));
+        list.add(deadlineRow("Math Problem Set 5", "MATH 008A", "Due Monday", "", null));
+        list.add(Box.createVerticalStrut(10));
+        list.add(deadlineRow("Purposive Comm. Essay", "GEC 002", "Due next Wednesday", "", null));
+        list.add(Box.createVerticalStrut(10));
+        list.add(deadlineRow("PE Fitness Log", "PE 001", "Submitted", "Done", Theme.SUCCESS));
+        card.add(list, BorderLayout.CENTER);
         return card;
+    }
+
+    private JPanel deadlineRow(String title, String course, String due, String status, Color statusColor) {
+        JPanel row = new JPanel(new BorderLayout(8, 0));
+        row.setOpaque(false);
+
+        JLabel name = new JLabel(title);
+        name.setFont(Theme.BODY);
+        name.setForeground(Theme.TEXT);
+        row.add(name, BorderLayout.CENTER);
+
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        right.setOpaque(false);
+        right.add(chip(course, Theme.PRIMARY));
+        JLabel dueLabel = new JLabel(due);
+        dueLabel.setFont(Theme.BODY);
+        dueLabel.setForeground(Theme.MUTED);
+        right.add(dueLabel);
+        if (statusColor != null) {
+            right.add(chip(status, statusColor));
+        }
+        row.add(right, BorderLayout.EAST);
+        return row;
+    }
+
+    private JLabel chip(String text, Color color) {
+        JLabel chip = new JLabel(" " + text + " ");
+        chip.setFont(Theme.BODY);
+        chip.setForeground(Color.WHITE);
+        chip.setBackground(color);
+        chip.setOpaque(true);
+        return chip;
     }
 
     private void styleTab(JToggleButton button) {
