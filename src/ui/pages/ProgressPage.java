@@ -150,7 +150,7 @@ public class ProgressPage extends JPanel {
             int headerHeight = 30;
             int rowHeight = 40;
 
-            g2.setFont(new Font("SansSerif", Font.PLAIN, 13));
+            g2.setFont(Theme.font(Font.PLAIN, 13));
             g2.setColor(Theme.MUTED);
             for (int d = 0; d < DAYS.length; d++) {
                 int x = (int) (d * (colWidth + gap));

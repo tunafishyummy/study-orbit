@@ -23,9 +23,10 @@ public final class Theme {
     public static final Color STUDY_CELL = new Color(0x3B3B3B);
     public static final Color STUDY_CELL_ACTIVE = new Color(0x4B44C9);
     public static final Color ARROW = new Color(0x3D2666);
-    public static final Font TITLE = new Font("SansSerif", Font.BOLD, 26);
-    public static final Font HEADING = new Font("SansSerif", Font.BOLD, 16);
-    public static final Font BODY = new Font("SansSerif", Font.PLAIN, 14);
+    private static final Font KUMBH_SANS = Assets.font("KumbhSans.ttf", Font.PLAIN, 14);
+    public static final Font TITLE = font(Font.BOLD, 26);
+    public static final Font HEADING = font(Font.BOLD, 16);
+    public static final Font BODY = font(Font.PLAIN, 14);
 
     private static boolean dark = true;
 
@@ -60,6 +61,21 @@ public final class Theme {
 
     // sets the shared defaults so every new control follows the current palette
     public static void apply() {
+        UIManager.put("defaultFont", BODY);
+        UIManager.put("Label.font", BODY);
+        UIManager.put("Button.font", BODY);
+        UIManager.put("TextField.font", BODY);
+        UIManager.put("TextArea.font", BODY);
+        UIManager.put("TextPane.font", BODY);
+        UIManager.put("EditorPane.font", BODY);
+        UIManager.put("ComboBox.font", BODY);
+        UIManager.put("List.font", BODY);
+        UIManager.put("Table.font", BODY);
+        UIManager.put("TableHeader.font", BODY);
+        UIManager.put("CheckBox.font", BODY);
+        UIManager.put("RadioButton.font", BODY);
+        UIManager.put("Menu.font", BODY);
+        UIManager.put("MenuItem.font", BODY);
         UIManager.put("Panel.background", BG);
         UIManager.put("Label.foreground", TEXT);
         UIManager.put("TextField.background", SURFACE);
@@ -78,6 +94,10 @@ public final class Theme {
         UIManager.put("ToggleButton.select", SELECT);
         UIManager.put("OptionPane.background", SURFACE);
         UIManager.put("OptionPane.messageForeground", TEXT);
+    }
+
+    public static Font font(int style, float size) {
+        return KUMBH_SANS.deriveFont(style, size);
     }
 
     public static JPanel card() {

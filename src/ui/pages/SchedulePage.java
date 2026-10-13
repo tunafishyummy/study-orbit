@@ -105,7 +105,7 @@ public class SchedulePage extends JPanel {
         card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JLabel heading = new JLabel("Semester Class Schedule", SwingConstants.CENTER);
-        heading.setFont(new Font("SansSerif", Font.BOLD, 26));
+        heading.setFont(Theme.font(Font.BOLD, 26));
         heading.setForeground(Theme.TEXT);
         card.add(heading, BorderLayout.NORTH);
 
@@ -127,7 +127,7 @@ public class SchedulePage extends JPanel {
         JButton previous = arrowButton("<");
         JButton next = arrowButton(">");
         JLabel range = new JLabel("October 4 - 10, 2026", SwingConstants.CENTER);
-        range.setFont(new Font("SansSerif", Font.BOLD, 24));
+        range.setFont(Theme.font(Font.BOLD, 24));
         range.setForeground(Theme.TEXT);
         weekHeader.add(previous, BorderLayout.WEST);
         weekHeader.add(range, BorderLayout.CENTER);
@@ -163,13 +163,13 @@ public class SchedulePage extends JPanel {
             double colWidth = (getWidth() - labelWidth) / 7.0;
             double rowHeight = (getHeight() - headerHeight) / 9.0;
 
-            g2.setFont(new Font("SansSerif", Font.BOLD, 14));
+            g2.setFont(Theme.font(Font.BOLD, 14));
             g2.setColor(new Color(0x111111));
             for (int d = 0; d < DAYS.length; d++) {
                 g2.drawString(DAYS[d], (int) (labelWidth + d * colWidth) + 12, 21);
             }
 
-            g2.setFont(new Font("SansSerif", Font.PLAIN, 12));
+            g2.setFont(Theme.font(Font.PLAIN, 12));
             g2.setColor(new Color(0x666666));
             for (int r = 0; r < TIMES.length; r++) {
                 int y = (int) (headerHeight + r * rowHeight);
@@ -206,10 +206,10 @@ public class SchedulePage extends JPanel {
             double colWidth = getWidth() / 7.0;
             for (int d = 0; d < DAYS.length; d++) {
                 int x = (int) (d * colWidth);
-                g2.setFont(new Font("SansSerif", Font.BOLD, 14));
+                g2.setFont(Theme.font(Font.BOLD, 14));
                 g2.setColor(new Color(0x111111));
                 g2.drawString(DAYS[d], x + 12, 20);
-                g2.setFont(new Font("SansSerif", Font.PLAIN, 12));
+                g2.setFont(Theme.font(Font.PLAIN, 12));
                 g2.setColor(new Color(0x666666));
                 g2.drawString(DATES[d], x + 12, 38);
             }

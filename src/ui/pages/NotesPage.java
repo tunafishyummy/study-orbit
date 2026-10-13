@@ -66,7 +66,7 @@ public class NotesPage extends JPanel {
         fields.add(new JLabel(""));
         fields.add(tagsField);
         editor.add(fields, BorderLayout.NORTH);
-        bodyArea.setFont(new Font("SansSerif", Font.PLAIN, 15));
+        bodyArea.setFont(Theme.font(Font.PLAIN, 15));
         bodyArea.setBackground(Theme.SURFACE);
         bodyArea.setForeground(Theme.TEXT);
         bodyArea.setCaretColor(Theme.TEXT);

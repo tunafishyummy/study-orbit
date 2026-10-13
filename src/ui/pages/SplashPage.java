@@ -8,8 +8,6 @@ import java.awt.*;
 
 // Screen 1, the welcome page
 public class SplashPage extends JPanel {
-    private static final Font KUMBH_SANS = Assets.font("KumbhSans.ttf", Font.PLAIN, 16);
-
     public SplashPage(Runnable onContinue) {
         setBackground(Theme.BG);
         setLayout(new BorderLayout());
@@ -20,17 +18,17 @@ public class SplashPage extends JPanel {
         left.setBorder(BorderFactory.createEmptyBorder(0, 60, 0, 0));
 
         JLabel title = new JLabel("Study Orbit");
-        title.setFont(KUMBH_SANS.deriveFont(Font.PLAIN, 68f));
+        title.setFont(Theme.font(Font.PLAIN, 68));
         title.setForeground(Theme.TEXT);
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel motto = new JLabel("An All-Around Learning Tool Built for Students");
-        motto.setFont(KUMBH_SANS.deriveFont(Font.PLAIN, 16f));
+        motto.setFont(Theme.font(Font.PLAIN, 16));
         motto.setForeground(Theme.MUTED);
         motto.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel profile = new JLabel("No selected profile");
-        profile.setFont(KUMBH_SANS.deriveFont(Font.BOLD, 18f));
+        profile.setFont(Theme.font(Font.BOLD, 18));
         profile.setForeground(Theme.TEXT);
         profile.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -38,7 +36,7 @@ public class SplashPage extends JPanel {
         chevron.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JButton continueButton = new JButton("Continue");
-        continueButton.setFont(KUMBH_SANS.deriveFont(Font.PLAIN, 20f));
+        continueButton.setFont(Theme.font(Font.PLAIN, 20));
         continueButton.setForeground(Theme.MUTED);
         continueButton.setBackground(Theme.BG);
         continueButton.setContentAreaFilled(false);
