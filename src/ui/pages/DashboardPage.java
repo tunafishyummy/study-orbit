@@ -1,28 +1,19 @@
 package ui.pages;
 
-import data.AppData;
-import data.NoteManager;
-import model.Note;
 import ui.Theme;
 
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 
 // Screen 3, the student dashboard
 public class DashboardPage extends JPanel {
 
     private final JLabel dateLabel = new JLabel();
     private final JLabel timeLabel = new JLabel();
-    private final NoteManager manager;
 
     public DashboardPage() {
-        manager = AppData.get();
         setBackground(Theme.BG);
         setLayout(new BorderLayout(0, 16));
         setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
@@ -58,20 +49,14 @@ public class DashboardPage extends JPanel {
     private JPanel cards() {
         JPanel topRow = new JPanel(new GridLayout(1, 3, 16, 16));
         topRow.setOpaque(false);
-        topRow.add(section("Next class", lines(
-                "CS 002 - Object-Oriented Programming",
-                "Mon and Wed 9:00 AM - Room 402")));
-        topRow.add(section("Cards due today", lines(
-                "23 cards due",
-                "About 15 minutes")));
-        topRow.add(section("Current Streak", lines(
-                "6 day streak",
-                "Keep it going")));
+        topRow.add(section("Next class"));
+        topRow.add(section("Cards due today"));
+        topRow.add(section("Current Streak"));
 
         JPanel bottomRow = new JPanel(new GridLayout(1, 2, 16, 16));
         bottomRow.setOpaque(false);
-        bottomRow.add(deadlines());
-        bottomRow.add(recentNotes());
+        bottomRow.add(section("Upcoming deadlines"));
+        bottomRow.add(section("Recent notes"));
 
         JPanel rows = new JPanel(new GridLayout(2, 1, 16, 16));
         rows.setOpaque(false);
@@ -80,108 +65,15 @@ public class DashboardPage extends JPanel {
         return rows;
     }
 
-    private JPanel section(String title, JComponent body) {
+    private JPanel section(String title) {
         JPanel card = Theme.card();
-        card.setLayout(new BorderLayout(0, 10));
+        card.setLayout(new BorderLayout());
+
         JLabel heading = new JLabel(title);
         heading.setFont(Theme.HEADING);
         heading.setForeground(Theme.TEXT);
         card.add(heading, BorderLayout.NORTH);
-        card.add(body, BorderLayout.CENTER);
         return card;
-    }
-
-    private JPanel lines(String... texts) {
-        JPanel panel = new JPanel();
-        panel.setOpaque(false);
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        for (String text : texts) {
-            JLabel label = new JLabel(text);
-            label.setFont(Theme.BODY);
-            label.setForeground(Theme.TEXT);
-            label.setAlignmentX(Component.LEFT_ALIGNMENT);
-            panel.add(label);
-            panel.add(Box.createVerticalStrut(4));
-        }
-        return panel;
-    }
-
-    private JPanel deadlines() {
-        JPanel list = new JPanel();
-        list.setOpaque(false);
-        list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
-        list.add(deadlineRow("OOP Concept Proposal", "CS 002", "Due Friday", Theme.WARNING));
-        list.add(Box.createVerticalStrut(8));
-        list.add(deadlineRow("Math Problem Set 5", "MATH 008A", "Due Monday", Theme.MUTED));
-        list.add(Box.createVerticalStrut(8));
-        list.add(deadlineRow("Purposive Comm. Essay", "GEC 002", "Due Wednesday", Theme.MUTED));
-        return section("Upcoming deadlines", list);
-    }
-
-    private JPanel deadlineRow(String title, String course, String due, Color chipColor) {
-        JPanel row = new JPanel(new BorderLayout(8, 0));
-        row.setOpaque(false);
-
-        JLabel name = new JLabel(title);
-        name.setFont(Theme.BODY);
-        name.setForeground(Theme.TEXT);
-        row.add(name, BorderLayout.CENTER);
-
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        right.setOpaque(false);
-        right.add(chip(course, Theme.PRIMARY));
-        right.add(chip(due, chipColor));
-        row.add(right, BorderLayout.EAST);
-        return row;
-    }
-
-    private JLabel chip(String text, Color color) {
-        JLabel chip = new JLabel(" " + text + " ");
-        chip.setFont(Theme.BODY);
-        chip.setForeground(Color.WHITE);
-        chip.setBackground(color);
-        chip.setOpaque(true);
-        return chip;
-    }
-
-    private JPanel recentNotes() {
-        JPanel list = new JPanel();
-        list.setOpaque(false);
-        list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
-
-        List<Note> notes = new ArrayList<>(manager.getAllNotes());
-        Collections.sort(notes, new Comparator<Note>() {
-            @Override
-            public int compare(Note a, Note b) {
-                return b.getEdited().compareTo(a.getEdited());
-            }
-        });
-
-        if (notes.isEmpty()) {
-            JLabel empty = Theme.muted("No notes yet. Create your first note in the Notes tab.");
-            empty.setAlignmentX(Component.LEFT_ALIGNMENT);
-            list.add(empty);
-        } else {
-            int count = Math.min(5, notes.size());
-            for (int i = 0; i < count; i++) {
-                Note note = notes.get(i);
-                JLabel row = new JLabel(note.getTitle() + "  -  " + metaText(note));
-                row.setFont(Theme.BODY);
-                row.setForeground(Theme.TEXT);
-                row.setAlignmentX(Component.LEFT_ALIGNMENT);
-                list.add(row);
-                list.add(Box.createVerticalStrut(6));
-            }
-        }
-        return section("Recent notes", list);
-    }
-
-    private String metaText(Note note) {
-        String edited = note.getEdited().format(DateTimeFormatter.ofPattern("MMM d"));
-        if (note.getCourseCode().isEmpty()) {
-            return edited;
-        }
-        return note.getCourseCode() + "  " + edited;
     }
 
     private void updateClock() {
