@@ -86,7 +86,7 @@ public class NotesPage extends JPanel {
         editor.add(buttons, BorderLayout.SOUTH);
         add(editor, BorderLayout.CENTER);
 
-        reload();
+        EventQueue.invokeLater(this::reload);
         addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override public void componentShown(java.awt.event.ComponentEvent e) { reload(); }
         });

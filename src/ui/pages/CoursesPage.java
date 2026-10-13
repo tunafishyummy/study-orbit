@@ -84,8 +84,10 @@ public class CoursesPage extends JPanel {
         form.add(delete);
         add(form, BorderLayout.EAST);
 
-        refresh();
-        setColor(chosenColor);
+        EventQueue.invokeLater(() -> {
+            refresh();
+            setColor(chosenColor);
+        });
     }
 
     private void setColor(Color c) {
