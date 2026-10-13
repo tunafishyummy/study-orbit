@@ -42,7 +42,7 @@ public class NavBar extends JPanel {
         for (String page : PAGES) {
             final NavButton button = new NavButton(page);
             button.setAlignmentX(Component.CENTER_ALIGNMENT);
-            button.setMaximumSize(new Dimension(94, 35));
+            button.setMaximumSize(new Dimension(104, 35));
             button.addActionListener(e -> {
                 select(page);
                 onNavigate.accept(page);
@@ -76,6 +76,7 @@ public class NavBar extends JPanel {
             setBorderPainted(false);
             setFont(Theme.BODY);
             setForeground(Theme.NAVBAR_TEXT);
+            setMargin(new Insets(2, 4, 2, 4));
             setCursor(new Cursor(Cursor.HAND_CURSOR));
         }
 
