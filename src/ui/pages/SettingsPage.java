@@ -63,11 +63,11 @@ public class SettingsPage extends JPanel {
         JPanel names = new JPanel();
         names.setOpaque(false);
         names.setLayout(new BoxLayout(names, BoxLayout.Y_AXIS));
-        JLabel name = new JLabel("User1");
+        JLabel name = new JLabel("User");
         name.setFont(Theme.HEADING);
         name.setForeground(Theme.TEXT);
         name.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel sub = Theme.muted("BSICS - 2nd Year");
+        JLabel sub = Theme.muted("College Level");
         sub.setAlignmentX(Component.LEFT_ALIGNMENT);
         names.add(name);
         names.add(sub);
