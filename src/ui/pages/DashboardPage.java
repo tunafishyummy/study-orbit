@@ -1,19 +1,28 @@
 package ui.pages;
 
+import data.AppData;
+import data.NoteManager;
+import model.Note;
 import ui.Theme;
 
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 // Screen 3, the student dashboard
 public class DashboardPage extends JPanel {
 
     private final JLabel dateLabel = new JLabel();
     private final JLabel timeLabel = new JLabel();
+    private final NoteManager manager;
 
     public DashboardPage() {
+        manager = AppData.get();
         setBackground(Theme.BG);
         setLayout(new BorderLayout(0, 16));
         setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
@@ -62,7 +71,7 @@ public class DashboardPage extends JPanel {
         JPanel bottomRow = new JPanel(new GridLayout(1, 2, 16, 16));
         bottomRow.setOpaque(false);
         bottomRow.add(deadlines());
-        bottomRow.add(section("Recent notes", empty()));
+        bottomRow.add(recentNotes());
 
         JPanel rows = new JPanel(new GridLayout(2, 1, 16, 16));
         rows.setOpaque(false);
@@ -94,12 +103,6 @@ public class DashboardPage extends JPanel {
             panel.add(label);
             panel.add(Box.createVerticalStrut(4));
         }
-        return panel;
-    }
-
-    private JPanel empty() {
-        JPanel panel = new JPanel();
-        panel.setOpaque(false);
         return panel;
     }
 
@@ -139,6 +142,46 @@ public class DashboardPage extends JPanel {
         chip.setBackground(color);
         chip.setOpaque(true);
         return chip;
+    }
+
+    private JPanel recentNotes() {
+        JPanel list = new JPanel();
+        list.setOpaque(false);
+        list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
+
+        List<Note> notes = new ArrayList<>(manager.getAllNotes());
+        Collections.sort(notes, new Comparator<Note>() {
+            @Override
+            public int compare(Note a, Note b) {
+                return b.getEdited().compareTo(a.getEdited());
+            }
+        });
+
+        if (notes.isEmpty()) {
+            JLabel empty = Theme.muted("No notes yet. Create your first note in the Notes tab.");
+            empty.setAlignmentX(Component.LEFT_ALIGNMENT);
+            list.add(empty);
+        } else {
+            int count = Math.min(5, notes.size());
+            for (int i = 0; i < count; i++) {
+                Note note = notes.get(i);
+                JLabel row = new JLabel(note.getTitle() + "  -  " + metaText(note));
+                row.setFont(Theme.BODY);
+                row.setForeground(Theme.TEXT);
+                row.setAlignmentX(Component.LEFT_ALIGNMENT);
+                list.add(row);
+                list.add(Box.createVerticalStrut(6));
+            }
+        }
+        return section("Recent notes", list);
+    }
+
+    private String metaText(Note note) {
+        String edited = note.getEdited().format(DateTimeFormatter.ofPattern("MMM d"));
+        if (note.getCourseCode().isEmpty()) {
+            return edited;
+        }
+        return note.getCourseCode() + "  " + edited;
     }
 
     private void updateClock() {
