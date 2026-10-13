@@ -17,7 +17,9 @@ public class StudyOrbitApp extends JFrame {
         setSize(1000, 620);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
+        setBackground(Theme.BG);
 
+        pages.setBackground(Theme.BG);
         pages.add(new DashboardPage(), "Dashboard");
         pages.add(new CoursesPage(), "Courses");
         pages.add(new NotesPage(), "Notes");
@@ -29,9 +31,11 @@ public class StudyOrbitApp extends JFrame {
         pages.add(new SettingsPage(), "Settings");
 
         JPanel dashboard = new JPanel(new BorderLayout());
+        dashboard.setBackground(Theme.BG);
         dashboard.add(new NavBar(name -> pageLayout.show(pages, name)), BorderLayout.WEST);
         dashboard.add(pages, BorderLayout.CENTER);
 
+        app.setBackground(Theme.BG);
         app.add(new SplashPage(() -> {
             appLayout.show(app, "Dashboard");
             pageLayout.show(pages, "Dashboard");
