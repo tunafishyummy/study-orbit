@@ -1,3 +1,5 @@
+package ui.pages;
+
 import java.awt.*;
 import javax.swing.*;
 
@@ -8,5 +10,4 @@ public class SettingsPage extends JPanel {
 
         add(new JLabel("Settings", SwingConstants.CENTER), BorderLayout.CENTER);
     }
-
 }

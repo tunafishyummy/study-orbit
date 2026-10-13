@@ -1,3 +1,5 @@
+package ui.pages;
+
 import java.awt.*;
 import javax.swing.*;
 
@@ -8,5 +10,4 @@ public class ProgressPage extends JPanel {
 
         add(new JLabel("Progress", SwingConstants.CENTER), BorderLayout.CENTER);
     }
-
-} //a
+}
