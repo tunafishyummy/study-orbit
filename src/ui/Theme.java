@@ -80,6 +80,27 @@ public final class Theme {
         UIManager.put("OptionPane.messageForeground", TEXT);
     }
 
+    public static JPanel card() {
+        JPanel panel = new JPanel();
+        panel.setBackground(SURFACE);
+        panel.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        return panel;
+    }
+
+    public static JLabel header(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(TITLE);
+        label.setForeground(TEXT);
+        return label;
+    }
+
+    public static JLabel muted(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(BODY);
+        label.setForeground(MUTED);
+        return label;
+    }
+
     public static JButton primaryButton(String text) {
         JButton b = new JButton(text);
         b.setBackground(PRIMARY);
