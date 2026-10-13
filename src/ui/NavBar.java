@@ -22,9 +22,28 @@ public class NavBar extends JPanel {
         setBackground(Theme.NAVBAR);
 
         JLabel logo = new JLabel();
-        Image image = Assets.image("images/Logo Navbar.png");
+        Image image = Assets.image("images/LogoNavbar.png");
         if (image != null) {
-            logo.setIcon(new ImageIcon(image.getScaledInstance(56, -1, Image.SCALE_SMOOTH)));
+            int logoSize = 56;
+            logo.setIcon(new Icon() {
+                @Override
+                public int getIconWidth() {
+                    return logoSize;
+                }
+
+                @Override
+                public int getIconHeight() {
+                    return logoSize;
+                }
+
+                @Override
+                public void paintIcon(Component component, Graphics graphics, int x, int y) {
+                    Graphics2D g2 = (Graphics2D) graphics.create();
+                    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                    g2.drawImage(image, x, y, logoSize, logoSize, component);
+                    g2.dispose();
+                }
+            });
         }
         logo.setAlignmentX(Component.CENTER_ALIGNMENT);
 
