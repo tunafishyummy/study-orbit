@@ -17,12 +17,23 @@ public class NavBar extends JPanel {
         setPreferredSize(new Dimension(110, 0));
         setBackground(Theme.NAVBAR);
 
-        JLabel logo = new JLabel("Study Orbit");
-        logo.setForeground(Theme.TEXT);
+        JLabel logo = new JLabel();
+        Image image = Assets.image("Logo Navbar.png");
+        if (image != null) {
+            logo.setIcon(new ImageIcon(image.getScaledInstance(56, 56, Image.SCALE_SMOOTH)));
+        }
         logo.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JLabel name = new JLabel("Study Orbit");
+        name.setFont(Theme.BODY);
+        name.setForeground(Theme.TEXT);
+        name.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         add(Box.createVerticalStrut(10));
         add(logo);
-        add(Box.createVerticalStrut(15));
+        add(Box.createVerticalStrut(4));
+        add(name);
+        add(Box.createVerticalStrut(12));
 
         ButtonGroup group = new ButtonGroup();
         for (String page : PAGES) {
