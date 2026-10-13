@@ -1,7 +1,6 @@
 package ui.pages;
 
 import data.AppData;
-import data.FlashcardManager;
 import java.awt.*;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -22,10 +21,10 @@ public class CreateFlashcardPage extends JPanel {
     private JTextArea frontArea;
     private JTextArea backArea;
     private JTextField tagsField;
-    private FlashcardManager flashcardManager;
+
 
     public CreateFlashcardPage(Runnable onBack) {
-        flashcardManager = new FlashcardManager(AppData.get().getStoreReference());
+
 
         setLayout(new BorderLayout());
         setBackground(Theme.BG);
@@ -271,7 +270,6 @@ public class CreateFlashcardPage extends JPanel {
             if (!tagText.isBlank()) {
                 for (String t : tagText.split(",")) tags.add(t.trim());
             }
-            flashcardManager.addFlashcard(deck, front, back, tags);
             JOptionPane.showMessageDialog(this, "Successfully added");
             frontArea.setText("");
             backArea.setText("");
