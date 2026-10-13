@@ -2,6 +2,7 @@ package ui.pages;
 
 import data.AppData;
 import data.NoteManager;
+import model.Course;
 import model.Note;
 import ui.Theme;
 
@@ -14,6 +15,7 @@ import java.awt.*;
 public class SearchPage extends JPanel {
     private final NoteManager manager;
     private final JTextField searchField = new JTextField();
+    private final JComboBox<String> courseBox = new JComboBox<>();
     private final DefaultListModel<Note> listModel = new DefaultListModel<>();
     private final JList<Note> list = new JList<>(listModel);
     private final JLabel status = new JLabel();
@@ -40,6 +42,15 @@ public class SearchPage extends JPanel {
                 refresh();
             }
         });
+        courseBox.addActionListener(e -> refresh());
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent e) {
+                reloadCourses();
+                refresh();
+            }
+        });
+        reloadCourses();
         refresh();
     }
 
@@ -70,7 +81,7 @@ public class SearchPage extends JPanel {
                     BorderFactory.createEmptyBorder(5, 14, 5, 14)));
             filters.add(button);
         }
-        filters.add(Theme.button("Course: Any"));
+        filters.add(courseBox);
 
         header.add(title);
         header.add(Box.createVerticalStrut(4));
@@ -110,10 +121,26 @@ public class SearchPage extends JPanel {
         return panel;
     }
 
+    private void reloadCourses() {
+        String selected = (String) courseBox.getSelectedItem();
+        courseBox.removeAllItems();
+        courseBox.addItem("All courses");
+        for (Course course : manager.getCourses()) {
+            courseBox.addItem(course.getCode());
+        }
+        if (selected != null) {
+            courseBox.setSelectedItem(selected);
+        }
+    }
+
     private void refresh() {
         String query = searchField.getText().trim().toLowerCase();
+        String course = (String) courseBox.getSelectedItem();
         listModel.clear();
         for (Note note : manager.getAllNotes()) {
+            if (course != null && !course.equals("All courses") && !note.getCourseCode().equals(course)) {
+                continue;
+            }
             if (!query.isEmpty() && !matches(note, query)) {
                 continue;
             }
