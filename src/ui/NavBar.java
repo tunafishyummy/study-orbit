@@ -13,6 +13,10 @@ public class NavBar extends JPanel {
     };
 
     public NavBar(Consumer<String> onNavigate) {
+        this(onNavigate, "Dashboard");
+    }
+
+    public NavBar(Consumer<String> onNavigate, String selectedPage) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setPreferredSize(new Dimension(110, 0));
         setBackground(Theme.NAVBAR);
@@ -49,7 +53,7 @@ public class NavBar extends JPanel {
             add(btn);
             add(Box.createVerticalStrut(5));
 
-            if (page.equals("Dashboard")) btn.setSelected(true);
+            if (page.equals(selectedPage)) btn.setSelected(true);
         }
     }
 }
