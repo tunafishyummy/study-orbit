@@ -88,7 +88,7 @@ public class SplashPage extends JPanel {
             double scale = Math.min(getWidth() / 565.0, getHeight() / 620.0);
             int width = (int) Math.round(WIDTH * scale);
             int height = (int) Math.round(width * image.getHeight(null) / (double) image.getWidth(null));
-            int x = getWidth() - width - (int) Math.round(RIGHT_MARGIN * scale);
+            int x = Math.max(0, getWidth() - width - (int) Math.round(RIGHT_MARGIN * scale));
             int y = getHeight() - height + (int) Math.round(BOTTOM_CROP * scale);
             g.drawImage(image, x, y, width, height, this);
         }
