@@ -76,7 +76,7 @@ public class SplashPage extends JPanel {
         private final Image image;
 
         WelcomeLogo() {
-            image = Assets.image("Logo.png");
+            image = Assets.image("images/Logo.png");
         }
 
         @Override

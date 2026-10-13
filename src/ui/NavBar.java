@@ -22,7 +22,7 @@ public class NavBar extends JPanel {
         setBackground(Theme.NAVBAR);
 
         JLabel logo = new JLabel();
-        Image image = Assets.image("Logo Navbar.png");
+        Image image = Assets.image("images/Logo Navbar.png");
         if (image != null) {
             logo.setIcon(new ImageIcon(image.getScaledInstance(56, -1, Image.SCALE_SMOOTH)));
         }
