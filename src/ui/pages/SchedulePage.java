@@ -1,157 +1,124 @@
 package ui.pages;
 
 import ui.Theme;
+import ui.components.RoundedPanel;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
 
 // Screen 8, the weekly schedule and the deadline list
 public class SchedulePage extends JPanel {
     private final CardLayout views = new CardLayout();
     private final JPanel viewPanel = new JPanel(views);
+    private final JLabel title = new JLabel();
+    private final JButton schedulePill = pill("Schedule");
+    private final JButton deadlinesPill = pill("Deadlines");
 
     public SchedulePage() {
         setBackground(Theme.BG);
-        setLayout(new BorderLayout(0, 12));
+        setLayout(new BorderLayout(0, 16));
         setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 
         add(header(), BorderLayout.NORTH);
 
         viewPanel.setOpaque(false);
         viewPanel.add(scheduleCard(), "Schedule");
-        viewPanel.add(deadlinesCard(), "Deadlines");
+        viewPanel.add(emptyCard(), "Deadlines");
         add(viewPanel, BorderLayout.CENTER);
+
+        schedulePill.addActionListener(e -> showTab("Schedule"));
+        deadlinesPill.addActionListener(e -> showTab("Deadlines"));
+        showTab("Schedule");
     }
 
     private JPanel header() {
-        JPanel header = new JPanel();
+        JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
-        header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
 
-        JLabel title = Theme.header("Schedule");
-        title.setAlignmentX(Component.LEFT_ALIGNMENT);
+        title.setFont(Theme.TITLE);
+        title.setForeground(Theme.TEXT);
+        header.add(title, BorderLayout.WEST);
 
-        JPanel tabs = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        tabs.setOpaque(false);
-        tabs.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JToggleButton scheduleTab = new JToggleButton("Schedule");
-        JToggleButton deadlinesTab = new JToggleButton("Deadlines");
-        ButtonGroup group = new ButtonGroup();
-        group.add(scheduleTab);
-        group.add(deadlinesTab);
-        scheduleTab.setSelected(true);
-        styleTab(scheduleTab);
-        styleTab(deadlinesTab);
-        scheduleTab.addActionListener(e -> views.show(viewPanel, "Schedule"));
-        deadlinesTab.addActionListener(e -> views.show(viewPanel, "Deadlines"));
-        tabs.add(scheduleTab);
-        tabs.add(deadlinesTab);
-
-        header.add(title);
-        header.add(Box.createVerticalStrut(10));
-        header.add(tabs);
+        JPanel mode = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        mode.setOpaque(false);
+        JLabel modeLabel = new JLabel("Mode:");
+        modeLabel.setFont(Theme.BODY);
+        modeLabel.setForeground(Theme.TEXT);
+        mode.add(modeLabel);
+        mode.add(schedulePill);
+        mode.add(deadlinesPill);
+        header.add(mode, BorderLayout.EAST);
         return header;
     }
 
-    private JPanel scheduleCard() {
-        JPanel card = Theme.card();
-        card.setLayout(new BorderLayout());
-        card.add(new WeekGrid(), BorderLayout.CENTER);
-        return card;
+    private void showTab(String tab) {
+        views.show(viewPanel, tab);
+        boolean schedule = tab.equals("Schedule");
+        if (schedule) {
+            title.setText("Schedules");
+        } else {
+            title.setText("Deadlines");
+        }
+        stylePill(schedulePill, schedule);
+        stylePill(deadlinesPill, !schedule);
     }
 
-    private JPanel deadlinesCard() {
-        JPanel card = Theme.card();
-        card.setLayout(new BorderLayout(0, 8));
+    private JButton pill(String text) {
+        JButton button = new JButton(text);
+        button.setFont(Theme.BODY);
+        button.setFocusPainted(false);
+        button.setOpaque(true);
+        return button;
+    }
 
-        JLabel heading = new JLabel("Deadlines");
-        heading.setFont(Theme.HEADING);
+    private void stylePill(JButton button, boolean active) {
+        if (active) {
+            button.setBackground(Theme.PRIMARY);
+            button.setForeground(Color.WHITE);
+            button.setBorderPainted(false);
+            button.setBorder(BorderFactory.createEmptyBorder(7, 20, 7, 20));
+        } else {
+            button.setBackground(Theme.BG);
+            button.setForeground(Theme.TEXT);
+            button.setBorderPainted(true);
+            button.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(Theme.BORDER),
+                    BorderFactory.createEmptyBorder(6, 19, 6, 19)));
+        }
+    }
+
+    private JPanel scheduleCard() {
+        JPanel card = new RoundedPanel(Theme.SURFACE, 24);
+        card.setLayout(new BorderLayout(0, 16));
+        card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JLabel heading = new JLabel("Semester Class Schedule", SwingConstants.CENTER);
+        heading.setFont(new Font("SansSerif", Font.BOLD, 26));
         heading.setForeground(Theme.TEXT);
         card.add(heading, BorderLayout.NORTH);
 
-        JPanel list = new JPanel();
-        list.setOpaque(false);
-        list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
-        list.add(deadlineRow("OOP Concept Proposal", "CS 002", "Due Friday", "Due soon", Theme.WARNING));
-        list.add(Box.createVerticalStrut(10));
-        list.add(deadlineRow("Math Problem Set 5", "MATH 008A", "Due Monday", "", null));
-        list.add(Box.createVerticalStrut(10));
-        list.add(deadlineRow("Purposive Comm. Essay", "GEC 002", "Due next Wednesday", "", null));
-        list.add(Box.createVerticalStrut(10));
-        list.add(deadlineRow("PE Fitness Log", "PE 001", "Submitted", "Done", Theme.SUCCESS));
-        card.add(list, BorderLayout.CENTER);
+        JPanel gridHolder = new RoundedPanel(Color.WHITE, 24);
+        gridHolder.setLayout(new BorderLayout());
+        gridHolder.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        gridHolder.add(new WeekGrid(), BorderLayout.CENTER);
+        card.add(gridHolder, BorderLayout.CENTER);
         return card;
     }
 
-    private JPanel deadlineRow(String title, String course, String due, String status, Color statusColor) {
-        JPanel row = new JPanel(new BorderLayout(8, 0));
-        row.setOpaque(false);
-
-        JLabel name = new JLabel(title);
-        name.setFont(Theme.BODY);
-        name.setForeground(Theme.TEXT);
-        row.add(name, BorderLayout.CENTER);
-
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        right.setOpaque(false);
-        right.add(chip(course, Theme.PRIMARY));
-        JLabel dueLabel = new JLabel(due);
-        dueLabel.setFont(Theme.BODY);
-        dueLabel.setForeground(Theme.MUTED);
-        right.add(dueLabel);
-        if (statusColor != null) {
-            right.add(chip(status, statusColor));
-        }
-        row.add(right, BorderLayout.EAST);
-        return row;
+    private JPanel emptyCard() {
+        JPanel card = new RoundedPanel(Theme.SURFACE, 24);
+        card.setLayout(new BorderLayout());
+        return card;
     }
 
-    private JLabel chip(String text, Color color) {
-        JLabel chip = new JLabel(" " + text + " ");
-        chip.setFont(Theme.BODY);
-        chip.setForeground(Color.WHITE);
-        chip.setBackground(color);
-        chip.setOpaque(true);
-        return chip;
-    }
-
-    private void styleTab(JToggleButton button) {
-        button.setFont(Theme.BODY);
-        button.setForeground(Theme.TEXT);
-        button.setBackground(Theme.SURFACE);
-        button.setFocusPainted(false);
-        button.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Theme.BORDER),
-                BorderFactory.createEmptyBorder(5, 14, 5, 14)));
-    }
-
-    // the weekly grid painted on one panel so blocks can span hours
+    // the empty week grid, painted so the lines line up
     private static class WeekGrid extends JPanel {
-        private static final String[] DAYS = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-        private final List<Block> blocks = new ArrayList<>();
+        private static final String[] DAYS = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+        private static final String[] TIMES = {"7:30 AM", "8:30 AM", "9:30 AM", "10:30 AM", "11:30 AM",
+                "12:30 PM", "1:30 PM", "2:30 PM", "3:30 PM"};
 
         WeekGrid() {
             setOpaque(false);
-            addBlock("Mon", 9, 10.5, "CS 002", "9:00 - 10:30", new Color(0x2563EB));
-            addBlock("Wed", 9, 10.5, "CS 002", "9:00 - 10:30", new Color(0x2563EB));
-            addBlock("Tue", 10, 11.5, "MATH 008A", "10:00 - 11:30", new Color(0x0D9488));
-            addBlock("Thu", 10, 11.5, "MATH 008A", "10:00 - 11:30", new Color(0x0D9488));
-            addBlock("Mon", 13, 14.5, "GEC 002", "1:00 - 2:30", new Color(0x7C3AED));
-            addBlock("Wed", 13, 14.5, "GEC 002", "1:00 - 2:30", new Color(0x7C3AED));
-            addBlock("Fri", 8, 9, "PE 001", "8:00 - 9:00", new Color(0xD97706));
-        }
-
-        private void addBlock(String day, double start, double end, String title, String time, Color color) {
-            Block block = new Block();
-            block.day = day;
-            block.start = start;
-            block.end = end;
-            block.title = title;
-            block.time = time;
-            block.color = color;
-            blocks.add(block);
         }
 
         @Override
@@ -160,72 +127,33 @@ public class SchedulePage extends JPanel {
             Graphics2D g2 = (Graphics2D) g;
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            int labelWidth = 60;
-            int headHeight = 26;
-            double dayWidth = (getWidth() - labelWidth) / 6.0;
-            double hourHeight = (getHeight() - headHeight) / 11.0;
+            int labelWidth = 72;
+            int headerHeight = 32;
+            double colWidth = (getWidth() - labelWidth) / 7.0;
+            double rowHeight = (getHeight() - headerHeight) / 9.0;
 
-            g2.setFont(new Font("SansSerif", Font.BOLD, 12));
-            g2.setColor(Theme.MUTED);
+            g2.setFont(new Font("SansSerif", Font.BOLD, 14));
+            g2.setColor(new Color(0x111111));
             for (int d = 0; d < DAYS.length; d++) {
-                g2.drawString(DAYS[d], (int) (labelWidth + d * dayWidth) + 8, 16);
+                g2.drawString(DAYS[d], (int) (labelWidth + d * colWidth) + 12, 21);
             }
 
-            g2.setFont(new Font("SansSerif", Font.PLAIN, 11));
-            for (int h = 0; h < 11; h++) {
-                int y = (int) (headHeight + h * hourHeight);
-                g2.setColor(Theme.MUTED);
-                g2.drawString(formatHour(7 + h), 6, y + 14);
-                g2.setColor(Theme.BORDER);
+            g2.setFont(new Font("SansSerif", Font.PLAIN, 12));
+            g2.setColor(new Color(0x666666));
+            for (int r = 0; r < TIMES.length; r++) {
+                int y = (int) (headerHeight + r * rowHeight);
+                g2.drawString(TIMES[r], 6, y + 15);
+            }
+
+            g2.setColor(new Color(0xD9D9D9));
+            for (int r = 0; r <= TIMES.length; r++) {
+                int y = (int) (headerHeight + r * rowHeight);
                 g2.drawLine(labelWidth, y, getWidth(), y);
             }
-            for (int d = 0; d <= 6; d++) {
-                int x = (int) (labelWidth + d * dayWidth);
-                g2.setColor(Theme.BORDER);
-                g2.drawLine(x, headHeight, x, getHeight());
+            for (int d = 0; d <= DAYS.length; d++) {
+                int x = (int) (labelWidth + d * colWidth);
+                g2.drawLine(x, 0, x, getHeight());
             }
-
-            for (Block block : blocks) {
-                int x = (int) (labelWidth + indexOf(block.day) * dayWidth) + 4;
-                int y = (int) (headHeight + (block.start - 7) * hourHeight) + 2;
-                int w = (int) dayWidth - 8;
-                int h = (int) ((block.end - block.start) * hourHeight) - 4;
-                g2.setColor(block.color);
-                g2.fillRoundRect(x, y, w, h, 10, 10);
-                g2.setColor(Color.WHITE);
-                g2.setFont(new Font("SansSerif", Font.BOLD, 12));
-                g2.drawString(block.title, x + 8, y + 18);
-                g2.setFont(new Font("SansSerif", Font.PLAIN, 11));
-                g2.drawString(block.time, x + 8, y + 34);
-            }
-        }
-
-        private int indexOf(String day) {
-            for (int i = 0; i < DAYS.length; i++) {
-                if (DAYS[i].equals(day)) {
-                    return i;
-                }
-            }
-            return 0;
-        }
-
-        private String formatHour(int hour) {
-            if (hour < 12) {
-                return hour + ":00";
-            }
-            if (hour == 12) {
-                return "12:00";
-            }
-            return (hour - 12) + ":00";
-        }
-
-        private static class Block {
-            String day;
-            double start;
-            double end;
-            String title;
-            String time;
-            Color color;
         }
     }
 }
