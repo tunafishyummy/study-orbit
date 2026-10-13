@@ -25,3 +25,6 @@ replay_pid*
 
 # Build output
 out/
+
+# Local app data
+data/
