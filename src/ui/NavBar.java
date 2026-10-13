@@ -24,7 +24,7 @@ public class NavBar extends JPanel {
         JLabel logo = new JLabel();
         Image image = Assets.image("Logo Navbar.png");
         if (image != null) {
-            logo.setIcon(new ImageIcon(image.getScaledInstance(56, 56, Image.SCALE_SMOOTH)));
+            logo.setIcon(new ImageIcon(image.getScaledInstance(56, -1, Image.SCALE_SMOOTH)));
         }
         logo.setAlignmentX(Component.CENTER_ALIGNMENT);
 
