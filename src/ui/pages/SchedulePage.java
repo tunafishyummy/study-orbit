@@ -23,7 +23,7 @@ public class SchedulePage extends JPanel {
 
         viewPanel.setOpaque(false);
         viewPanel.add(scheduleCard(), "Schedule");
-        viewPanel.add(emptyCard(), "Deadlines");
+        viewPanel.add(deadlinesCard(), "Deadlines");
         add(viewPanel, BorderLayout.CENTER);
 
         schedulePill.addActionListener(e -> showTab("Schedule"));
@@ -105,9 +105,28 @@ public class SchedulePage extends JPanel {
         return card;
     }
 
-    private JPanel emptyCard() {
+    private JPanel deadlinesCard() {
         JPanel card = new RoundedPanel(Theme.SURFACE, 24);
-        card.setLayout(new BorderLayout());
+        card.setLayout(new BorderLayout(0, 16));
+        card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JPanel weekHeader = new JPanel(new BorderLayout());
+        weekHeader.setOpaque(false);
+        JButton previous = Theme.button("<");
+        JButton next = Theme.button(">");
+        JLabel range = new JLabel("October 4 - 10, 2026", SwingConstants.CENTER);
+        range.setFont(new Font("SansSerif", Font.BOLD, 24));
+        range.setForeground(Theme.TEXT);
+        weekHeader.add(previous, BorderLayout.WEST);
+        weekHeader.add(range, BorderLayout.CENTER);
+        weekHeader.add(next, BorderLayout.EAST);
+        card.add(weekHeader, BorderLayout.NORTH);
+
+        JPanel gridHolder = new RoundedPanel(Color.WHITE, 24);
+        gridHolder.setLayout(new BorderLayout());
+        gridHolder.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        gridHolder.add(new DeadlineGrid(), BorderLayout.CENTER);
+        card.add(gridHolder, BorderLayout.CENTER);
         return card;
     }
 
@@ -152,6 +171,40 @@ public class SchedulePage extends JPanel {
             }
             for (int d = 0; d <= DAYS.length; d++) {
                 int x = (int) (labelWidth + d * colWidth);
+                g2.drawLine(x, 0, x, getHeight());
+            }
+        }
+    }
+
+    // the empty deadline week view
+    private static class DeadlineGrid extends JPanel {
+        private static final String[] DAYS = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+        private static final String[] DATES = {"Oct 4", "Oct 5", "Oct 6", "Oct 7", "Oct 8", "Oct 9", "Oct 10"};
+
+        DeadlineGrid() {
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            double colWidth = getWidth() / 7.0;
+            for (int d = 0; d < DAYS.length; d++) {
+                int x = (int) (d * colWidth);
+                g2.setFont(new Font("SansSerif", Font.BOLD, 14));
+                g2.setColor(new Color(0x111111));
+                g2.drawString(DAYS[d], x + 12, 20);
+                g2.setFont(new Font("SansSerif", Font.PLAIN, 12));
+                g2.setColor(new Color(0x666666));
+                g2.drawString(DATES[d], x + 12, 38);
+            }
+
+            g2.setColor(new Color(0xD9D9D9));
+            for (int d = 0; d <= DAYS.length; d++) {
+                int x = (int) (d * colWidth);
                 g2.drawLine(x, 0, x, getHeight());
             }
         }
