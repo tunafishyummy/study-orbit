@@ -59,24 +59,51 @@ public class SplashPage extends JPanel {
         left.add(continueButton);
         left.add(Box.createVerticalGlue());
 
-        // the logo keeps its own size and aspect ratio, anchored to the lower right
-        JPanel art = new JPanel(new GridBagLayout());
+        JPanel art = new JPanel(new BorderLayout());
         art.setOpaque(false);
-        GridBagConstraints c = new GridBagConstraints();
-        c.anchor = GridBagConstraints.SOUTHEAST;
-        c.weightx = 1;
-        c.weighty = 1;
-        c.insets = new Insets(0, 0, 0, 24);
-
-        JLabel logo = new JLabel();
-        Image image = Assets.image("Logo.png");
-        if (image != null) {
-            logo.setIcon(new ImageIcon(image.getScaledInstance(460, -1, Image.SCALE_SMOOTH)));
-        }
-        art.add(logo, c);
+        art.add(new WelcomeLogo(), BorderLayout.CENTER);
 
         add(left, BorderLayout.WEST);
         add(art, BorderLayout.CENTER);
+    }
+
+    // paints the logo at the bottom right so the page edge crops its bottom
+    private static class WelcomeLogo extends JComponent {
+        private static final int WIDTH = 720;
+        private static final int RIGHT_MARGIN = 6;
+        private static final int BOTTOM_CROP = 170;
+
+        private final Image scaled;
+        private final int height;
+
+        WelcomeLogo() {
+            Image image = Assets.image("Logo.png");
+            if (image != null && image.getWidth(null) > 0 && image.getHeight(null) > 0) {
+                height = WIDTH * image.getHeight(null) / image.getWidth(null);
+                Image scaledImage = image.getScaledInstance(WIDTH, -1, Image.SCALE_SMOOTH);
+                MediaTracker tracker = new MediaTracker(this);
+                tracker.addImage(scaledImage, 0);
+                try {
+                    tracker.waitForAll();
+                } catch (InterruptedException exception) {
+                    // the image still appears on the next paint
+                }
+                scaled = scaledImage;
+            } else {
+                height = 0;
+                scaled = null;
+            }
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            if (scaled == null) {
+                return;
+            }
+            int x = getWidth() - WIDTH - RIGHT_MARGIN;
+            int y = getHeight() - height + BOTTOM_CROP;
+            g.drawImage(scaled, x, y, null);
+        }
     }
 
     // the small dropdown indicator under the profile line
