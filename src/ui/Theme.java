@@ -20,6 +20,9 @@ public final class Theme {
     public static final Color DANGER = new Color(0xEF4444);
     public static final Color HEADER_GREEN = new Color(0x3CB44A);
     public static final Color HEADER_BLUE = new Color(0x7EC8F0);
+    public static final Color STUDY_CELL = new Color(0x3B3B3B);
+    public static final Color STUDY_CELL_ACTIVE = new Color(0x4B44C9);
+    public static final Color ARROW = new Color(0x3D2666);
     public static final Font TITLE = new Font("SansSerif", Font.BOLD, 26);
     public static final Font HEADING = new Font("SansSerif", Font.BOLD, 16);
     public static final Font BODY = new Font("SansSerif", Font.PLAIN, 14);

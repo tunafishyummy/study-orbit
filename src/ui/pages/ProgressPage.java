@@ -130,6 +130,10 @@ public class ProgressPage extends JPanel {
                 {"", "", "", "", "1", "2", "3"},
                 {"4", "5", "6", "7", "8", "9", "10"}
         };
+        private static final boolean[][] ACTIVE = {
+                {false, false, false, false, true, true, true},
+                {true, true, true, false, false, false, false}
+        };
 
         StudyGrid() {
             setOpaque(false);
@@ -144,7 +148,7 @@ public class ProgressPage extends JPanel {
             int gap = 8;
             double colWidth = (getWidth() - gap * 6) / 7.0;
             int headerHeight = 30;
-            int rowHeight = 38;
+            int rowHeight = 40;
 
             g2.setFont(new Font("SansSerif", Font.PLAIN, 13));
             g2.setColor(Theme.MUTED);
@@ -157,13 +161,21 @@ public class ProgressPage extends JPanel {
                 for (int d = 0; d < DAYS.length; d++) {
                     int x = (int) (d * (colWidth + gap));
                     int y = headerHeight + r * (rowHeight + gap);
-                    g2.setColor(Theme.BG);
-                    g2.fillRoundRect(x, y, (int) colWidth, rowHeight, 8, 8);
+                    if (ACTIVE[r][d]) {
+                        g2.setColor(Theme.STUDY_CELL_ACTIVE);
+                    } else {
+                        g2.setColor(Theme.STUDY_CELL);
+                    }
+                    g2.fillRoundRect(x, y, (int) colWidth, rowHeight, 6, 6);
 
                     String value = CELLS[r][d];
                     if (!value.isEmpty()) {
-                        g2.setColor(Theme.MUTED);
-                        g2.drawString(value, x + 10, y + 24);
+                        if (ACTIVE[r][d]) {
+                            g2.setColor(Color.WHITE);
+                        } else {
+                            g2.setColor(new Color(0xCFCFCF));
+                        }
+                        g2.drawString(value, x + 10, y + 25);
                     }
                 }
             }
