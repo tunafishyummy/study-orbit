@@ -94,6 +94,15 @@ public class FlashcardsPage extends JPanel {
         texts.add(Box.createVerticalStrut(3));
         texts.add(backLabel);
         row.add(texts, BorderLayout.CENTER);
+
+        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        buttons.setOpaque(false);
+        JButton accept = Theme.button("Accept");
+        accept.addActionListener(e -> accept.setText("Accepted"));
+        JButton edit = Theme.button("Edit");
+        buttons.add(accept);
+        buttons.add(edit);
+        row.add(buttons, BorderLayout.EAST);
         return row;
     }
 
