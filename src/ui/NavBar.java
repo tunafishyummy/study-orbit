@@ -14,9 +14,11 @@ public class NavBar extends JPanel {
 
     public NavBar(Consumer<String> onNavigate) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setPreferredSize(new Dimension(100, 0));
+        setPreferredSize(new Dimension(110, 0));
+        setBackground(Theme.NAVBAR);
 
         JLabel logo = new JLabel("Study Orbit");
+        logo.setForeground(Theme.TEXT);
         logo.setAlignmentX(Component.CENTER_ALIGNMENT);
         add(Box.createVerticalStrut(10));
         add(logo);
@@ -25,8 +27,12 @@ public class NavBar extends JPanel {
         ButtonGroup group = new ButtonGroup();
         for (String page : PAGES) {
             JToggleButton btn = new JToggleButton(page);
+            btn.setForeground(Theme.TEXT);
+            btn.setBackground(Theme.NAVBAR);
+            btn.setFocusPainted(false);
+            btn.setBorderPainted(false);
             btn.setAlignmentX(Component.CENTER_ALIGNMENT);
-            btn.setMaximumSize(new Dimension(90, 35));
+            btn.setMaximumSize(new Dimension(94, 35));
             btn.addActionListener(e -> onNavigate.accept(page));
             group.add(btn);
             add(btn);
