@@ -9,7 +9,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 
-/** Screen 2: Courses page. Add, edit and delete courses. */
 public class CoursesPage extends JPanel {
     private final NoteManager manager;
     private final DefaultListModel<Course> listModel = new DefaultListModel<>();
@@ -29,7 +28,6 @@ public class CoursesPage extends JPanel {
         header.setFont(Theme.TITLE);
         add(header, BorderLayout.NORTH);
 
-        // course list with colored squares
         list.setFont(Theme.BODY);
         list.setCellRenderer((l, c, i, sel, focus) -> {
             JLabel lbl = new JLabel("  " + c);
@@ -50,7 +48,6 @@ public class CoursesPage extends JPanel {
         });
         add(new JScrollPane(list), BorderLayout.CENTER);
 
-        // form
         JPanel form = new JPanel(new GridLayout(0, 1, 6, 6));
         form.setOpaque(false);
         form.setPreferredSize(new Dimension(260, 0));
