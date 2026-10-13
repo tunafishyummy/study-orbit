@@ -18,7 +18,7 @@ public class ProgressPage extends JPanel {
 
         add(Theme.header("Progress"), BorderLayout.NORTH);
 
-        JPanel rows = new JPanel(new GridLayout(2, 1, 16, 16));
+        JPanel rows = new JPanel(new GridLayout(3, 1, 16, 16));
         rows.setOpaque(false);
 
         JPanel row1 = new JPanel(new GridLayout(1, 2, 16, 16));
@@ -32,8 +32,17 @@ public class ProgressPage extends JPanel {
         row2.add(statCard("Quizzes taken", "4"));
         row2.add(statCard("Notes created", String.valueOf(manager.getAllNotes().size())));
 
+        JPanel row3 = Theme.card();
+        row3.setLayout(new BorderLayout(0, 8));
+        JLabel chartTitle = new JLabel("Cards reviewed per day");
+        chartTitle.setFont(Theme.HEADING);
+        chartTitle.setForeground(Theme.TEXT);
+        row3.add(chartTitle, BorderLayout.NORTH);
+        row3.add(new BarChart(), BorderLayout.CENTER);
+
         rows.add(row1);
         rows.add(row2);
+        rows.add(row3);
         add(rows, BorderLayout.CENTER);
     }
 
@@ -138,6 +147,40 @@ public class ProgressPage extends JPanel {
             g2.setColor(Theme.TEXT);
             FontMetrics metrics = g2.getFontMetrics();
             g2.drawString(text, (getWidth() - metrics.stringWidth(text)) / 2, getHeight() / 2 + 6);
+        }
+    }
+
+    // simple bar chart for the week
+    private static class BarChart extends JComponent {
+        private final int[] values = {8, 14, 6, 18, 12, 4, 10};
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int max = 0;
+            for (int value : values) {
+                max = Math.max(max, value);
+            }
+            if (max == 0) {
+                return;
+            }
+
+            int gap = 12;
+            int barWidth = (getWidth() - gap * 6) / 7;
+            for (int i = 0; i < values.length; i++) {
+                int height = (int) ((getHeight() - 10) * (values[i] / (double) max));
+                int x = i * (barWidth + gap);
+                int y = getHeight() - height;
+                if (i == values.length - 1) {
+                    g2.setColor(Theme.PRIMARY);
+                } else {
+                    g2.setColor(Theme.NAVBAR_SELECTED);
+                }
+                g2.fillRoundRect(x, y, barWidth, height, 6, 6);
+            }
         }
     }
 }
