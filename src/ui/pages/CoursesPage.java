@@ -28,13 +28,20 @@ public class CoursesPage extends JPanel {
         add(header, BorderLayout.NORTH);
 
         list.setFont(Theme.BODY);
+        list.setBackground(Theme.SURFACE);
+        list.setForeground(Theme.TEXT);
         list.setCellRenderer((l, c, i, sel, focus) -> {
             JLabel lbl = new JLabel("  " + c);
             lbl.setOpaque(true);
             lbl.setFont(Theme.BODY);
+            lbl.setForeground(Theme.TEXT);
             lbl.setBorder(BorderFactory.createMatteBorder(0, 10, 0, 0, Theme.parse(c.getColorHex())));
             lbl.setPreferredSize(new Dimension(100, 32));
-            lbl.setBackground(sel ? new Color(0xE0E7FF) : Color.WHITE);
+            if (sel) {
+                lbl.setBackground(Theme.SELECT);
+            } else {
+                lbl.setBackground(Theme.SURFACE);
+            }
             return lbl;
         });
         list.addListSelectionListener(e -> {
