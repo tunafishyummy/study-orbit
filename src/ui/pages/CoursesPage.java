@@ -2,12 +2,11 @@ package ui.pages;
 
 import data.AppData;
 import data.NoteManager;
-import ui.Theme;
-import model.Course;
-
-import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
+import javax.swing.*;
+import model.Course;
+import ui.Theme;
 
 public class CoursesPage extends JPanel {
     private final NoteManager manager;

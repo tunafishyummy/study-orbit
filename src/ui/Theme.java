@@ -1,7 +1,7 @@
 package ui;
 
-import javax.swing.*;
 import java.awt.*;
+import javax.swing.*;
 
 public final class Theme {
     public static final Color BG = new Color(0xF5F7FB);
