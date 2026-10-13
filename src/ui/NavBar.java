@@ -39,7 +39,7 @@ public class NavBar extends JPanel {
                 @Override
                 public void paintIcon(Component component, Graphics graphics, int x, int y) {
                     Graphics2D g2 = (Graphics2D) graphics.create();
-                    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+                    g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
                     g2.drawImage(image, x, y, logoSize, logoSize, component);
                     g2.dispose();
                 }
