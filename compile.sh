@@ -9,4 +9,6 @@ if [ "$result" -ne 0 ]; then
   echo "Build failed"
   exit 1
 fi
+rm -rf out/assets
+cp -r src/assets out/assets
 echo "Build successful"
