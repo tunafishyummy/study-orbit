@@ -80,7 +80,9 @@ public final class Theme {
     public static JPanel card() {
         JPanel panel = new JPanel();
         panel.setBackground(SURFACE);
-        panel.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER),
+                BorderFactory.createEmptyBorder(16, 16, 16, 16)));
         return panel;
     }
 

@@ -167,6 +167,7 @@ public class SettingsPage extends JPanel {
     private JPanel card(String title, Color headerColor, Icon icon) {
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(Theme.SURFACE);
+        card.setBorder(BorderFactory.createLineBorder(Theme.BORDER));
 
         JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
         header.setBackground(headerColor);
