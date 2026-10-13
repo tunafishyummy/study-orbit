@@ -58,6 +58,28 @@ public final class Theme {
         }
     }
 
+    // sets the shared defaults so every new control follows the current palette
+    public static void apply() {
+        UIManager.put("Panel.background", BG);
+        UIManager.put("Label.foreground", TEXT);
+        UIManager.put("TextField.background", SURFACE);
+        UIManager.put("TextField.foreground", TEXT);
+        UIManager.put("TextField.caretForeground", TEXT);
+        UIManager.put("TextArea.background", SURFACE);
+        UIManager.put("TextArea.foreground", TEXT);
+        UIManager.put("TextArea.caretForeground", TEXT);
+        UIManager.put("ComboBox.background", SURFACE);
+        UIManager.put("ComboBox.foreground", TEXT);
+        UIManager.put("List.background", SURFACE);
+        UIManager.put("List.foreground", TEXT);
+        UIManager.put("ScrollPane.background", BG);
+        UIManager.put("Viewport.background", SURFACE);
+        UIManager.put("CheckBox.foreground", TEXT);
+        UIManager.put("ToggleButton.select", NAVBAR_SELECTED);
+        UIManager.put("OptionPane.background", SURFACE);
+        UIManager.put("OptionPane.messageForeground", TEXT);
+    }
+
     public static JButton primaryButton(String text) {
         JButton b = new JButton(text);
         b.setBackground(PRIMARY);
