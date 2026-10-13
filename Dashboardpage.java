@@ -8,4 +8,4 @@ public class DashboardPage extends JPanel {
 
         add(new JLabel("Dashboard", SwingConstants.CENTER), BorderLayout.CENTER);
     }
-}
+} //a

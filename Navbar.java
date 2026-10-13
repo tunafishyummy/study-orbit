@@ -33,4 +33,4 @@ public class NavBar extends JPanel {
             if (page.equals("Dashboard")) btn.setSelected(true);
         }
     }
-}
+} //a

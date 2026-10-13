@@ -9,4 +9,4 @@ public class FlashcardsPage extends JPanel {
         add(new JLabel("Flashcards", SwingConstants.CENTER), BorderLayout.CENTER);
     }
 
-}
+} //a

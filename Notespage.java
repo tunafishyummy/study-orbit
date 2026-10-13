@@ -9,4 +9,4 @@ public class NotesPage extends JPanel {
         add(new JLabel("Notes", SwingConstants.CENTER), BorderLayout.CENTER);
     }
 
-}
+} //a

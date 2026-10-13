@@ -30,4 +30,4 @@ public class StudyOrbitApp extends JFrame {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new StudyOrbitApp().setVisible(true));
     }
-}
+} //a

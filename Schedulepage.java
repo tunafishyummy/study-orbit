@@ -9,4 +9,4 @@ public class SchedulePage extends JPanel {
         add(new JLabel("Schedule", SwingConstants.CENTER), BorderLayout.CENTER);
     }
 
-}
+} //a

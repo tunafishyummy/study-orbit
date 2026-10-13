@@ -9,4 +9,4 @@ public class QuizzesPage extends JPanel {
         add(new JLabel("Quizzes", SwingConstants.CENTER), BorderLayout.CENTER);
     }
 
-}
+} //a
