@@ -1,20 +1,46 @@
 package ui.pages;
 
+import data.AppData;
+import data.NoteManager;
+import model.Note;
 import ui.Theme;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 
 // Screen 9, search across notes and flashcards
 public class SearchPage extends JPanel {
+    private final NoteManager manager;
+    private final JTextField searchField = new JTextField();
+    private final DefaultListModel<Note> listModel = new DefaultListModel<>();
+    private final JList<Note> list = new JList<>(listModel);
+    private final JLabel status = new JLabel();
 
     public SearchPage() {
+        manager = AppData.get();
         setBackground(Theme.BG);
         setLayout(new BorderLayout(0, 12));
         setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 
         add(header(), BorderLayout.NORTH);
         add(results(), BorderLayout.CENTER);
+
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) {
+                refresh();
+            }
+
+            public void removeUpdate(DocumentEvent e) {
+                refresh();
+            }
+
+            public void changedUpdate(DocumentEvent e) {
+                refresh();
+            }
+        });
+        refresh();
     }
 
     private JPanel header() {
@@ -27,7 +53,6 @@ public class SearchPage extends JPanel {
         JLabel subtitle = Theme.muted("Search what you want like courses, flashcards, notes");
         subtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JTextField searchField = new JTextField();
         searchField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
         searchField.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -59,8 +84,70 @@ public class SearchPage extends JPanel {
 
     private JPanel results() {
         JPanel panel = Theme.card();
-        panel.setLayout(new BorderLayout());
-        panel.add(Theme.muted("Start typing to search your notes."), BorderLayout.NORTH);
+        panel.setLayout(new BorderLayout(0, 8));
+
+        status.setFont(Theme.BODY);
+        status.setForeground(Theme.MUTED);
+        panel.add(status, BorderLayout.NORTH);
+
+        list.setFont(Theme.BODY);
+        list.setBackground(Theme.SURFACE);
+        list.setForeground(Theme.TEXT);
+        list.setCellRenderer((l, note, index, selected, focus) -> {
+            JLabel label = new JLabel(rowText(note));
+            label.setOpaque(true);
+            label.setFont(Theme.BODY);
+            label.setForeground(Theme.TEXT);
+            if (selected) {
+                label.setBackground(Theme.SELECT);
+            } else {
+                label.setBackground(Theme.SURFACE);
+            }
+            label.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
+            return label;
+        });
+        panel.add(new JScrollPane(list), BorderLayout.CENTER);
         return panel;
+    }
+
+    private void refresh() {
+        String query = searchField.getText().trim().toLowerCase();
+        listModel.clear();
+        for (Note note : manager.getAllNotes()) {
+            if (!query.isEmpty() && !matches(note, query)) {
+                continue;
+            }
+            listModel.addElement(note);
+        }
+        if (listModel.isEmpty()) {
+            status.setText("No matches found.");
+        } else if (listModel.size() == 1) {
+            status.setText("1 result");
+        } else {
+            status.setText(listModel.size() + " results");
+        }
+    }
+
+    private boolean matches(Note note, String query) {
+        if (note.getTitle().toLowerCase().contains(query)) {
+            return true;
+        }
+        if (note.getBody().toLowerCase().contains(query)) {
+            return true;
+        }
+        for (String tag : note.getTags()) {
+            if (tag.toLowerCase().contains(query)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String rowText(Note note) {
+        String course = note.getCourseCode();
+        if (course.isEmpty()) {
+            course = "No course";
+        }
+        return note.getTitle() + "  -  " + course;
     }
 }
