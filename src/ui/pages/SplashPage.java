@@ -73,36 +73,25 @@ public class SplashPage extends JPanel {
         private static final int RIGHT_MARGIN = 6;
         private static final int BOTTOM_CROP = 170;
 
-        private final Image scaled;
-        private final int height;
+        private final Image image;
 
         WelcomeLogo() {
-            Image image = Assets.image("Logo.png");
-            if (image != null && image.getWidth(null) > 0 && image.getHeight(null) > 0) {
-                height = WIDTH * image.getHeight(null) / image.getWidth(null);
-                Image scaledImage = image.getScaledInstance(WIDTH, -1, Image.SCALE_SMOOTH);
-                MediaTracker tracker = new MediaTracker(this);
-                tracker.addImage(scaledImage, 0);
-                try {
-                    tracker.waitForAll();
-                } catch (InterruptedException exception) {
-                    // the image still appears on the next paint
-                }
-                scaled = scaledImage;
-            } else {
-                height = 0;
-                scaled = null;
-            }
+            image = Assets.image("Logo.png");
         }
 
         @Override
         protected void paintComponent(Graphics g) {
-            if (scaled == null) {
+            if (image == null || image.getWidth(null) <= 0 || image.getHeight(null) <= 0) {
                 return;
             }
-            int x = getWidth() - WIDTH - RIGHT_MARGIN;
-            int y = getHeight() - height + BOTTOM_CROP;
-            g.drawImage(scaled, x, y, null);
+
+            // scale window whatever
+            double scale = Math.min(getWidth() / 565.0, getHeight() / 620.0);
+            int width = (int) Math.round(WIDTH * scale);
+            int height = (int) Math.round(width * image.getHeight(null) / (double) image.getWidth(null));
+            int x = getWidth() - width - (int) Math.round(RIGHT_MARGIN * scale);
+            int y = getHeight() - height + (int) Math.round(BOTTOM_CROP * scale);
+            g.drawImage(image, x, y, width, height, this);
         }
     }
 
