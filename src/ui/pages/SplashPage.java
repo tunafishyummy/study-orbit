@@ -23,6 +23,11 @@ public class SplashPage extends JPanel {
         title.setForeground(Theme.TEXT);
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+        JLabel motto = new JLabel("An All-Around Learning Tool Built for Students");
+        motto.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        motto.setForeground(Theme.MUTED);
+        motto.setAlignmentX(Component.LEFT_ALIGNMENT);
+
         JLabel profile = new JLabel("No selected profile");
         profile.setFont(new Font("SansSerif", Font.BOLD, 18));
         profile.setForeground(Theme.TEXT);
@@ -44,7 +49,9 @@ public class SplashPage extends JPanel {
 
         left.add(Box.createVerticalGlue());
         left.add(title);
-        left.add(Box.createVerticalStrut(44));
+        left.add(Box.createVerticalStrut(16));
+        left.add(motto);
+        left.add(Box.createVerticalStrut(38));
         left.add(profile);
         left.add(Box.createVerticalStrut(6));
         left.add(chevron);
