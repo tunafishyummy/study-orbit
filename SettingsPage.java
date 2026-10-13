@@ -9,4 +9,4 @@ public class SettingsPage extends JPanel {
         add(new JLabel("Settings", SwingConstants.CENTER), BorderLayout.CENTER);
     }
 
-} //a
+}
