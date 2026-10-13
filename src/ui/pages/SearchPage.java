@@ -1,44 +1,66 @@
 package ui.pages;
 
-import java.awt.*;
-import javax.swing.*;
+import ui.Theme;
 
+import javax.swing.*;
+import java.awt.*;
+
+// Screen 9, search across notes and flashcards
 public class SearchPage extends JPanel {
 
     public SearchPage() {
-        setLayout(new BorderLayout());
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        setBackground(Theme.BG);
+        setLayout(new BorderLayout(0, 12));
+        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 
-        JLabel title = new JLabel("Search");
-        title.setFont(title.getFont().deriveFont(Font.BOLD, 28f));
-        JLabel subtitle = new JLabel("Search what you want like courses, flashcards, notes");
+        add(header(), BorderLayout.NORTH);
+        add(results(), BorderLayout.CENTER);
+    }
 
-        // search bar
-        JTextField searchField = new JTextField();
-        searchField.setMaximumSize(new Dimension(Integer.MAX_VALUE, searchField.getPreferredSize().height));
-
-        // filter buttons
-        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        ButtonGroup group = new ButtonGroup();
-        for (String name : new String[]{"All", "Notes", "Flashcards"}) {
-            JToggleButton btn = new JToggleButton(name);
-            group.add(btn);
-            filters.add(btn);
-            if (name.equals("All")) btn.setSelected(true);
-        }
-        filters.add(new JButton("Course: Any"));
-
+    private JPanel header() {
         JPanel header = new JPanel();
+        header.setOpaque(false);
         header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
-        for (JComponent c : new JComponent[]{title, subtitle, searchField, filters}) {
-            c.setAlignmentX(Component.LEFT_ALIGNMENT);
-            header.add(c);
+
+        JLabel title = Theme.header("Search");
+        title.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel subtitle = Theme.muted("Search what you want like courses, flashcards, notes");
+        subtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JTextField searchField = new JTextField();
+        searchField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+        searchField.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        filters.setOpaque(false);
+        filters.setAlignmentX(Component.LEFT_ALIGNMENT);
+        for (String name : new String[]{"All", "Notes", "Flashcards"}) {
+            JToggleButton button = new JToggleButton(name);
+            button.setFont(Theme.BODY);
+            button.setForeground(Theme.TEXT);
+            button.setBackground(Theme.SURFACE);
+            button.setFocusPainted(false);
+            button.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(Theme.BORDER),
+                    BorderFactory.createEmptyBorder(5, 14, 5, 14)));
+            filters.add(button);
         }
+        filters.add(Theme.button("Course: Any"));
 
-        add(header, BorderLayout.NORTH);
+        header.add(title);
+        header.add(Box.createVerticalStrut(4));
+        header.add(subtitle);
+        header.add(Box.createVerticalStrut(12));
+        header.add(searchField);
+        header.add(Box.createVerticalStrut(10));
+        header.add(filters);
+        return header;
+    }
 
-        JPanel results = new JPanel();
-        results.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        add(results, BorderLayout.CENTER);
+    private JPanel results() {
+        JPanel panel = Theme.card();
+        panel.setLayout(new BorderLayout());
+        panel.add(Theme.muted("Start typing to search your notes."), BorderLayout.NORTH);
+        return panel;
     }
 }
