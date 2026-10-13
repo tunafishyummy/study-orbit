@@ -1,6 +1,7 @@
 package data;
 
 import model.Course;
+import model.Flashcard;
 import model.Note;
 
 import java.io.IOException;
@@ -11,15 +12,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class NoteManager {
     private final List<Course> courses = new ArrayList<>();
     private final List<Note> notes = new ArrayList<>();
+    private final List<Flashcard> flashcards = new ArrayList<>();
     private final DataStore store;
 
     public NoteManager(DataStore store) throws IOException {
         this.store = store;
-        store.load(courses, notes);
+        store.load(courses, notes, flashcards);
     }
 
     public List<Course> getCourses() { return new ArrayList<>(courses); }
@@ -49,7 +50,6 @@ public class NoteManager {
         save();
     }
 
-    /** Deleting a course keeps its notes, they just become "no course". */
     public void deleteCourse(String code) throws IOException {
         Course c = findCourse(code);
         if (c == null) return;
@@ -98,5 +98,7 @@ public class NoteManager {
         Files.writeString(target, text, StandardCharsets.UTF_8);
     }
 
-    private void save() throws IOException { store.save(courses, notes); }
+    public DataStore getStoreReference() { return store; }
+    public List<Flashcard> getFlashcards() { return flashcards; }
+    public void save() throws IOException { store.save(courses, notes, flashcards); }
 }

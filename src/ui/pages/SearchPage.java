@@ -2,27 +2,44 @@ package ui.pages;
 
 import data.AppData;
 import data.NoteManager;
-import model.Course;
-import model.Note;
-import ui.Theme;
-
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import java.awt.*;
+import model.Course;
+import model.Flashcard;
+import model.Note;
+import ui.Theme;
 
-// Screen 9, search across notes and flashcards
+// Screen 9: Search across courses, notes, and flashcards
 public class SearchPage extends JPanel {
     private final NoteManager manager;
     private final JTextField searchField = new JTextField();
     private final JComboBox<String> courseBox = new JComboBox<>();
-    private final DefaultListModel<Note> listModel = new DefaultListModel<>();
-    private final JList<Note> list = new JList<>(listModel);
+    private final DefaultListModel<SearchItem> listModel = new DefaultListModel<>();
+    private final JList<SearchItem> list = new JList<>(listModel);
     private final JLabel status = new JLabel();
     private String filter = "All";
 
+    public static class SearchItem {
+        public final String type;
+        public final String title;
+        public final String subtitle;
+
+        public SearchItem(String type, String title, String subtitle) {
+            this.type = type;
+            this.title = title;
+            this.subtitle = subtitle;
+        }
+
+        @Override
+        public String toString() {
+            return "[" + type + "] " + title + (subtitle.isEmpty() ? "" : "  -  " + subtitle);
+        }
+    }
+
     public SearchPage() {
-        manager = AppData.get();
+        this.manager = AppData.get();
         setBackground(Theme.BG);
         setLayout(new BorderLayout(0, 12));
         setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
@@ -31,17 +48,9 @@ public class SearchPage extends JPanel {
         add(results(), BorderLayout.CENTER);
 
         searchField.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) {
-                refresh();
-            }
-
-            public void removeUpdate(DocumentEvent e) {
-                refresh();
-            }
-
-            public void changedUpdate(DocumentEvent e) {
-                refresh();
-            }
+            public void insertUpdate(DocumentEvent e) { refresh(); }
+            public void removeUpdate(DocumentEvent e) { refresh(); }
+            public void changedUpdate(DocumentEvent e) { refresh(); }
         });
         courseBox.addActionListener(e -> refresh());
         addComponentListener(new java.awt.event.ComponentAdapter() {
@@ -62,7 +71,7 @@ public class SearchPage extends JPanel {
 
         JLabel title = Theme.header("Search");
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
-        JLabel subtitle = Theme.muted("Search what you want like courses, flashcards, notes");
+        JLabel subtitle = Theme.muted("Search across courses, notes, and flashcards");
         subtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         searchField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
@@ -72,7 +81,7 @@ public class SearchPage extends JPanel {
         filters.setOpaque(false);
         filters.setAlignmentX(Component.LEFT_ALIGNMENT);
         ButtonGroup group = new ButtonGroup();
-        for (String name : new String[]{"All", "Notes", "Flashcards"}) {
+        for (String name : new String[]{"All", "Courses", "Notes", "Flashcards"}) {
             JToggleButton button = new JToggleButton(name);
             styleFilter(button);
             if (name.equals("All")) {
@@ -108,8 +117,8 @@ public class SearchPage extends JPanel {
         list.setFont(Theme.BODY);
         list.setBackground(Theme.SURFACE);
         list.setForeground(Theme.TEXT);
-        list.setCellRenderer((l, note, index, selected, focus) -> {
-            JLabel label = new JLabel(rowText(note));
+        list.setCellRenderer((l, item, index, selected, focus) -> {
+            JLabel label = new JLabel("  " + item.toString());
             label.setOpaque(true);
             label.setFont(Theme.BODY);
             label.setForeground(Theme.TEXT);
@@ -138,23 +147,39 @@ public class SearchPage extends JPanel {
     }
 
     private void refresh() {
-        if ("Flashcards".equals(filter)) {
-            listModel.clear();
-            status.setText("No flashcards yet.");
-            return;
+        String query = searchField.getText().trim().toLowerCase();
+        String courseFilter = (String) courseBox.getSelectedItem();
+        listModel.clear();
+
+        // 1. Search Courses
+        if ("All".equals(filter) || "Courses".equals(filter)) {
+            for (Course c : manager.getCourses()) {
+                if (matchesCourse(c, query)) {
+                    listModel.addElement(new SearchItem("Course", c.getCode() + " - " + c.getTitle(), ""));
+                }
+            }
         }
 
-        String query = searchField.getText().trim().toLowerCase();
-        String course = (String) courseBox.getSelectedItem();
-        listModel.clear();
-        for (Note note : manager.getAllNotes()) {
-            if (course != null && !course.equals("All courses") && !note.getCourseCode().equals(course)) {
-                continue;
+        // 2. Search Notes
+        if ("All".equals(filter) || "Notes".equals(filter)) {
+            for (Note note : manager.getAllNotes()) {
+                if (courseFilter != null && !courseFilter.equals("All courses") && !note.getCourseCode().equals(courseFilter)) {
+                    continue;
+                }
+                if (matchesNote(note, query)) {
+                    String courseStr = note.getCourseCode().isEmpty() ? "No course" : note.getCourseCode();
+                    listModel.addElement(new SearchItem("Note", note.getTitle(), courseStr));
+                }
             }
-            if (!query.isEmpty() && !matches(note, query)) {
-                continue;
+        }
+
+        // 3. Search Flashcards
+        if ("All".equals(filter) || "Flashcards".equals(filter)) {
+            for (Flashcard f : manager.getFlashcards()) {
+                if (matchesFlashcard(f, query)) {
+                    listModel.addElement(new SearchItem("Flashcard", f.getFront(), "Deck: " + f.getDeckTitle()));
+                }
             }
-            listModel.addElement(note);
         }
 
         if (listModel.isEmpty()) {
@@ -166,27 +191,24 @@ public class SearchPage extends JPanel {
         }
     }
 
-    private boolean matches(Note note, String query) {
-        if (note.getTitle().toLowerCase().contains(query)) {
-            return true;
-        }
-        if (note.getBody().toLowerCase().contains(query)) {
-            return true;
-        }
-        for (String tag : note.getTags()) {
-            if (tag.toLowerCase().contains(query)) {
-                return true;
-            }
-        }
-        return false;
+    private boolean matchesCourse(Course c, String query) {
+        if (query.isEmpty()) return true;
+        return c.getCode().toLowerCase().contains(query) || c.getTitle().toLowerCase().contains(query);
     }
 
-    private String rowText(Note note) {
-        String course = note.getCourseCode();
-        if (course.isEmpty()) {
-            course = "No course";
-        }
-        return note.getTitle() + "  -  " + course;
+    private boolean matchesNote(Note note, String query) {
+        if (query.isEmpty()) return true;
+        return note.getTitle().toLowerCase().contains(query) ||
+               note.getBody().toLowerCase().contains(query) ||
+               note.getTags().stream().anyMatch(t -> t.toLowerCase().contains(query));
+    }
+
+    private boolean matchesFlashcard(Flashcard f, String query) {
+        if (query.isEmpty()) return true;
+        return f.getDeckTitle().toLowerCase().contains(query) ||
+               f.getFront().toLowerCase().contains(query) ||
+               f.getBack().toLowerCase().contains(query) ||
+               f.getTags().stream().anyMatch(t -> t.toLowerCase().contains(query));
     }
 
     private void styleFilter(JToggleButton button) {

@@ -11,9 +11,9 @@ public final class AppData {
     public static synchronized NoteManager get() {
         if (instance == null) {
             try {
-                instance = new NoteManager(new DataStore(Path.of("data", "studyorbit.dat")));
+                instance = new NoteManager(new DataStore(Path.of("data", "studyorbit.db")));
             } catch (IOException e) {
-                throw new RuntimeException("Could not load Study Orbit data", e);
+                throw new RuntimeException("Could not load Study Orbit database", e);
             }
         }
         return instance;

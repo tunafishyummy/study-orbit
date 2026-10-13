@@ -9,6 +9,8 @@ public class StudyOrbitApp extends JFrame {
     private CardLayout pageLayout;
     private JPanel pages;
     private String currentPage = "Dashboard";
+    private CreateFlashcardPage createFlashcardPage;
+    private FlashcardsPage flashcardsPage;
 
     public StudyOrbitApp() {
         setTitle("Study Orbit");
@@ -18,7 +20,6 @@ public class StudyOrbitApp extends JFrame {
         setContentPane(buildContent(true));
     }
 
-    // builds the whole screen again so a palette change reaches every component
     public void rebuild() {
         Theme.apply();
         setContentPane(buildContent(false));
@@ -30,11 +31,25 @@ public class StudyOrbitApp extends JFrame {
         pageLayout = new CardLayout();
         pages = new JPanel(pageLayout);
         pages.setBackground(Theme.BG);
+
+        createFlashcardPage = new CreateFlashcardPage(() -> {
+            flashcardsPage.refreshDecks(() -> {
+                createFlashcardPage.refreshNotes();
+                pageLayout.show(pages, "CreateFlashcard");
+            });
+            pageLayout.show(pages, "Flashcards");
+        });
+
+        flashcardsPage = new FlashcardsPage(() -> {
+            createFlashcardPage.refreshNotes();
+            pageLayout.show(pages, "CreateFlashcard");
+        });
+
         pages.add(new DashboardPage(), "Dashboard");
         pages.add(new CoursesPage(), "Courses");
         pages.add(new NotesPage(), "Notes");
-        pages.add(new FlashcardsPage(), "Flashcards");
-        pages.add(new QuizzesPage(), "Quizzes");
+        pages.add(flashcardsPage, "Flashcards");
+        pages.add(createFlashcardPage, "CreateFlashcard");
         pages.add(new SchedulePage(), "Schedule");
         pages.add(new SearchPage(), "Search");
         pages.add(new ProgressPage(), "Progress");
@@ -44,6 +59,14 @@ public class StudyOrbitApp extends JFrame {
         dashboard.setBackground(Theme.BG);
         dashboard.add(new NavBar(name -> {
             currentPage = name;
+            if (name.equals("CreateFlashcard")) {
+                createFlashcardPage.refreshNotes();
+            } else if (name.equals("Flashcards")) {
+                flashcardsPage.refreshDecks(() -> {
+                    createFlashcardPage.refreshNotes();
+                    pageLayout.show(pages, "CreateFlashcard");
+                });
+            }
             pageLayout.show(pages, name);
         }, currentPage), BorderLayout.WEST);
         dashboard.add(pages, BorderLayout.CENTER);
