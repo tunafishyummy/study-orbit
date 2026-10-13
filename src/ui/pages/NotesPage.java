@@ -33,7 +33,7 @@ public class NotesPage extends JPanel {
         this.manager = AppData.get();
         setBackground(Theme.BG);
         setLayout(new BorderLayout(12, 12));
-        setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 
         JLabel header = new JLabel("Notes");
         header.setFont(Theme.TITLE);
