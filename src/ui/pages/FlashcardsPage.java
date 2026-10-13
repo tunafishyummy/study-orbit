@@ -15,6 +15,7 @@ public class FlashcardsPage extends JPanel {
 
         add(header(), BorderLayout.NORTH);
         add(body(), BorderLayout.CENTER);
+        add(footer(), BorderLayout.SOUTH);
     }
 
     private JPanel header() {
@@ -104,6 +105,14 @@ public class FlashcardsPage extends JPanel {
         buttons.add(edit);
         row.add(buttons, BorderLayout.EAST);
         return row;
+    }
+
+    private JPanel footer() {
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        footer.setOpaque(false);
+        footer.add(Theme.button("Cancel"));
+        footer.add(Theme.primaryButton("Save 3 cards to review"));
+        return footer;
     }
 
     private JLabel chip(String text, Color color) {
