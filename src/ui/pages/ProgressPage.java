@@ -1,5 +1,7 @@
 package ui.pages;
 
+import data.AppData;
+import data.NoteManager;
 import ui.Theme;
 
 import javax.swing.*;
@@ -9,13 +11,14 @@ import java.awt.*;
 public class ProgressPage extends JPanel {
 
     public ProgressPage() {
+        NoteManager manager = AppData.get();
         setBackground(Theme.BG);
         setLayout(new BorderLayout(0, 16));
         setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 
         add(Theme.header("Progress"), BorderLayout.NORTH);
 
-        JPanel rows = new JPanel(new GridLayout(1, 1, 16, 16));
+        JPanel rows = new JPanel(new GridLayout(2, 1, 16, 16));
         rows.setOpaque(false);
 
         JPanel row1 = new JPanel(new GridLayout(1, 2, 16, 16));
@@ -23,7 +26,14 @@ public class ProgressPage extends JPanel {
         row1.add(streakCard());
         row1.add(goalCard());
 
+        JPanel row2 = new JPanel(new GridLayout(1, 3, 16, 16));
+        row2.setOpaque(false);
+        row2.add(statCard("Cards reviewed", "142"));
+        row2.add(statCard("Quizzes taken", "4"));
+        row2.add(statCard("Notes created", String.valueOf(manager.getAllNotes().size())));
+
         rows.add(row1);
+        rows.add(row2);
         add(rows, BorderLayout.CENTER);
     }
 
@@ -53,6 +63,22 @@ public class ProgressPage extends JPanel {
         heading.setForeground(Theme.TEXT);
         card.add(heading, BorderLayout.NORTH);
         card.add(new GoalRing(5, 7), BorderLayout.CENTER);
+        return card;
+    }
+
+    private JPanel statCard(String title, String value) {
+        JPanel card = Theme.card();
+        card.setLayout(new BorderLayout(0, 6));
+
+        JLabel heading = new JLabel(title);
+        heading.setFont(Theme.BODY);
+        heading.setForeground(Theme.MUTED);
+        JLabel number = new JLabel(value);
+        number.setFont(new Font("SansSerif", Font.BOLD, 32));
+        number.setForeground(Theme.TEXT);
+
+        card.add(heading, BorderLayout.NORTH);
+        card.add(number, BorderLayout.CENTER);
         return card;
     }
 
