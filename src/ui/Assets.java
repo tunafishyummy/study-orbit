@@ -2,6 +2,8 @@ package ui;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 
 // loads images from the assets folder that compile copies next to the classes
@@ -14,5 +16,17 @@ public final class Assets {
             return null;
         }
         return new ImageIcon(url).getImage();
+    }
+
+    public static Font font(String name, int style, float size) {
+        URL url = Assets.class.getResource("/assets/fonts/" + name);
+        if (url == null) {
+            return new Font("SansSerif", style, Math.round(size));
+        }
+        try (InputStream stream = url.openStream()) {
+            return Font.createFont(Font.TRUETYPE_FONT, stream).deriveFont(style, size);
+        } catch (FontFormatException | IOException e) {
+            return new Font("SansSerif", style, Math.round(size));
+        }
     }
 }

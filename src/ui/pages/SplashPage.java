@@ -8,6 +8,7 @@ import java.awt.*;
 
 // Screen 1, the welcome page
 public class SplashPage extends JPanel {
+    private static final Font KUMBH_SANS = Assets.font("KumbhSans.ttf", Font.PLAIN, 16);
 
     public SplashPage(Runnable onContinue) {
         setBackground(Theme.BG);
@@ -18,18 +19,18 @@ public class SplashPage extends JPanel {
         left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
         left.setBorder(BorderFactory.createEmptyBorder(0, 60, 0, 0));
 
-        JLabel title = new JLabel("<html>Study<br>Orbit</html>");
-        title.setFont(new Font("SansSerif", Font.PLAIN, 68));
+        JLabel title = new JLabel("Study Orbit");
+        title.setFont(KUMBH_SANS.deriveFont(Font.PLAIN, 68f));
         title.setForeground(Theme.TEXT);
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel motto = new JLabel("An All-Around Learning Tool Built for Students");
-        motto.setFont(new Font("SansSerif", Font.PLAIN, 16));
+        motto.setFont(KUMBH_SANS.deriveFont(Font.PLAIN, 16f));
         motto.setForeground(Theme.MUTED);
         motto.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel profile = new JLabel("No selected profile");
-        profile.setFont(new Font("SansSerif", Font.BOLD, 18));
+        profile.setFont(KUMBH_SANS.deriveFont(Font.BOLD, 18f));
         profile.setForeground(Theme.TEXT);
         profile.setAlignmentX(Component.LEFT_ALIGNMENT);
 
@@ -37,7 +38,7 @@ public class SplashPage extends JPanel {
         chevron.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JButton continueButton = new JButton("Continue");
-        continueButton.setFont(new Font("SansSerif", Font.PLAIN, 20));
+        continueButton.setFont(KUMBH_SANS.deriveFont(Font.PLAIN, 20f));
         continueButton.setForeground(Theme.MUTED);
         continueButton.setBackground(Theme.BG);
         continueButton.setContentAreaFilled(false);
