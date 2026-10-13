@@ -33,14 +33,22 @@ public class SettingsPage extends JPanel {
         c.gridx = 0;
         c.gridy = 0;
         c.weightx = 0.42;
-        c.weighty = 1;
-        c.insets = new Insets(0, 0, 0, 16);
+        c.weighty = 0.55;
+        c.insets = new Insets(0, 0, 16, 16);
         grid.add(profileCard(), c);
 
         c.gridx = 1;
         c.weightx = 0.58;
-        c.insets = new Insets(0, 0, 0, 0);
+        c.insets = new Insets(0, 0, 16, 0);
         grid.add(appearanceCard(), c);
+
+        c.gridx = 0;
+        c.gridy = 1;
+        c.weightx = 1;
+        c.weighty = 0.45;
+        c.gridwidth = 2;
+        c.insets = new Insets(0, 0, 0, 0);
+        grid.add(notificationsCard(), c);
 
         add(grid, BorderLayout.CENTER);
     }
@@ -131,6 +139,30 @@ public class SettingsPage extends JPanel {
         body.add(line());
         body.add(Box.createVerticalStrut(14));
         body.add(largeTextRow);
+
+        card.add(body, BorderLayout.CENTER);
+        return card;
+    }
+
+    private JPanel notificationsCard() {
+        JPanel card = card("Notifications", Theme.HEADER_BLUE, CardIcons.bell());
+
+        JPanel body = new JPanel();
+        body.setOpaque(false);
+        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
+        body.setBorder(BorderFactory.createEmptyBorder(10, 24, 10, 24));
+
+        JPanel deadlineRow = row("Deadline Reminders", "Get notified on upcoming deadlines.");
+        deadlineRow.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        deadlineRow.add(switchHolder(new ToggleSwitch(true)), BorderLayout.EAST);
+
+        JPanel reviewRow = row("Daily Review Reminders", "Get notified on flashcards, notes, and upcoming classes");
+        reviewRow.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        reviewRow.add(switchHolder(new ToggleSwitch(true)), BorderLayout.EAST);
+
+        body.add(deadlineRow);
+        body.add(line());
+        body.add(reviewRow);
 
         card.add(body, BorderLayout.CENTER);
         return card;
