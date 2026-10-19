@@ -15,9 +15,10 @@ public class StudyOrbitApp extends JFrame {
     public StudyOrbitApp() {
         setTitle("Study Orbit");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setContentPane(buildContent(true));
         setSize(1000, 620);
         setLocationRelativeTo(null);
-        setContentPane(buildContent(true));
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
 
     public void rebuild() {
