@@ -13,10 +13,14 @@ public class NavBar extends JPanel {
     };
 
     public NavBar(Consumer<String> onNavigate) {
-        this(onNavigate, "Dashboard");
+        this(onNavigate, "Dashboard", () -> {});
     }
 
     public NavBar(Consumer<String> onNavigate, String selectedPage) {
+        this(onNavigate, selectedPage, () -> {});
+    }
+
+    public NavBar(Consumer<String> onNavigate, String selectedPage, Runnable onLogoClick) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setPreferredSize(new Dimension(110, 0));
         setBackground(Theme.NAVBAR);
@@ -46,6 +50,13 @@ public class NavBar extends JPanel {
             });
         }
         logo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        logo.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logo.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                onLogoClick.run();
+            }
+        });
 
         JLabel name = new JLabel("Study Orbit");
         name.setFont(Theme.BODY);

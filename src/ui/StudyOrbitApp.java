@@ -8,6 +8,8 @@ public class StudyOrbitApp extends JFrame {
 
     private CardLayout pageLayout;
     private JPanel pages;
+    private CardLayout appLayout;
+    private JPanel app;
     private String currentPage = "Dashboard";
     private CreateFlashcardPage createFlashcardPage;
     private FlashcardsPage flashcardsPage;
@@ -16,9 +18,9 @@ public class StudyOrbitApp extends JFrame {
         setTitle("Study Orbit");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setContentPane(buildContent(true));
-        setSize(1000, 620);
+        setSize(1000, 620); // default shrunk size
         setLocationRelativeTo(null);
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setExtendedState(JFrame.MAXIMIZED_BOTH); // mackmize
     }
 
     public void rebuild() {
@@ -28,7 +30,7 @@ public class StudyOrbitApp extends JFrame {
         repaint();
     }
 
-    private JPanel buildContent(boolean withSplash) {
+    private JPanel buildContent(boolean showSplashInitially) {
         pageLayout = new CardLayout();
         pages = new JPanel(pageLayout);
         pages.setBackground(Theme.BG);
@@ -69,21 +71,19 @@ public class StudyOrbitApp extends JFrame {
                 });
             }
             pageLayout.show(pages, name);
-        }, currentPage), BorderLayout.WEST);
+        }, currentPage, () -> appLayout.show(app, "Splash")), BorderLayout.WEST);
         dashboard.add(pages, BorderLayout.CENTER);
 
-        CardLayout appLayout = new CardLayout();
-        JPanel app = new JPanel(appLayout);
+        appLayout = new CardLayout();
+        app = new JPanel(appLayout);
         app.setBackground(Theme.BG);
-        if (withSplash) {
-            app.add(new SplashPage(() -> {
-                currentPage = "Dashboard";
-                appLayout.show(app, "Dashboard");
-                pageLayout.show(pages, "Dashboard");
-            }), "Splash");
-        }
+        app.add(new SplashPage(() -> {
+            currentPage = "Dashboard";
+            appLayout.show(app, "Dashboard");
+            pageLayout.show(pages, "Dashboard");
+        }), "Splash");
         app.add(dashboard, "Dashboard");
-        if (withSplash) {
+        if (showSplashInitially) {
             appLayout.show(app, "Splash");
         } else {
             appLayout.show(app, "Dashboard");
