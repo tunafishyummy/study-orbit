@@ -9,6 +9,7 @@ import java.awt.*;
 // Screen 1, the welcome page
 public class SplashPage extends JPanel {
     private static final int TITLE_LINE_SPACING = -30;
+    private static final int CONTENT_SIDE_MARGIN = 100;
 
     public SplashPage(Runnable onContinue) {
         setBackground(Theme.BG);
@@ -17,7 +18,7 @@ public class SplashPage extends JPanel {
         JPanel left = new JPanel();
         left.setOpaque(false);
         left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
-        left.setBorder(BorderFactory.createEmptyBorder(0, 24, 0, 24));
+        left.setBorder(BorderFactory.createEmptyBorder(0, CONTENT_SIDE_MARGIN, 0, CONTENT_SIDE_MARGIN));
 
         JPanel title = new JPanel();
         title.setOpaque(false);
