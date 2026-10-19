@@ -17,6 +17,7 @@ public class StudyOrbitApp extends JFrame {
     public StudyOrbitApp() {
         setTitle("Study Orbit");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setIconImage(Assets.image("images/Logo.png"));
         setContentPane(buildContent(true));
         setSize(1000, 620); // default shrunk size
         setLocationRelativeTo(null);
