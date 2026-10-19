@@ -72,7 +72,7 @@ public class NavBar extends JPanel {
         for (String page : PAGES) {
             final NavButton button = new NavButton(page);
             button.setAlignmentX(Component.CENTER_ALIGNMENT);
-            button.setMaximumSize(new Dimension(104, 35));
+            button.setMaximumSize(new Dimension(104, 54));
             button.addActionListener(e -> {
                 select(page);
                 onNavigate.accept(page);
@@ -106,7 +106,14 @@ public class NavBar extends JPanel {
             setBorderPainted(false);
             setFont(Theme.BODY);
             setForeground(Theme.NAVBAR_TEXT);
-            setMargin(new Insets(2, 4, 2, 4));
+            setMargin(new Insets(3, 4, 3, 4));
+            Image icon = Assets.image("icons/" + page + "Icon.png"); // awesome smart way of doing icons in one line
+            if (icon != null) {
+                setIcon(new ImageIcon(icon.getScaledInstance(24, 24, Image.SCALE_SMOOTH)));
+                setHorizontalTextPosition(SwingConstants.CENTER);
+                setVerticalTextPosition(SwingConstants.BOTTOM);
+                setIconTextGap(2);
+            }
             setCursor(new Cursor(Cursor.HAND_CURSOR));
         }
 
