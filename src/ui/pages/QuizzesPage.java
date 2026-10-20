@@ -11,7 +11,7 @@ public class QuizzesPage extends JPanel {
     public QuizzesPage() {
         setBackground(Theme.BG);
         setLayout(new BorderLayout());
-        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        setBorder(BorderFactory.createEmptyBorder(0, 24, 24, 24));
 
         add(Theme.header("Quizzes"), BorderLayout.NORTH);
     }

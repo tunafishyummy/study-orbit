@@ -20,7 +20,7 @@ public class CoursesPage extends JPanel {
         this.manager = AppData.get();
         setBackground(Theme.BG);
         setLayout(new BorderLayout(16, 16));
-        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        setBorder(BorderFactory.createEmptyBorder(0, 24, 24, 24));
 
         JLabel header = new JLabel("Your Courses");
         header.setFont(Theme.TITLE);

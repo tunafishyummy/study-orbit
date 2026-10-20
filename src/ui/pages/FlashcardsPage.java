@@ -31,7 +31,7 @@ public class FlashcardsPage extends JPanel {
     public FlashcardsPage(Runnable onNavigateToCreate) {
         setLayout(new BorderLayout());
         setBackground(Theme.BG);
-        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        setBorder(BorderFactory.createEmptyBorder(0, 24, 24, 24));
 
         JLabel header = Theme.header("Review Flashcards");
         add(header, BorderLayout.NORTH);

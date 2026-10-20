@@ -13,7 +13,7 @@ public class SettingsPage extends JPanel {
     public SettingsPage() {
         setBackground(Theme.BG);
         setLayout(new BorderLayout(0, 16));
-        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        setBorder(BorderFactory.createEmptyBorder(0, 24, 24, 24));
 
         add(Theme.header("Settings"), BorderLayout.NORTH);
 

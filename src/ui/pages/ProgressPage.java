@@ -11,7 +11,7 @@ public class ProgressPage extends JPanel {
     public ProgressPage() {
         setBackground(Theme.BG);
         setLayout(new BorderLayout(0, 16));
-        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        setBorder(BorderFactory.createEmptyBorder(0, 24, 24, 24));
 
         add(Theme.header("Progress and Streaks"), BorderLayout.NORTH);
 

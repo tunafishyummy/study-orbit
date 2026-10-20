@@ -17,7 +17,7 @@ public class SchedulePage extends JPanel {
     public SchedulePage() {
         setBackground(Theme.BG);
         setLayout(new BorderLayout(0, 16));
-        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        setBorder(BorderFactory.createEmptyBorder(0, 24, 24, 24));
 
         add(header(), BorderLayout.NORTH);
 

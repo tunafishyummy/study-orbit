@@ -16,7 +16,7 @@ public class DashboardPage extends JPanel {
     public DashboardPage() {
         setBackground(Theme.BG);
         setLayout(new BorderLayout(0, 16));
-        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        setBorder(BorderFactory.createEmptyBorder(0, 24, 24, 24));
 
         add(header(), BorderLayout.NORTH);
         add(cards(), BorderLayout.CENTER);
