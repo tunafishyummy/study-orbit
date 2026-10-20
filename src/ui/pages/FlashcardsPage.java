@@ -21,6 +21,7 @@ public class FlashcardsPage extends JPanel {
     private List<Flashcard> currentDeckCards;
     private int currentIndex = 0;
     private boolean showingFront = true;
+    private final Runnable onNavigateToCreate;
 
     // Animation state variables
     private Timer flipTimer;
@@ -29,9 +30,10 @@ public class FlashcardsPage extends JPanel {
     private boolean flippingToBack = false;
 
     public FlashcardsPage(Runnable onNavigateToCreate) {
+        this.onNavigateToCreate = onNavigateToCreate;
         setLayout(new BorderLayout());
         setBackground(Theme.BG);
-        setBorder(BorderFactory.createEmptyBorder(0, 24, 24, 24));
+        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 
         JLabel header = Theme.header("Review Flashcards");
         add(header, BorderLayout.NORTH);
@@ -51,7 +53,7 @@ public class FlashcardsPage extends JPanel {
         content.add(deckScroll, BorderLayout.WEST);
 
         // Custom animated card container panel overriding paintComponent for scaling
-        flashcardCard = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS) {
+        flashcardCard = new RoundedPanel(Theme.SURFACE, 20) {
             @Override
             protected void paintComponent(Graphics g) {
                 if (scaleX < 1.0f) {
@@ -116,42 +118,10 @@ public class FlashcardsPage extends JPanel {
         content.add(flashcardCard, BorderLayout.CENTER);
         add(content, BorderLayout.CENTER);
 
-        refreshDecks(onNavigateToCreate);
+        refresh();
     }
 
-    private void startFlipAnimation() {
-        if (isFlipping || currentDeckCards == null || currentDeckCards.isEmpty()) return;
-
-        isFlipping = true;
-        flippingToBack = showingFront;
-
-        flipTimer = new Timer(15, e -> {
-            if (flippingToBack == showingFront) {
-                scaleX -= 0.15f;
-                if (scaleX <= 0.0f) {
-                    scaleX = 0.0f;
-                    showingFront = !showingFront;
-                    displayCurrentCard();
-                }
-            } else {
-                scaleX += 0.15f;
-                if (scaleX >= 1.0f) {
-                    scaleX = 1.0f;
-                    isFlipping = false;
-                    ((Timer) e.getSource()).stop();
-                }
-            }
-            flashcardCard.repaint();
-        });
-        flipTimer.start();
-    }
-
-    private void setCardText(String text) {
-        String escaped = text != null ? text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br/>") : "";
-        cardLabel.setText("<html><div style='text-align: center; padding: 20px;'>" + escaped + "</div></html>");
-    }
-
-    public void refreshDecks(Runnable onNavigateToCreate) {
+    public void refresh() {
         deckListPanel.removeAll();
         
         List<Flashcard> allCards = new ArrayList<>();
@@ -198,7 +168,7 @@ public class FlashcardsPage extends JPanel {
             deckBtn.addActionListener(e -> {
                 selectedDeck = deck;
                 updateCardDisplay(allCards);
-                refreshDecks(onNavigateToCreate);
+                refresh();
             });
             deckListPanel.add(deckBtn);
             deckListPanel.add(Box.createVerticalStrut(10));
@@ -215,6 +185,38 @@ public class FlashcardsPage extends JPanel {
         deckListPanel.repaint();
 
         updateCardDisplay(allCards);
+    }
+
+    private void startFlipAnimation() {
+        if (isFlipping || currentDeckCards == null || currentDeckCards.isEmpty()) return;
+
+        isFlipping = true;
+        flippingToBack = showingFront;
+
+        flipTimer = new Timer(15, e -> {
+            if (flippingToBack == showingFront) {
+                scaleX -= 0.15f;
+                if (scaleX <= 0.0f) {
+                    scaleX = 0.0f;
+                    showingFront = !showingFront;
+                    displayCurrentCard();
+                }
+            } else {
+                scaleX += 0.15f;
+                if (scaleX >= 1.0f) {
+                    scaleX = 1.0f;
+                    isFlipping = false;
+                    ((Timer) e.getSource()).stop();
+                }
+            }
+            flashcardCard.repaint();
+        });
+        flipTimer.start();
+    }
+
+    private void setCardText(String text) {
+        String escaped = text != null ? text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br/>") : "";
+        cardLabel.setText("<html><div style='text-align: center; padding: 20px;'>" + escaped + "</div></html>");
     }
 
     private void updateCardDisplay(List<Flashcard> allCards) {

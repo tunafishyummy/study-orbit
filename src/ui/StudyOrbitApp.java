@@ -45,10 +45,7 @@ public class StudyOrbitApp extends JFrame {
         pages.setBackground(Theme.BG);
 
         createFlashcardPage = new CreateFlashcardPage(() -> {
-            flashcardsPage.refreshDecks(() -> {
-                createFlashcardPage.refreshNotes();
-                pageLayout.show(pages, "CreateFlashcard");
-            });
+            flashcardsPage.refresh();
             pageLayout.show(pages, "Flashcards");
         });
 
@@ -74,10 +71,7 @@ public class StudyOrbitApp extends JFrame {
             if (name.equals("CreateFlashcard")) {
                 createFlashcardPage.refreshNotes();
             } else if (name.equals("Flashcards")) {
-                flashcardsPage.refreshDecks(() -> {
-                    createFlashcardPage.refreshNotes();
-                    pageLayout.show(pages, "CreateFlashcard");
-                });
+                flashcardsPage.refresh();
             }
             pageLayout.show(pages, name);
         }, currentPage, () -> appLayout.show(app, "Splash")), BorderLayout.WEST);
@@ -259,7 +253,6 @@ public class StudyOrbitApp extends JFrame {
 
         @Override
         protected void paintComponent(Graphics g) {
-            // no png is telling
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             if (getModel().isRollover() || getModel().isPressed()) {

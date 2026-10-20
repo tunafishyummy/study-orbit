@@ -8,14 +8,10 @@ import model.Flashcard;
 public class FlashcardManager {
     private final List<Flashcard> flashcards;
 
-   public FlashcardManager(DataStore store) {
-    this.flashcards = new ArrayList<>();
-    for (Object obj : AppData.get().getFlashcards()) {
-        if (obj instanceof Flashcard) {
-            this.flashcards.add((Flashcard) obj);
-        }
+    @SuppressWarnings("unchecked")
+    public FlashcardManager(DataStore store) {
+        this.flashcards = (List<Flashcard>) (List<?>) AppData.get().getFlashcards();
     }
-}
 
     public List<Flashcard> getAllFlashcards() {
         return new ArrayList<>(flashcards);
@@ -27,7 +23,7 @@ public class FlashcardManager {
         }
         Flashcard f = new Flashcard(deckTitle, front, back, tags);
         flashcards.add(f);
-        AppData.get().save();
+        AppData.get().save(); // Persists live list changes to SQLite database
         return f;
     }
 
