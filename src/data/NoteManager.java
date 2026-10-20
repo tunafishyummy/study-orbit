@@ -1,9 +1,5 @@
 package data;
 
-import model.Course;
-import model.Flashcard;
-import model.Note;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -11,6 +7,9 @@ import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import model.Course;
+import model.Flashcard;
+import model.Note;
 
 public class NoteManager {
     private final List<Course> courses = new ArrayList<>();
@@ -44,6 +43,7 @@ public class NoteManager {
         Course other = findCourse(code);
         if (other != null && other != c) throw new IllegalArgumentException("Course code already exists.");
         for (Note n : notes) if (n.getCourseCode().equals(c.getCode())) n.setCourseCode(code.trim());
+        for (Flashcard f : flashcards) if (f.getCourseCode().equals(c.getCode())) f.setCourseCode(code.trim());
         c.setCode(code.trim());
         c.setTitle(title.trim());
         c.setColorHex(colorHex);
@@ -54,6 +54,7 @@ public class NoteManager {
         Course c = findCourse(code);
         if (c == null) return;
         for (Note n : notes) if (n.getCourseCode().equals(c.getCode())) n.setCourseCode("");
+        for (Flashcard f : flashcards) if (f.getCourseCode().equals(c.getCode())) f.setCourseCode("");
         courses.remove(c);
         save();
     }

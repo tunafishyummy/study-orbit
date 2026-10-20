@@ -33,12 +33,18 @@ public class DataStore {
     private void initDatabase() {
         String createCourses = "CREATE TABLE IF NOT EXISTS courses (code TEXT PRIMARY KEY, title TEXT NOT NULL, color_hex TEXT)";
         String createNotes = "CREATE TABLE IF NOT EXISTS notes (id TEXT PRIMARY KEY, title TEXT NOT NULL, body TEXT, course_code TEXT, tags TEXT, created TEXT, edited TEXT)";
-        String createFlashcards = "CREATE TABLE IF NOT EXISTS flashcards (id TEXT PRIMARY KEY, deck_title TEXT NOT NULL, front TEXT NOT NULL, back TEXT NOT NULL, tags TEXT, created TEXT)";
+        String createFlashcards = "CREATE TABLE IF NOT EXISTS flashcards (id TEXT PRIMARY KEY, deck_title TEXT NOT NULL, front TEXT NOT NULL, back TEXT NOT NULL, tags TEXT, created TEXT, course_code TEXT)";
 
         try (Connection conn = connect(); Statement stmt = conn.createStatement()) {
             stmt.execute(createCourses);
             stmt.execute(createNotes);
             stmt.execute(createFlashcards);
+            // older databases were made before flashcards had a course, so add the column once
+            try {
+                stmt.execute("ALTER TABLE flashcards ADD COLUMN course_code TEXT");
+            } catch (SQLException alreadyThere) {
+                // column exists already: nothing to do
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -68,7 +74,7 @@ public class DataStore {
                     String tagText = rs.getString("tags");
                     List<String> tags = new ArrayList<>();
                     if (tagText != null && !tagText.isBlank()) for (String t : tagText.split(",")) tags.add(t.trim());
-                    flashcards.add(new Flashcard(rs.getString("id"), rs.getString("deck_title"), rs.getString("front"), rs.getString("back"), tags, LocalDateTime.parse(rs.getString("created"))));
+                    flashcards.add(new Flashcard(rs.getString("id"), rs.getString("deck_title"), rs.getString("course_code"), rs.getString("front"), rs.getString("back"), tags, LocalDateTime.parse(rs.getString("created"))));
                 }
             }
         } catch (SQLException e) {
@@ -105,7 +111,7 @@ public class DataStore {
                     pstmt.executeUpdate();
                 }
             }
-            try (PreparedStatement pstmt = conn.prepareStatement("INSERT INTO flashcards (id, deck_title, front, back, tags, created) VALUES (?, ?, ?, ?, ?, ?)")) {
+            try (PreparedStatement pstmt = conn.prepareStatement("INSERT INTO flashcards (id, deck_title, front, back, tags, created, course_code) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
                 for (Flashcard f : flashcards) {
                     pstmt.setString(1, f.getId());
                     pstmt.setString(2, f.getDeckTitle());
@@ -113,6 +119,7 @@ public class DataStore {
                     pstmt.setString(4, f.getBack());
                     pstmt.setString(5, String.join(",", f.getTags()));
                     pstmt.setString(6, f.getCreated().toString());
+                    pstmt.setString(7, f.getCourseCode());
                     pstmt.executeUpdate();
                 }
             }

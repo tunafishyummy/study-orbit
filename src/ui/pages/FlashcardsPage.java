@@ -219,6 +219,22 @@ public class FlashcardsPage extends JPanel {
         cardLabel.setText("<html><div style='text-align: center; padding: 20px;'>" + escaped + "</div></html>");
     }
 
+    // opens the deck of this card and shows the card, used when a search result is clicked
+    public void showCard(Flashcard card) {
+        selectedDeck = card.getDeckTitle().trim();
+        refresh();   // rebuilds the deck list and loads this deck's cards
+        for (int i = 0; i < currentDeckCards.size(); i++) {
+            if (currentDeckCards.get(i).getId().equals(card.getId())) {
+                currentIndex = i;
+                break;
+            }
+        }
+        showingFront = true;   // always start on the question side
+        scaleX = 1.0f;
+        displayCurrentCard();
+        flashcardCard.repaint();
+    }
+
     private void updateCardDisplay(List<Flashcard> allCards) {
         currentDeckCards = new ArrayList<>();
         if (selectedDeck != null) {
@@ -241,9 +257,9 @@ public class FlashcardsPage extends JPanel {
                 setCardText(f.getBack());
             }
         } else if (selectedDeck != null) {
-            setCardText("No flashcards in this deck yet.<br>Click 'ADD FLASHCARD' to generate them from your notes!");
+            setCardText("No flashcards in this deck yet. Click 'ADD FLASHCARD' to generate them from your notes!");
         } else {
-            setCardText("NO DECKS YET<br>Create a flashcard from your notes to start reviewing!");
+            setCardText("NO DECKS YET Create a flashcard from your notes to start reviewing!");
         }
     }
 

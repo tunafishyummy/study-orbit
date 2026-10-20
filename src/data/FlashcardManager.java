@@ -18,10 +18,14 @@ public class FlashcardManager {
     }
 
     public Flashcard addFlashcard(String deckTitle, String front, String back, List<String> tags) throws IOException {
+        return addFlashcard(deckTitle, "", front, back, tags);
+    }
+
+    public Flashcard addFlashcard(String deckTitle, String courseCode, String front, String back, List<String> tags) throws IOException {
         if (front.isBlank() || back.isBlank()) {
             throw new IllegalArgumentException("Front and back cannot be empty.");
         }
-        Flashcard f = new Flashcard(deckTitle, front, back, tags);
+        Flashcard f = new Flashcard(deckTitle, courseCode, front, back, tags);
         flashcards.add(f);
         AppData.get().save(); // Persists live list changes to SQLite database
         return f;

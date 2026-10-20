@@ -92,6 +92,18 @@ public class CoursesPage extends JPanel {
 
     private void clearForm() { codeField.setText(""); titleField.setText(""); list.clearSelection(); }
 
+    // selects one course in the list, used when a search result is clicked
+    public void showCourse(Course course) {
+        refresh();
+        for (int i = 0; i < listModel.size(); i++) {
+            if (listModel.get(i).getCode().equals(course.getCode())) {
+                list.setSelectedIndex(i);
+                list.ensureIndexIsVisible(i);
+                break;
+            }
+        }
+    }
+
     void refresh() {
         listModel.clear();
         for (Course c : manager.getCourses()) listModel.addElement(c);

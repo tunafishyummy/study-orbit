@@ -10,6 +10,7 @@ public class Flashcard {
     private String deckTitle;
     private String front;
     private String back;
+    private String courseCode;
     private List<String> tags;
     private LocalDateTime created;
 
@@ -17,8 +18,18 @@ public class Flashcard {
         this(UUID.randomUUID().toString(), deckTitle, front, back, tags, LocalDateTime.now());
     }
 
+    public Flashcard(String deckTitle, String courseCode, String front, String back, List<String> tags) {
+        this(UUID.randomUUID().toString(), deckTitle, courseCode, front, back, tags, LocalDateTime.now());
+    }
+
     public Flashcard(String id, String deckTitle, String front, String back, List<String> tags, LocalDateTime created) {
+        this(id, deckTitle, "", front, back, tags, created);
+    }
+
+    public Flashcard(String id, String deckTitle, String courseCode, String front, String back,
+                     List<String> tags, LocalDateTime created) {
         this.id = id == null ? UUID.randomUUID().toString() : id;
+        this.courseCode = courseCode == null ? "" : courseCode;
         this.deckTitle = deckTitle == null ? "General" : deckTitle;
         this.front = front == null ? "" : front;
         this.back = back == null ? "" : back;
@@ -30,6 +41,8 @@ public class Flashcard {
     public String getDeckTitle() { return deckTitle; }
     public String getFront() { return front; }
     public String getBack() { return back; }
+    public String getCourseCode() { return courseCode; }
+    public void setCourseCode(String courseCode) { this.courseCode = courseCode == null ? "" : courseCode; }
     public List<String> getTags() { return new ArrayList<>(tags); }
     public LocalDateTime getCreated() { return created; }
 

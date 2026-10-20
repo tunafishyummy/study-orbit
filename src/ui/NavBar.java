@@ -94,7 +94,7 @@ public class NavBar extends JPanel {
         select(selectedPage);
     }
 
-    private void select(String page) {
+    public void select(String page) {
         activeButton = null;
         for (Component component : getComponents()) {
             if (component instanceof NavButton) {

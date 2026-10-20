@@ -3,20 +3,19 @@ package ui.pages;
 import data.AIFlashcardService;
 import data.AppData;
 import data.NoteManager;
-import ui.Theme;
-import model.Course;
-import model.Note;
-import ui.components.RoundedComboBox;
-import ui.components.RoundedTextArea;
-import ui.components.RoundedTextField;
-
-import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.*;
+import model.Course;
+import model.Note;
+import ui.Theme;
+import ui.components.RoundedComboBox;
+import ui.components.RoundedTextArea;
+import ui.components.RoundedTextField;
 
 /** Screen 4: Notes page. Create, edit, move, tag, delete, export notes, and AI image OCR upload. */
 public class NotesPage extends JPanel {
@@ -208,6 +207,18 @@ public class NotesPage extends JPanel {
         if (filterBox.getSelectedItem() == null) filterBox.setSelectedIndex(0);
         loading = false;
         refreshList();
+    }
+
+    // opens one note in the editor, used when a search result is clicked
+    public void showNote(Note n) {
+        reload();
+        loading = true;
+        filterBox.setSelectedItem(ALL);   // make sure the note is in the list
+        loading = false;
+        refreshList();
+        current = n;
+        list.setSelectedValue(n, true);
+        open(n);
     }
 
     private void refreshList() {

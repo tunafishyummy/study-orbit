@@ -4,6 +4,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import javax.swing.*;
+import model.Course;
+import model.Flashcard;
+import model.Note;
 import ui.pages.*;
 
 public class StudyOrbitApp extends JFrame {
@@ -15,6 +18,10 @@ public class StudyOrbitApp extends JFrame {
     private String currentPage = "Dashboard";
     private CreateFlashcardPage createFlashcardPage;
     private FlashcardsPage flashcardsPage;
+    // kept as fields so a search result can reach these later
+    private NavBar navBar;
+    private NotesPage notesPage;
+    private CoursesPage coursesPage;
     private final java.util.List<WindowControlButton> maximizeButtons = new ArrayList<>();
     private Rectangle restoreBounds;
     private boolean maximized;
@@ -38,6 +45,35 @@ public class StudyOrbitApp extends JFrame {
         repaint();
     }
 
+    private SearchPage.Opener searchOpener() {
+        return new SearchPage.Opener() {
+            @Override
+            public void openCourse(Course course) {
+                goTo("Courses");
+                coursesPage.showCourse(course);
+            }
+
+            @Override
+            public void openNote(Note note) {
+                goTo("Notes");
+                notesPage.showNote(note);
+            }
+
+            @Override
+            public void openFlashcard(Flashcard card) {
+                goTo("Flashcards");
+                flashcardsPage.showCard(card);
+            }
+        };
+    }
+
+    // switches page and moves the navbar highlight with it
+    private void goTo(String name) {
+        currentPage = name;
+        navBar.select(name);
+        pageLayout.show(pages, name);
+    }
+
     private JPanel buildContent(boolean showSplashInitially) {
         maximizeButtons.clear();
         pageLayout = new CardLayout();
@@ -55,18 +91,22 @@ public class StudyOrbitApp extends JFrame {
         });
 
         pages.add(new DashboardPage(), "Dashboard");
-        pages.add(new CoursesPage(), "Courses");
-        pages.add(new NotesPage(), "Notes");
+        // create these two first and save them, so we can call showCourse / showNote on them
+        coursesPage = new CoursesPage();
+        notesPage = new NotesPage();
+        pages.add(coursesPage, "Courses");
+        pages.add(notesPage, "Notes");
         pages.add(flashcardsPage, "Flashcards");
         pages.add(createFlashcardPage, "CreateFlashcard");
         pages.add(new SchedulePage(), "Schedule");
-        pages.add(new SearchPage(), "Search");
+        pages.add(new SearchPage(searchOpener()), "Search");
         pages.add(new ProgressPage(), "Progress");
         pages.add(new SettingsPage(), "Settings");
 
         JPanel dashboard = new JPanel(new BorderLayout());
         dashboard.setBackground(Theme.BG);
-        dashboard.add(new NavBar(name -> {
+        // saved in navBar so goTo() can move the highlight
+        navBar = new NavBar(name -> {
             currentPage = name;
             if (name.equals("CreateFlashcard")) {
                 createFlashcardPage.refreshNotes();
@@ -74,7 +114,8 @@ public class StudyOrbitApp extends JFrame {
                 flashcardsPage.refresh();
             }
             pageLayout.show(pages, name);
-        }, currentPage, () -> appLayout.show(app, "Splash")), BorderLayout.WEST);
+        }, currentPage, () -> appLayout.show(app, "Splash"));
+        dashboard.add(navBar, BorderLayout.WEST);
 
         JPanel dashboardContent = new JPanel(new BorderLayout());
         dashboardContent.setBackground(Theme.BG);

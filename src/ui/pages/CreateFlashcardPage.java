@@ -451,7 +451,10 @@ public class CreateFlashcardPage extends JPanel {
             if (!tagText.isBlank()) {
                 for (String t : tagText.split(",")) tags.add(t.trim());
             }
-            flashcardManager.addFlashcard(deck, front, back, tags);
+            // the card belongs to the course of the note it was made from
+            Note source = (Note) noteSelector.getSelectedItem();
+            String courseCode = source == null ? "" : source.getCourseCode();
+            flashcardManager.addFlashcard(deck, courseCode, front, back, tags);
             JOptionPane.showMessageDialog(this, "Successfully added");
             frontArea.setText("");
             backArea.setText("");
