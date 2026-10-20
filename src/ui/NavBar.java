@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import javax.swing.*;
 
 public class NavBar extends JPanel {
+    private static final int NAVBAR_WIDTH = 90;
     private static final int NAVBAR_EDGE_MARGIN = 40;
     private static final int TAB_VERTICAL_EXPANSION = 8;
     private NavButton activeButton;
@@ -26,7 +27,7 @@ public class NavBar extends JPanel {
 
     public NavBar(Consumer<String> onNavigate, String selectedPage, Runnable onLogoClick) {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-        setPreferredSize(new Dimension(110, 0));
+        setPreferredSize(new Dimension(NAVBAR_WIDTH, 0));
         setBackground(Theme.NAVBAR);
 
         JLabel logo = new JLabel();
@@ -78,7 +79,7 @@ public class NavBar extends JPanel {
             final NavButton button = new NavButton(page);
             button.setAlignmentX(Component.CENTER_ALIGNMENT);
             button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 54));
-            button.setPreferredSize(new Dimension(110, 54));
+            button.setPreferredSize(new Dimension(NAVBAR_WIDTH, 54));
             button.addActionListener(e -> {
                 select(page);
                 onNavigate.accept(page);
@@ -179,7 +180,7 @@ public class NavBar extends JPanel {
             setContentAreaFilled(false);
             setFocusPainted(false);
             setBorderPainted(false);
-            setFont(Theme.BODY);
+            setFont(Theme.font(Font.PLAIN, 10));
             setForeground(Theme.NAVBAR_TEXT);
             setMargin(new Insets(3, 4, 3, 4));
             setHorizontalTextPosition(SwingConstants.CENTER);
