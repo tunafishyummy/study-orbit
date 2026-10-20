@@ -57,7 +57,7 @@ public class StudyOrbitApp extends JFrame {
         pages.add(new SchedulePage(), "Schedule");
         pages.add(new SearchPage(), "Search");
         pages.add(new ProgressPage(), "Progress");
-        pages.add(new SettingsPage(this::rebuild), "Settings");
+        pages.add(new SettingsPage(), "Settings");
 
         JPanel dashboard = new JPanel(new BorderLayout());
         dashboard.setBackground(Theme.BG);

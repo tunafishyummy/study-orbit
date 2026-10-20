@@ -10,10 +10,7 @@ import java.awt.*;
 
 // Screen 11, settings and accessibility
 public class SettingsPage extends JPanel {
-    private final Runnable onThemeChange;
-
-    public SettingsPage(Runnable onThemeChange) {
-        this.onThemeChange = onThemeChange;
+    public SettingsPage() {
         setBackground(Theme.BG);
         setLayout(new BorderLayout(0, 16));
         setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
@@ -92,45 +89,9 @@ public class SettingsPage extends JPanel {
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
         body.setBorder(BorderFactory.createEmptyBorder(18, 24, 18, 24));
 
-        JLabel mode = new JLabel("Mode");
-        mode.setFont(Theme.HEADING);
-        mode.setForeground(Theme.TEXT);
-        mode.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JButton darkButton = new JButton("Dark");
-        JButton lightButton = new JButton("Light");
-        if (Theme.isDark()) {
-            stylePill(darkButton, true);
-            stylePill(lightButton, false);
-        } else {
-            stylePill(darkButton, false);
-            stylePill(lightButton, true);
-        }
-        darkButton.addActionListener(e -> {
-            if (!Theme.isDark()) {
-                Theme.setDark(true);
-                onThemeChange.run();
-            }
-        });
-        lightButton.addActionListener(e -> {
-            if (Theme.isDark()) {
-                Theme.setDark(false);
-                onThemeChange.run();
-            }
-        });
-
-        JPanel segments = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        segments.setOpaque(false);
-        segments.setAlignmentX(Component.LEFT_ALIGNMENT);
-        segments.add(darkButton);
-        segments.add(lightButton);
-
         JPanel largeTextRow = row("Large Text", null);
         largeTextRow.add(switchHolder(new ToggleSwitch(true)), BorderLayout.EAST);
-
-        body.add(mode);
-        body.add(Box.createVerticalStrut(10));
-        body.add(segments);
+        
         body.add(Box.createVerticalStrut(14));
         body.add(line());
         body.add(Box.createVerticalStrut(14));
@@ -238,22 +199,4 @@ public class SettingsPage extends JPanel {
         return line;
     }
 
-    private void stylePill(JButton button, boolean active) {
-        button.setFont(Theme.BODY);
-        button.setFocusPainted(false);
-        button.setOpaque(true);
-        if (active) {
-            button.setBackground(Theme.PRIMARY);
-            button.setForeground(Color.WHITE);
-            button.setBorderPainted(false);
-            button.setBorder(BorderFactory.createEmptyBorder(7, 20, 7, 20));
-        } else {
-            button.setBackground(Theme.BG);
-            button.setForeground(Theme.MUTED);
-            button.setBorderPainted(true);
-            button.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(Theme.BORDER),
-                    BorderFactory.createEmptyBorder(6, 19, 6, 19)));
-        }
-    }
 }

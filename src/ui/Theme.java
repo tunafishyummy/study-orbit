@@ -9,51 +9,23 @@ import ui.components.RoundedScrollPane;
 public final class Theme {
     public static final int CORNER_RADIUS = 24;
 
-    // palette values, dark is the figma look and light keeps the original colors
-    public static Color BG;
-    public static Color SURFACE;
-    public static Color TEXT;
-    public static Color MUTED;
-    public static Color BORDER;
-    public static Color SELECT;
+    // Fixed dark palette.
+    public static final Color BG = new Color(0x171717);
+    public static final Color SURFACE = new Color(0x2D2D2D);
+    public static final Color TEXT = new Color(0xFFFFFF);
+    public static final Color MUTED = new Color(0xA1A1AA);
+    public static final Color BORDER = new Color(0x3F3F46);
     public static final Color NAVBAR = new Color(0x27235C);
     public static final Color NAVBAR_TEXT = Color.WHITE;
     public static final Color PRIMARY = new Color(0x6151D9);
+    public static final Color SELECT = PRIMARY;
     public static final Color STUDY_CELL = new Color(0x3B3B3B);
     private static final Font KUMBH_SANS = Assets.font("KumbhSans.ttf", Font.PLAIN, 14);
     public static final Font TITLE = font(Font.BOLD, 26);
     public static final Font HEADING = font(Font.BOLD, 16);
     public static final Font BODY = font(Font.PLAIN, 14);
 
-    private static boolean dark = true;
-
     private Theme() {}
-
-    static {
-        setDark(true);
-    }
-
-    public static boolean isDark() {
-        return dark;
-    }
-
-    public static void setDark(boolean value) {
-        dark = value;
-        if (dark) {
-            BG = new Color(0x171717);
-            SURFACE = new Color(0x2D2D2D);
-            TEXT = new Color(0xFFFFFF);
-            MUTED = new Color(0xA1A1AA);
-            BORDER = new Color(0x3F3F46);
-        } else {
-            BG = new Color(0xF5F7FB);
-            SURFACE = new Color(0xFFFFFF);
-            TEXT = new Color(0x1F2937);
-            MUTED = new Color(0x6B7280);
-            BORDER = new Color(0xE5E7EB);
-        }
-        SELECT = PRIMARY;
-    }
 
     // sets the shared defaults so every new control follows the current palette
     public static void apply() {
