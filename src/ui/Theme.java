@@ -17,7 +17,6 @@ public final class Theme {
     public static Color BORDER;
     public static Color SELECT;
     public static final Color NAVBAR = new Color(0x27235C);
-    public static final Color NAVBAR_SELECTED = new Color(0x3B3580);
     public static final Color NAVBAR_TEXT = Color.WHITE;
     public static final Color PRIMARY = new Color(0x6151D9);
     public static final Color STUDY_CELL = new Color(0x3B3B3B);

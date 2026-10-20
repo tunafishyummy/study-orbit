@@ -6,6 +6,9 @@ import javax.swing.*;
 
 public class NavBar extends JPanel {
     private static final int NAVBAR_EDGE_MARGIN = 40;
+    private static final int TAB_VERTICAL_EXPANSION = 8;
+    private NavButton activeButton;
+    private JLabel navTitle;
 
     // Same order as the sidebar in the design
     public static final String[] PAGES = {
@@ -59,49 +62,116 @@ public class NavBar extends JPanel {
             }
         });
 
-        JLabel name = new JLabel("Study Orbit");
-        name.setFont(Theme.BODY);
-        name.setForeground(Theme.NAVBAR_TEXT);
-        name.setAlignmentX(Component.CENTER_ALIGNMENT);
+        navTitle = new JLabel("Study Orbit");
+        navTitle.setFont(Theme.BODY);
+        navTitle.setForeground(Theme.NAVBAR_TEXT);
+        navTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         add(Box.createVerticalStrut(NAVBAR_EDGE_MARGIN));
         add(logo);
         add(Box.createVerticalStrut(4));
-        add(name);
-        add(Box.createVerticalStrut(12));
+        add(navTitle);
+        add(verticalStrut(12));
 
-        add(Box.createVerticalGlue());
+        add(verticalGlue());
         for (String page : PAGES) {
             final NavButton button = new NavButton(page);
             button.setAlignmentX(Component.CENTER_ALIGNMENT);
-            button.setMaximumSize(new Dimension(104, 54));
+            button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 54));
+            button.setPreferredSize(new Dimension(110, 54));
             button.addActionListener(e -> {
                 select(page);
                 onNavigate.accept(page);
             });
             add(button);
             if (!page.equals(PAGES[PAGES.length - 1])) {
-                add(Box.createVerticalGlue());
+                add(verticalGlue());
             }
         }
-        add(Box.createVerticalStrut(NAVBAR_EDGE_MARGIN));
+        add(verticalStrut(NAVBAR_EDGE_MARGIN));
 
         select(selectedPage);
     }
 
     private void select(String page) {
+        activeButton = null;
         for (Component component : getComponents()) {
             if (component instanceof NavButton) {
                 NavButton button = (NavButton) component;
-                button.setActive(button.page.equals(page));
+                boolean active = button.page.equals(page);
+                button.setActive(active);
+                if (active) activeButton = button;
             }
         }
+        repaint();
     }
 
-    // a nav item that paints its own chip so the bar stays dark in both themes
+    private static Component verticalGlue() {
+        return new Box.Filler(
+                new Dimension(0, 0),
+                new Dimension(0, 0),
+                new Dimension(0, Short.MAX_VALUE)) {
+            @Override
+            public boolean contains(int x, int y) {
+                return false;
+            }
+        };
+    }
+
+    private static Component verticalStrut(int height) {
+        Dimension size = new Dimension(0, height);
+        return new Box.Filler(size, size, size) {
+            @Override
+            public boolean contains(int x, int y) {
+                return false;
+            }
+        };
+    }
+
+    private int tabVerticalExpansion(NavButton button) {
+        int index = java.util.Arrays.asList(PAGES).indexOf(button.page);
+        if (index < 0) return 0;
+
+        int available = Integer.MAX_VALUE;
+        if (index > 0) {
+            NavButton previous = navButton(PAGES[index - 1]);
+            available = Math.min(available, button.getY() - previous.getY() - previous.getHeight());
+        } else if (navTitle != null) {
+            available = Math.min(available, button.getY() - navTitle.getY() - navTitle.getHeight());
+        }
+        if (index < PAGES.length - 1) {
+            NavButton next = navButton(PAGES[index + 1]);
+            available = Math.min(available, next.getY() - button.getY() - button.getHeight());
+        } else {
+            available = Math.min(available, getHeight() - button.getY() - button.getHeight());
+        }
+        return Math.max(0, Math.min(TAB_VERTICAL_EXPANSION, available / 2));
+    }
+
+    private NavButton navButton(String page) {
+        for (Component component : getComponents()) {
+            if (component instanceof NavButton && ((NavButton) component).page.equals(page)) {
+                return (NavButton) component;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (activeButton == null) return;
+
+        int expansion = tabVerticalExpansion(activeButton);
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setColor(Theme.BG);
+        g2.fillRect(0, activeButton.getY() - expansion, getWidth(),
+                activeButton.getHeight() + expansion * 2);
+        g2.dispose();
+    }
+
     private class NavButton extends JButton {
         private final String page;
-        private boolean active;
 
         NavButton(String page) {
             super(page);
@@ -112,31 +182,37 @@ public class NavBar extends JPanel {
             setFont(Theme.BODY);
             setForeground(Theme.NAVBAR_TEXT);
             setMargin(new Insets(3, 4, 3, 4));
-            Image icon = Assets.image("icons/" + page + "Icon.png"); // awesome smart way of doing icons in one line
-            if (icon != null) {
-                setIcon(new ImageIcon(icon.getScaledInstance(24, 24, Image.SCALE_SMOOTH)));
-                setHorizontalTextPosition(SwingConstants.CENTER);
-                setVerticalTextPosition(SwingConstants.BOTTOM);
-                setIconTextGap(2);
-            }
+            setHorizontalTextPosition(SwingConstants.CENTER);
+            setVerticalTextPosition(SwingConstants.BOTTOM);
+            setIconTextGap(2);
             setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setPageIcon(false);
         }
 
         void setActive(boolean value) {
-            active = value;
+            setPageIcon(value);
             repaint();
         }
 
-        @Override
-        protected void paintComponent(Graphics g) {
-            if (active) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(Theme.NAVBAR_SELECTED);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
-                g2.dispose();
+        private void setPageIcon(boolean highlighted) {
+            String normalPath = "icons/" + page + "Icon.png";
+            String iconPath = highlighted
+                    ? "icons/" + page + "IconHighlighted.png"
+                    : normalPath;
+            Image image = Assets.image(iconPath);
+            if (image == null && highlighted) {
+                image = Assets.image(normalPath);
             }
-            super.paintComponent(g);
+            setIcon(image == null
+                    ? null
+                    : new ImageIcon(image.getScaledInstance(24, 24, Image.SCALE_SMOOTH)));
+        }
+
+        @Override
+        public boolean contains(int x, int y) {
+            int expansion = tabVerticalExpansion(this);
+            return x >= 0 && x < getWidth()
+                    && y >= -expansion && y < getHeight() + expansion;
         }
     }
 }
