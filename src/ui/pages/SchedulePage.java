@@ -100,7 +100,7 @@ public class SchedulePage extends JPanel {
     }
 
     private JPanel scheduleCard() {
-        JPanel card = new RoundedPanel(Theme.SURFACE, 24);
+        JPanel card = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS);
         card.setLayout(new BorderLayout(0, 16));
         card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
@@ -109,7 +109,7 @@ public class SchedulePage extends JPanel {
         heading.setForeground(Theme.TEXT);
         card.add(heading, BorderLayout.NORTH);
 
-        JPanel gridHolder = new RoundedPanel(Color.WHITE, 24);
+        JPanel gridHolder = new RoundedPanel(Color.WHITE, Theme.CORNER_RADIUS);
         gridHolder.setLayout(new BorderLayout());
         gridHolder.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
         gridHolder.add(new WeekGrid(), BorderLayout.CENTER);
@@ -118,7 +118,7 @@ public class SchedulePage extends JPanel {
     }
 
     private JPanel deadlinesCard() {
-        JPanel card = new RoundedPanel(Theme.SURFACE, 24);
+        JPanel card = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS);
         card.setLayout(new BorderLayout(0, 16));
         card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
@@ -134,7 +134,7 @@ public class SchedulePage extends JPanel {
         weekHeader.add(next, BorderLayout.EAST);
         card.add(weekHeader, BorderLayout.NORTH);
 
-        JPanel gridHolder = new RoundedPanel(Color.WHITE, 24);
+        JPanel gridHolder = new RoundedPanel(Color.WHITE, Theme.CORNER_RADIUS);
         gridHolder.setLayout(new BorderLayout());
         gridHolder.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
         gridHolder.add(new DeadlineGrid(), BorderLayout.CENTER);

@@ -5,6 +5,9 @@ import data.NoteManager;
 import ui.Theme;
 import model.Course;
 import model.Note;
+import ui.components.RoundedComboBox;
+import ui.components.RoundedTextArea;
+import ui.components.RoundedTextField;
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,13 +22,13 @@ public class NotesPage extends JPanel {
     private static final String NONE = "No course";
 
     private final NoteManager manager;
-    private final JComboBox<String> filterBox = new JComboBox<>();
+    private final JComboBox<String> filterBox = new RoundedComboBox<>();
     private final DefaultListModel<Note> listModel = new DefaultListModel<>();
     private final JList<Note> list = new JList<>(listModel);
-    private final JTextField titleField = new JTextField();
-    private final JComboBox<String> courseBox = new JComboBox<>();
-    private final JTextField tagsField = new JTextField();
-    private final JTextArea bodyArea = new JTextArea();
+    private final JTextField titleField = new RoundedTextField();
+    private final JComboBox<String> courseBox = new RoundedComboBox<>();
+    private final JTextField tagsField = new RoundedTextField();
+    private final JTextArea bodyArea = new RoundedTextArea();
     private Note current; // null = writing a new note
     private boolean loading;
 
@@ -50,7 +53,7 @@ public class NotesPage extends JPanel {
         list.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && !loading && list.getSelectedValue() != null) open(list.getSelectedValue());
         });
-        left.add(new JScrollPane(list), BorderLayout.CENTER);
+        left.add(Theme.roundedScrollPane(list), BorderLayout.CENTER);
         left.add(newNote, BorderLayout.SOUTH);
         add(left, BorderLayout.WEST);
 
@@ -73,7 +76,7 @@ public class NotesPage extends JPanel {
         bodyArea.setLineWrap(true);
         bodyArea.setWrapStyleWord(true);
         bodyArea.setMargin(new Insets(8, 8, 8, 8));
-        editor.add(new JScrollPane(bodyArea), BorderLayout.CENTER);
+        editor.add(Theme.inputScrollPane(bodyArea), BorderLayout.CENTER);
 
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttons.setOpaque(false);

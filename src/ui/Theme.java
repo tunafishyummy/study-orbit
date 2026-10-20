@@ -2,8 +2,13 @@ package ui;
 
 import java.awt.*;
 import javax.swing.*;
+import ui.components.RoundedButton;
+import ui.components.RoundedPanel;
+import ui.components.RoundedScrollPane;
 
 public final class Theme {
+    public static final int CORNER_RADIUS = 24;
+
     // palette values, dark is the figma look and light keeps the original colors
     public static Color BG;
     public static Color SURFACE;
@@ -101,12 +106,21 @@ public final class Theme {
     }
 
     public static JPanel card() {
-        JPanel panel = new JPanel();
-        panel.setBackground(SURFACE);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER),
-                BorderFactory.createEmptyBorder(16, 16, 16, 16)));
+        JPanel panel = new RoundedPanel(SURFACE, CORNER_RADIUS, BORDER);
+        panel.setBorder(BorderFactory.createEmptyBorder(17, 17, 17, 17));
         return panel;
+    }
+
+    public static JScrollPane inputScrollPane(JTextArea area) {
+        JScrollPane scroll = new JScrollPane(area);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        return scroll;
+    }
+
+    public static JScrollPane roundedScrollPane(Component view) {
+        return new RoundedScrollPane(view);
     }
 
     public static JLabel header(String text) {
@@ -124,27 +138,23 @@ public final class Theme {
     }
 
     public static JButton primaryButton(String text) {
-        JButton b = new JButton(text);
+        JButton b = new RoundedButton(text);
         b.setBackground(PRIMARY);
         b.setForeground(Color.WHITE);
         b.setFont(BODY);
         b.setFocusPainted(false);
-        b.setOpaque(true);
         b.setBorderPainted(false);
         b.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
         return b;
     }
 
     public static JButton button(String text) {
-        JButton b = new JButton(text);
+        JButton b = new RoundedButton(text);
         b.setBackground(SURFACE);
         b.setForeground(TEXT);
         b.setFont(BODY);
         b.setFocusPainted(false);
-        b.setOpaque(true);
-        b.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER),
-                BorderFactory.createEmptyBorder(7, 15, 7, 15)));
+        b.setBorder(BorderFactory.createEmptyBorder(7, 15, 7, 15));
         return b;
     }
 

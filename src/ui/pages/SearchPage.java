@@ -10,12 +10,15 @@ import model.Course;
 import model.Flashcard;
 import model.Note;
 import ui.Theme;
+import ui.components.RoundedComboBox;
+import ui.components.RoundedToggleButton;
+import ui.components.RoundedTextField;
 
 // Screen 9: Search across courses, notes, and flashcards
 public class SearchPage extends JPanel {
     private final NoteManager manager;
-    private final JTextField searchField = new JTextField();
-    private final JComboBox<String> courseBox = new JComboBox<>();
+    private final JTextField searchField = new RoundedTextField();
+    private final JComboBox<String> courseBox = new RoundedComboBox<>();
     private final DefaultListModel<SearchItem> listModel = new DefaultListModel<>();
     private final JList<SearchItem> list = new JList<>(listModel);
     private final JLabel status = new JLabel();
@@ -82,7 +85,7 @@ public class SearchPage extends JPanel {
         filters.setAlignmentX(Component.LEFT_ALIGNMENT);
         ButtonGroup group = new ButtonGroup();
         for (String name : new String[]{"All", "Courses", "Notes", "Flashcards"}) {
-            JToggleButton button = new JToggleButton(name);
+            JToggleButton button = new RoundedToggleButton(name);
             styleFilter(button);
             if (name.equals("All")) {
                 button.setSelected(true);
@@ -130,7 +133,7 @@ public class SearchPage extends JPanel {
             label.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
             return label;
         });
-        panel.add(new JScrollPane(list), BorderLayout.CENTER);
+        panel.add(Theme.roundedScrollPane(list), BorderLayout.CENTER);
         return panel;
     }
 
@@ -216,8 +219,6 @@ public class SearchPage extends JPanel {
         button.setForeground(Theme.TEXT);
         button.setBackground(Theme.SURFACE);
         button.setFocusPainted(false);
-        button.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Theme.BORDER),
-                BorderFactory.createEmptyBorder(5, 14, 5, 14)));
+        button.setBorder(BorderFactory.createEmptyBorder(5, 14, 5, 14));
     }
 }

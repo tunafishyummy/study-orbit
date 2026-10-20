@@ -11,7 +11,10 @@ import javax.swing.*;
 import model.Flashcard;
 import model.Note;
 import ui.Theme;
+import ui.components.RoundedComboBox;
 import ui.components.RoundedPanel;
+import ui.components.RoundedTextArea;
+import ui.components.RoundedTextField;
 
 public class CreateFlashcardPage extends JPanel {
     private static final String NEW_DECK_OPTION = "+ Create New Deck";
@@ -52,7 +55,7 @@ public class CreateFlashcardPage extends JPanel {
         splitContent.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0));
 
         // Left Panel: Reference Note Viewer
-        RoundedPanel leftPanel = new RoundedPanel(Theme.SURFACE, 16);
+        RoundedPanel leftPanel = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS);
         leftPanel.setLayout(new BorderLayout(0, 10));
         leftPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
@@ -64,13 +67,13 @@ public class CreateFlashcardPage extends JPanel {
         noteTopBar.add(noteLabel, BorderLayout.WEST);
 
         List<Note> notes = AppData.get().getAllNotes();
-        noteSelector = new JComboBox<>(notes.toArray(new Note[0]));
+        noteSelector = new RoundedComboBox<>(notes.toArray(new Note[0]));
         noteSelector.setFont(Theme.BODY);
         noteSelector.addActionListener(e -> updateNoteContent());
         noteTopBar.add(noteSelector, BorderLayout.CENTER);
         leftPanel.add(noteTopBar, BorderLayout.NORTH);
 
-        noteBodyArea = new JTextArea();
+        noteBodyArea = new RoundedTextArea();
         noteBodyArea.setFont(Theme.BODY);
         noteBodyArea.setForeground(Theme.TEXT);
         noteBodyArea.setLineWrap(true);
@@ -78,15 +81,12 @@ public class CreateFlashcardPage extends JPanel {
         noteBodyArea.setEditable(false);
         noteBodyArea.setOpaque(false);
 
-        JScrollPane noteScroll = new JScrollPane(noteBodyArea);
-        noteScroll.setBorder(null);
-        noteScroll.setOpaque(false);
-        noteScroll.getViewport().setOpaque(false);
+        JScrollPane noteScroll = Theme.inputScrollPane(noteBodyArea);
         leftPanel.add(noteScroll, BorderLayout.CENTER);
         splitContent.add(leftPanel);
 
         // Right Panel: Form + AI Suggested Flashcards
-        RoundedPanel rightPanel = new RoundedPanel(Theme.SURFACE, 16);
+        RoundedPanel rightPanel = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS);
         rightPanel.setLayout(new BorderLayout());
         rightPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
@@ -102,14 +102,14 @@ public class CreateFlashcardPage extends JPanel {
         rightContentContainer.add(Box.createVerticalStrut(12));
 
         rightContentContainer.add(label("Select or Create Deck"));
-        deckSelector = new JComboBox<>();
+        deckSelector = new RoundedComboBox<>();
         deckSelector.setFont(Theme.BODY);
         deckSelector.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
         deckSelector.addActionListener(e -> toggleNewDeckField());
         rightContentContainer.add(deckSelector);
         rightContentContainer.add(Box.createVerticalStrut(8));
 
-        newDeckField = new JTextField();
+        newDeckField = new RoundedTextField();
         newDeckField.setFont(Theme.BODY);
         newDeckField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
         newDeckField.setVisible(false);
@@ -117,27 +117,27 @@ public class CreateFlashcardPage extends JPanel {
         rightContentContainer.add(Box.createVerticalStrut(10));
 
         rightContentContainer.add(label("Front (Question / Prompt)"));
-        frontArea = new JTextArea(3, 20);
+        frontArea = new RoundedTextArea(3, 20);
         frontArea.setFont(Theme.BODY);
         frontArea.setLineWrap(true);
         frontArea.setWrapStyleWord(true);
-        JScrollPane frontScroll = new JScrollPane(frontArea);
+        JScrollPane frontScroll = Theme.inputScrollPane(frontArea);
         frontScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 75));
         rightContentContainer.add(frontScroll);
         rightContentContainer.add(Box.createVerticalStrut(10));
 
         rightContentContainer.add(label("Back (Answer / Definition)"));
-        backArea = new JTextArea(3, 20);
+        backArea = new RoundedTextArea(3, 20);
         backArea.setFont(Theme.BODY);
         backArea.setLineWrap(true);
         backArea.setWrapStyleWord(true);
-        JScrollPane backScroll = new JScrollPane(backArea);
+        JScrollPane backScroll = Theme.inputScrollPane(backArea);
         backScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 75));
         rightContentContainer.add(backScroll);
         rightContentContainer.add(Box.createVerticalStrut(10));
 
         rightContentContainer.add(label("Tags (comma separated)"));
-        tagsField = new JTextField();
+        tagsField = new RoundedTextField();
         tagsField.setFont(Theme.BODY);
         tagsField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
         rightContentContainer.add(tagsField);

@@ -7,13 +7,14 @@ import java.io.IOException;
 import javax.swing.*;
 import model.Course;
 import ui.Theme;
+import ui.components.RoundedTextField;
 
 public class CoursesPage extends JPanel {
     private final NoteManager manager;
     private final DefaultListModel<Course> listModel = new DefaultListModel<>();
     private final JList<Course> list = new JList<>(listModel);
-    private final JTextField codeField = new JTextField(10);
-    private final JTextField titleField = new JTextField(20);
+    private final JTextField codeField = new RoundedTextField(10);
+    private final JTextField titleField = new RoundedTextField(20);
     private final JButton colorButton = Theme.button("Pick color");
     private Color chosenColor = Theme.PRIMARY;
 
@@ -52,7 +53,7 @@ public class CoursesPage extends JPanel {
                 setColor(Theme.parse(c.getColorHex()));
             }
         });
-        add(new JScrollPane(list), BorderLayout.CENTER);
+        add(Theme.roundedScrollPane(list), BorderLayout.CENTER);
 
         JPanel form = new JPanel(new GridLayout(0, 1, 6, 6));
         form.setOpaque(false);

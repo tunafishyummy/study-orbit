@@ -3,6 +3,7 @@ package ui.pages;
 import ui.Theme;
 import ui.components.Avatar;
 import ui.components.CardIcons;
+import ui.components.RoundedPanel;
 import ui.components.ToggleSwitch;
 
 import javax.swing.*;
@@ -165,12 +166,12 @@ public class SettingsPage extends JPanel {
     }
 
     private JPanel card(String title, Color headerColor, Icon icon) {
-        JPanel card = new JPanel(new BorderLayout());
-        card.setBackground(Theme.SURFACE);
-        card.setBorder(BorderFactory.createLineBorder(Theme.BORDER));
+        JPanel card = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS, Theme.BORDER);
+        card.setLayout(new BorderLayout());
+        card.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
 
-        JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 6));
-        header.setBackground(headerColor);
+        JPanel header = new RoundedTopPanel(headerColor);
+        header.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 6));
         JLabel iconLabel = new JLabel(icon);
         JLabel titleLabel = new JLabel(title);
         titleLabel.setFont(Theme.HEADING);
@@ -180,6 +181,28 @@ public class SettingsPage extends JPanel {
 
         card.add(header, BorderLayout.NORTH);
         return card;
+    }
+
+    private static class RoundedTopPanel extends JPanel {
+        private final Color fill;
+
+        RoundedTopPanel(Color fill) {
+            this.fill = fill;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(fill);
+            int corner = Theme.CORNER_RADIUS / 2;
+            g2.fillRoundRect(0, 0, getWidth(), getHeight() + Theme.CORNER_RADIUS,
+                    Theme.CORNER_RADIUS, Theme.CORNER_RADIUS);
+            g2.fillRect(0, corner, getWidth(), getHeight() - corner);
+            g2.dispose();
+            super.paintComponent(g);
+        }
     }
 
     private JPanel row(String title, String caption) {

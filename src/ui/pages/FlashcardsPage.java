@@ -51,7 +51,7 @@ public class FlashcardsPage extends JPanel {
         content.add(deckScroll, BorderLayout.WEST);
 
         // Custom animated card container panel overriding paintComponent for scaling
-        flashcardCard = new RoundedPanel(Theme.SURFACE, 20) {
+        flashcardCard = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS) {
             @Override
             protected void paintComponent(Graphics g) {
                 if (scaleX < 1.0f) {
