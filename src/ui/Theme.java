@@ -19,15 +19,8 @@ public final class Theme {
     public static final Color NAVBAR = new Color(0x27235C);
     public static final Color NAVBAR_SELECTED = new Color(0x3B3580);
     public static final Color NAVBAR_TEXT = Color.WHITE;
-    public static final Color PRIMARY = new Color(0x4F46E5);
-    public static final Color SUCCESS = new Color(0x22C55E);
-    public static final Color WARNING = new Color(0xF59E0B);
-    public static final Color DANGER = new Color(0xEF4444);
-    public static final Color HEADER_GREEN = new Color(0x3CB44A);
-    public static final Color HEADER_BLUE = new Color(0x7EC8F0);
+    public static final Color PRIMARY = new Color(0x6151D9);
     public static final Color STUDY_CELL = new Color(0x3B3B3B);
-    public static final Color STUDY_CELL_ACTIVE = new Color(0x4B44C9);
-    public static final Color ARROW = new Color(0x3D2666);
     private static final Font KUMBH_SANS = Assets.font("KumbhSans.ttf", Font.PLAIN, 14);
     public static final Font TITLE = font(Font.BOLD, 26);
     public static final Font HEADING = font(Font.BOLD, 16);
@@ -53,15 +46,14 @@ public final class Theme {
             TEXT = new Color(0xFFFFFF);
             MUTED = new Color(0xA1A1AA);
             BORDER = new Color(0x3F3F46);
-            SELECT = new Color(0x3B3580);
         } else {
             BG = new Color(0xF5F7FB);
             SURFACE = new Color(0xFFFFFF);
             TEXT = new Color(0x1F2937);
             MUTED = new Color(0x6B7280);
             BORDER = new Color(0xE5E7EB);
-            SELECT = new Color(0xE0E7FF);
         }
+        SELECT = PRIMARY;
     }
 
     // sets the shared defaults so every new control follows the current palette

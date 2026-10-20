@@ -127,6 +127,7 @@ public class SearchPage extends JPanel {
             label.setForeground(Theme.TEXT);
             if (selected) {
                 label.setBackground(Theme.SELECT);
+                label.setForeground(Color.WHITE);
             } else {
                 label.setBackground(Theme.SURFACE);
             }

@@ -89,7 +89,7 @@ public class SchedulePage extends JPanel {
 
     private JButton arrowButton(String text) {
         JButton button = new JButton(text);
-        button.setBackground(Theme.ARROW);
+        button.setBackground(Theme.PRIMARY);
         button.setForeground(Color.WHITE);
         button.setFont(Theme.BODY);
         button.setFocusPainted(false);

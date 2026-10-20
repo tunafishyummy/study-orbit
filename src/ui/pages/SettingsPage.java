@@ -51,7 +51,7 @@ public class SettingsPage extends JPanel {
     }
 
     private JPanel profileCard() {
-        JPanel card = card("Profile", Theme.HEADER_GREEN, CardIcons.person());
+        JPanel card = card("Profile", CardIcons.person());
 
         JPanel body = new JPanel(new BorderLayout(0, 14));
         body.setOpaque(false);
@@ -86,7 +86,7 @@ public class SettingsPage extends JPanel {
     }
 
     private JPanel appearanceCard() {
-        JPanel card = card("Appearance", Theme.HEADER_BLUE, CardIcons.palette());
+        JPanel card = card("Appearance", CardIcons.palette());
 
         JPanel body = new JPanel();
         body.setOpaque(false);
@@ -142,7 +142,7 @@ public class SettingsPage extends JPanel {
     }
 
     private JPanel notificationsCard() {
-        JPanel card = card("Notifications", Theme.HEADER_BLUE, CardIcons.bell());
+        JPanel card = card("Notifications", CardIcons.bell());
 
         JPanel body = new JPanel();
         body.setOpaque(false);
@@ -165,12 +165,12 @@ public class SettingsPage extends JPanel {
         return card;
     }
 
-    private JPanel card(String title, Color headerColor, Icon icon) {
+    private JPanel card(String title, Icon icon) {
         JPanel card = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS, Theme.BORDER);
         card.setLayout(new BorderLayout());
         card.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
 
-        JPanel header = new RoundedTopPanel(headerColor);
+        JPanel header = new RoundedTopPanel(Theme.PRIMARY);
         header.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 6));
         JLabel iconLabel = new JLabel(icon);
         JLabel titleLabel = new JLabel(title);

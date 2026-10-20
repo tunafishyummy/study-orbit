@@ -162,7 +162,7 @@ public class ProgressPage extends JPanel {
                     int x = (int) (d * (colWidth + gap));
                     int y = headerHeight + r * (rowHeight + gap);
                     if (ACTIVE[r][d]) {
-                        g2.setColor(Theme.STUDY_CELL_ACTIVE);
+                        g2.setColor(Theme.PRIMARY);
                     } else {
                         g2.setColor(Theme.STUDY_CELL);
                     }

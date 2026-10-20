@@ -226,7 +226,7 @@ public class CreateFlashcardPage extends JPanel {
                 SwingUtilities.invokeLater(() -> {
                     suggestedContainer.removeAll();
                     JLabel errLabel = new JLabel("Failed to generate: " + ex.getMessage());
-                    errLabel.setForeground(Color.RED);
+                    errLabel.setForeground(Theme.PRIMARY);
                     errLabel.setFont(Theme.BODY);
                     suggestedContainer.add(errLabel);
                     suggestedContainer.revalidate();

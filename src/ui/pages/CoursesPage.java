@@ -15,8 +15,6 @@ public class CoursesPage extends JPanel {
     private final JList<Course> list = new JList<>(listModel);
     private final JTextField codeField = new RoundedTextField(10);
     private final JTextField titleField = new RoundedTextField(20);
-    private final JButton colorButton = Theme.button("Pick color");
-    private Color chosenColor = Theme.PRIMARY;
 
     public CoursesPage() {
         this.manager = AppData.get();
@@ -35,13 +33,14 @@ public class CoursesPage extends JPanel {
             JLabel lbl = new JLabel("  " + c);
             lbl.setOpaque(true);
             lbl.setFont(Theme.BODY);
-            lbl.setForeground(Theme.TEXT);
-            lbl.setBorder(BorderFactory.createMatteBorder(0, 10, 0, 0, Theme.parse(c.getColorHex())));
+            lbl.setBorder(BorderFactory.createMatteBorder(0, 10, 0, 0, Theme.PRIMARY));
             lbl.setPreferredSize(new Dimension(100, 32));
             if (sel) {
                 lbl.setBackground(Theme.SELECT);
+                lbl.setForeground(Color.WHITE);
             } else {
                 lbl.setBackground(Theme.SURFACE);
+                lbl.setForeground(Theme.TEXT);
             }
             return lbl;
         });
@@ -50,7 +49,6 @@ public class CoursesPage extends JPanel {
             if (c != null) {
                 codeField.setText(c.getCode());
                 titleField.setText(c.getTitle());
-                setColor(Theme.parse(c.getColorHex()));
             }
         });
         add(Theme.roundedScrollPane(list), BorderLayout.CENTER);
@@ -62,21 +60,16 @@ public class CoursesPage extends JPanel {
         form.add(codeField);
         form.add(new JLabel("Course title"));
         form.add(titleField);
-        form.add(colorButton);
-        colorButton.addActionListener(e -> {
-            Color c = JColorChooser.showDialog(this, "Course color", chosenColor);
-            if (c != null) setColor(c);
-        });
         JButton add = Theme.primaryButton("Add course");
         add.addActionListener(e -> run(() -> {
-            manager.addCourse(codeField.getText(), titleField.getText(), Theme.toHex(chosenColor));
+            manager.addCourse(codeField.getText(), titleField.getText(), Theme.toHex(Theme.PRIMARY));
             clearForm();
         }));
         JButton update = Theme.button("Update selected");
         update.addActionListener(e -> run(() -> {
             Course sel = list.getSelectedValue();
             if (sel == null) throw new IllegalArgumentException("Select a course to update.");
-            manager.updateCourse(sel.getCode(), codeField.getText(), titleField.getText(), Theme.toHex(chosenColor));
+            manager.updateCourse(sel.getCode(), codeField.getText(), titleField.getText(), Theme.toHex(Theme.PRIMARY));
         }));
         JButton delete = Theme.button("Delete selected");
         delete.addActionListener(e -> run(() -> {
@@ -94,18 +87,8 @@ public class CoursesPage extends JPanel {
 
         EventQueue.invokeLater(() -> {
             refresh();
-            setColor(chosenColor);
         });
     }
-
-    private void setColor(Color c) {
-        chosenColor = c;
-        colorButton.setBackground(c);
-        colorButton.setOpaque(true);
-        colorButton.setForeground(luminance(c) > 140 ? Color.BLACK : Color.WHITE);
-    }
-
-    private static double luminance(Color c) { return 0.299 * c.getRed() + 0.587 * c.getGreen() + 0.114 * c.getBlue(); }
 
     private void clearForm() { codeField.setText(""); titleField.setText(""); list.clearSelection(); }
 
