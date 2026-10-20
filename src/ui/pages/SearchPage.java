@@ -11,8 +11,8 @@ import model.Flashcard;
 import model.Note;
 import ui.Theme;
 import ui.components.RoundedComboBox;
-import ui.components.RoundedToggleButton;
 import ui.components.RoundedTextField;
+import ui.components.RoundedToggleButton;
 
 // Screen 9: Search across courses, notes, and flashcards
 public class SearchPage extends JPanel {
@@ -178,10 +178,14 @@ public class SearchPage extends JPanel {
         }
 
         // 3. Search Flashcards
+        // 3. Search Flashcards
         if ("All".equals(filter) || "Flashcards".equals(filter)) {
-            for (Flashcard f : manager.getFlashcards()) {
-                if (matchesFlashcard(f, query)) {
-                    listModel.addElement(new SearchItem("Flashcard", f.getFront(), "Deck: " + f.getDeckTitle()));
+            for (Object obj : manager.getFlashcards()) {
+                if (obj instanceof Flashcard) {
+                    Flashcard f = (Flashcard) obj;
+                    if (matchesFlashcard(f, query)) {
+                        listModel.addElement(new SearchItem("Flashcard", f.getFront(), "Deck: " + f.getDeckTitle()));
+                    }
                 }
             }
         }

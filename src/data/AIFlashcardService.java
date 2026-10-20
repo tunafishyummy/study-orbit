@@ -10,6 +10,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Base64;
 
 public class AIFlashcardService {
     private final String apiKey;
@@ -99,5 +100,60 @@ public class AIFlashcardService {
         }
 
         return suggestions;
+    }
+
+    public String extractTextFromImage(byte[] imageBytes, String mimeType) throws Exception {
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException("API key is missing.");
+        }
+
+        // Updated to gemini-3.8-flash
+        String endpoint = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=)" + apiKey;
+        
+        String base64Data = Base64.getEncoder().encodeToString(imageBytes);
+
+        JsonObject inlineData = new JsonObject();
+        inlineData.addProperty("mime_type", mimeType);
+        inlineData.addProperty("data", base64Data);
+
+        JsonObject filePart = new JsonObject();
+        filePart.add("inline_data", inlineData);
+
+        JsonObject textPart = new JsonObject();
+        textPart.addProperty("text", "Extract all readable text from this image accurately and format it cleanly as structured notes.");
+
+        JsonArray partsArray = new JsonArray();
+        partsArray.add(filePart);
+        partsArray.add(textPart);
+
+        JsonObject contentObject = new JsonObject();
+        contentObject.add("parts", partsArray);
+
+        JsonArray contentsArray = new JsonArray();
+        contentsArray.add(contentObject);
+
+        JsonObject requestBody = new JsonObject();
+        requestBody.add("contents", contentsArray);
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(endpoint))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody.toString()))
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("OCR API Request failed with HTTP " + response.statusCode() + ": " + response.body());
+        }
+
+        JsonObject jsonResponse = JsonParser.parseString(response.body()).getAsJsonObject();
+        return jsonResponse.getAsJsonArray("candidates")
+                .get(0).getAsJsonObject()
+                .getAsJsonObject("content")
+                .getAsJsonArray("parts")
+                .get(0).getAsJsonObject()
+                .get("text").getAsString().trim();
     }
 }

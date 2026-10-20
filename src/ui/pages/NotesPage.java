@@ -1,5 +1,6 @@
 package ui.pages;
 
+import data.AIFlashcardService;
 import data.AppData;
 import data.NoteManager;
 import ui.Theme;
@@ -13,10 +14,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Screen 4: Notes page. Create, edit, move, tag, delete and export notes. */
+/** Screen 4: Notes page. Create, edit, move, tag, delete, export notes, and AI image OCR upload. */
 public class NotesPage extends JPanel {
     private static final String ALL = "All courses";
     private static final String NONE = "No course";
@@ -29,6 +31,7 @@ public class NotesPage extends JPanel {
     private final JComboBox<String> courseBox = new RoundedComboBox<>();
     private final JTextField tagsField = new RoundedTextField();
     private final JTextArea bodyArea = new RoundedTextArea();
+    private final AIFlashcardService aiService = new AIFlashcardService("GEMINI_API_KEY");
     private Note current; // null = writing a new note
     private boolean loading;
 
@@ -59,6 +62,11 @@ public class NotesPage extends JPanel {
 
         JPanel editor = new JPanel(new BorderLayout(0, 8));
         editor.setOpaque(false);
+
+        JPanel topContainer = new JPanel();
+        topContainer.setLayout(new BoxLayout(topContainer, BoxLayout.Y_AXIS));
+        topContainer.setOpaque(false);
+
         JPanel fields = new JPanel(new GridLayout(0, 2, 8, 6));
         fields.setOpaque(false);
         fields.add(new JLabel("Title"));
@@ -68,7 +76,13 @@ public class NotesPage extends JPanel {
         fields.add(new JLabel("Tags (comma separated)"));
         fields.add(new JLabel(""));
         fields.add(tagsField);
-        editor.add(fields, BorderLayout.NORTH);
+        
+        topContainer.add(fields);
+        topContainer.add(Box.createVerticalStrut(8));
+        topContainer.add(buildNoteToolbar());
+
+        editor.add(topContainer, BorderLayout.NORTH);
+
         bodyArea.setFont(Theme.font(Font.PLAIN, 15));
         bodyArea.setBackground(Theme.SURFACE);
         bodyArea.setForeground(Theme.TEXT);
@@ -96,6 +110,84 @@ public class NotesPage extends JPanel {
         addComponentListener(new java.awt.event.ComponentAdapter() {
             @Override public void componentShown(java.awt.event.ComponentEvent e) { reload(); }
         });
+    }
+
+    private JPanel buildNoteToolbar() {
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        toolbar.setOpaque(false);
+
+        JPopupMenu uploadMenu = new JPopupMenu();
+        uploadMenu.setBackground(Theme.SURFACE);
+        uploadMenu.setBorder(BorderFactory.createLineBorder(Theme.BORDER));
+
+        JMenuItem uploadFileItem = new JMenuItem("📁 Upload files");
+        uploadFileItem.setFont(Theme.BODY);
+        uploadFileItem.setBackground(Theme.SURFACE);
+        uploadFileItem.setForeground(Theme.TEXT);
+        uploadFileItem.addActionListener(e -> uploadAndExtractImageText());
+        uploadMenu.add(uploadFileItem);
+
+        JButton uploadOcrBtn = Theme.primaryButton("📷 Upload & Extract Text (AI)");
+        uploadOcrBtn.setToolTipText("Upload image or document for Gemini AI text extraction");
+        
+        uploadOcrBtn.addActionListener(e -> {
+            uploadMenu.show(uploadOcrBtn, 0, uploadOcrBtn.getHeight());
+        });
+
+        toolbar.add(uploadOcrBtn);
+        return toolbar;
+    }
+
+    private void uploadAndExtractImageText() {
+        Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
+        FileDialog fileDialog = new FileDialog(parentFrame, "Select Image or Document for AI Text Extraction", FileDialog.LOAD);
+        fileDialog.setVisible(true);
+
+        String filename = fileDialog.getFile();
+        String directory = fileDialog.getDirectory(); // Fixed from fileDialog.get()
+
+        if (filename != null && directory != null) {
+            File selectedFile = new File(directory, filename);
+            
+            JDialog loadingDialog = new JDialog(parentFrame, "Processing", true);
+            JLabel msg = new JLabel("  Extracting text with Gemini AI...", JLabel.CENTER);
+            loadingDialog.add(msg);
+            loadingDialog.setSize(260, 90);
+            loadingDialog.setLocationRelativeTo(this);
+
+            new Thread(() -> {
+                try {
+                    byte[] fileBytes = Files.readAllBytes(selectedFile.toPath());
+                    String mimeType = "image/jpeg";
+                    String nameLower = selectedFile.getName().toLowerCase();
+                    if (nameLower.endsWith(".png")) {
+                        mimeType = "image/png";
+                    } else if (nameLower.endsWith(".pdf")) {
+                        mimeType = "application/pdf";
+                    }
+
+                    String extractedText = aiService.extractTextFromImage(fileBytes, mimeType);
+                    SwingUtilities.invokeLater(() -> {
+                        loadingDialog.dispose();
+                        if (!extractedText.isEmpty()) {
+                            if (bodyArea.getText().isBlank()) {
+                                bodyArea.setText(extractedText);
+                            } else {
+                                bodyArea.append("\n\n" + extractedText);
+                            }
+                            JOptionPane.showMessageDialog(this, "Text extracted successfully!", "AI OCR Success", JOptionPane.INFORMATION_MESSAGE);
+                        }
+                    });
+                } catch (Exception ex) {
+                    SwingUtilities.invokeLater(() -> {
+                        loadingDialog.dispose();
+                        JOptionPane.showMessageDialog(this, "Extraction failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    });
+                }
+            }).start();
+
+            loadingDialog.setVisible(true);
+        }
     }
 
     public void reload() {
