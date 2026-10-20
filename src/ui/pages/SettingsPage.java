@@ -2,7 +2,6 @@ package ui.pages;
 
 import ui.Theme;
 import ui.components.Avatar;
-import ui.components.CardIcons;
 import ui.components.RoundedPanel;
 import ui.components.ToggleSwitch;
 
@@ -51,7 +50,7 @@ public class SettingsPage extends JPanel {
     }
 
     private JPanel profileCard() {
-        JPanel card = card("Profile", CardIcons.person());
+        JPanel card = card("Profile");
 
         JPanel body = new JPanel(new BorderLayout(0, 14));
         body.setOpaque(false);
@@ -86,7 +85,7 @@ public class SettingsPage extends JPanel {
     }
 
     private JPanel appearanceCard() {
-        JPanel card = card("Appearance", CardIcons.palette());
+        JPanel card = card("Appearance");
 
         JPanel body = new JPanel();
         body.setOpaque(false);
@@ -142,7 +141,7 @@ public class SettingsPage extends JPanel {
     }
 
     private JPanel notificationsCard() {
-        JPanel card = card("Notifications", CardIcons.bell());
+        JPanel card = card("Notifications");
 
         JPanel body = new JPanel();
         body.setOpaque(false);
@@ -165,18 +164,16 @@ public class SettingsPage extends JPanel {
         return card;
     }
 
-    private JPanel card(String title, Icon icon) {
+    private JPanel card(String title) {
         JPanel card = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS, Theme.BORDER);
         card.setLayout(new BorderLayout());
         card.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
 
         JPanel header = new RoundedTopPanel(Theme.PRIMARY);
         header.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 6));
-        JLabel iconLabel = new JLabel(icon);
         JLabel titleLabel = new JLabel(title);
         titleLabel.setFont(Theme.HEADING);
         titleLabel.setForeground(Color.WHITE);
-        header.add(iconLabel);
         header.add(titleLabel);
 
         card.add(header, BorderLayout.NORTH);
