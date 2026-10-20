@@ -1,9 +1,5 @@
 package data;
 
-import model.Course;
-import model.Flashcard;
-import model.Note;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,6 +7,9 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import model.Course;
+import model.Flashcard;
+import model.Note;
 
 public class DataStore {
     private final String url;

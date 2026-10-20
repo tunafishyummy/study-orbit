@@ -1,6 +1,8 @@
 package ui.pages;
 
+import data.AIFlashcardService;
 import data.AppData;
+import data.FlashcardManager;
 import java.awt.*;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -21,10 +23,13 @@ public class CreateFlashcardPage extends JPanel {
     private JTextArea frontArea;
     private JTextArea backArea;
     private JTextField tagsField;
-
+    private JPanel suggestedContainer;
+    private FlashcardManager flashcardManager;
+    private AIFlashcardService aiService;
 
     public CreateFlashcardPage(Runnable onBack) {
-
+        flashcardManager = new FlashcardManager(AppData.get().getStoreReference());
+       aiService = new AIFlashcardService("GEMINI_API_KEY"); // Replace with your own
 
         setLayout(new BorderLayout());
         setBackground(Theme.BG);
@@ -41,12 +46,12 @@ public class CreateFlashcardPage extends JPanel {
         headerPanel.add(backToReviewBtn, BorderLayout.EAST);
         add(headerPanel, BorderLayout.NORTH);
 
-        // Split Content: Left = Note Viewer, Right = Manual Form + Suggested Header
+        // Split Content
         JPanel splitContent = new JPanel(new GridLayout(1, 2, 24, 0));
         splitContent.setOpaque(false);
         splitContent.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0));
 
-        // Left Panel: Note Reference Viewer
+        // Left Panel: Reference Note Viewer
         RoundedPanel leftPanel = new RoundedPanel(Theme.SURFACE, 16);
         leftPanel.setLayout(new BorderLayout(0, 10));
         leftPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -80,7 +85,7 @@ public class CreateFlashcardPage extends JPanel {
         leftPanel.add(noteScroll, BorderLayout.CENTER);
         splitContent.add(leftPanel);
 
-        // Right Panel: Form with Existing/New Deck Dropdown
+        // Right Panel: Form + AI Suggested Flashcards
         RoundedPanel rightPanel = new RoundedPanel(Theme.SURFACE, 16);
         rightPanel.setLayout(new BorderLayout());
         rightPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -96,7 +101,6 @@ public class CreateFlashcardPage extends JPanel {
         rightContentContainer.add(formTitle);
         rightContentContainer.add(Box.createVerticalStrut(12));
 
-        // Deck Selection Controls
         rightContentContainer.add(label("Select or Create Deck"));
         deckSelector = new JComboBox<>();
         deckSelector.setFont(Theme.BODY);
@@ -108,7 +112,7 @@ public class CreateFlashcardPage extends JPanel {
         newDeckField = new JTextField();
         newDeckField.setFont(Theme.BODY);
         newDeckField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
-        newDeckField.setVisible(false); // Hidden unless "+ Create New Deck" is selected
+        newDeckField.setVisible(false);
         rightContentContainer.add(newDeckField);
         rightContentContainer.add(Box.createVerticalStrut(10));
 
@@ -144,7 +148,7 @@ public class CreateFlashcardPage extends JPanel {
         saveCardBtn.addActionListener(e -> saveFlashcard());
         rightContentContainer.add(saveCardBtn);
 
-        // Divider
+        // Section Divider
         rightContentContainer.add(Box.createVerticalStrut(20));
         JPanel line = new JPanel();
         line.setBackground(Theme.BORDER);
@@ -152,7 +156,7 @@ public class CreateFlashcardPage extends JPanel {
         rightContentContainer.add(line);
         rightContentContainer.add(Box.createVerticalStrut(16));
 
-        // Suggested Flashcards Placeholder Section
+        // AI Suggested Flashcards Section
         JLabel suggestedTitle = new JLabel("Suggested Flashcards");
         suggestedTitle.setFont(Theme.HEADING);
         suggestedTitle.setForeground(Theme.TEXT);
@@ -160,9 +164,17 @@ public class CreateFlashcardPage extends JPanel {
         rightContentContainer.add(suggestedTitle);
         rightContentContainer.add(Box.createVerticalStrut(6));
 
-        JLabel suggestedSubtitle = Theme.muted("Auto-generated cards from notes coming soon...");
-        suggestedSubtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
-        rightContentContainer.add(suggestedSubtitle);
+        JButton generateAiBtn = Theme.button("Generate Cards from Note (AI)");
+        generateAiBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+        generateAiBtn.addActionListener(e -> fetchAiSuggestions());
+        rightContentContainer.add(generateAiBtn);
+        rightContentContainer.add(Box.createVerticalStrut(10));
+
+        suggestedContainer = new JPanel();
+        suggestedContainer.setLayout(new BoxLayout(suggestedContainer, BoxLayout.Y_AXIS));
+        suggestedContainer.setOpaque(false);
+        suggestedContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rightContentContainer.add(suggestedContainer);
 
         JScrollPane rightScroll = new JScrollPane(rightContentContainer);
         rightScroll.setBorder(null);
@@ -191,13 +203,73 @@ public class CreateFlashcardPage extends JPanel {
         return l;
     }
 
+    private void fetchAiSuggestions() {
+        Note selected = (Note) noteSelector.getSelectedItem();
+        if (selected == null || selected.getBody().isBlank()) {
+            JOptionPane.showMessageDialog(this, "Please select a valid note first.", "Warning", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        suggestedContainer.removeAll();
+        JLabel loadingLabel = Theme.muted("Generating suggestions with Gemini API...");
+        loadingLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        suggestedContainer.add(loadingLabel);
+        suggestedContainer.revalidate();
+        suggestedContainer.repaint();
+
+        // Run network call on a background thread to keep UI smooth
+        new Thread(() -> {
+            try {
+                List<AIFlashcardService.SuggestedCard> suggestions = aiService.generateSuggestions(selected.getTitle(), selected.getBody());
+                SwingUtilities.invokeLater(() -> displaySuggestions(suggestions));
+            } catch (Exception ex) {
+                SwingUtilities.invokeLater(() -> {
+                    suggestedContainer.removeAll();
+                    JLabel errLabel = new JLabel("Failed to generate: " + ex.getMessage());
+                    errLabel.setForeground(Color.RED);
+                    errLabel.setFont(Theme.BODY);
+                    suggestedContainer.add(errLabel);
+                    suggestedContainer.revalidate();
+                    suggestedContainer.repaint();
+                });
+            }
+        }).start();
+    }
+
+    private void displaySuggestions(List<AIFlashcardService.SuggestedCard> suggestions) {
+        suggestedContainer.removeAll();
+        if (suggestions.isEmpty()) {
+            JLabel emptyLabel = Theme.muted("No suggestions generated.");
+            emptyLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            suggestedContainer.add(emptyLabel);
+        } else {
+            for (AIFlashcardService.SuggestedCard sc : suggestions) {
+                JButton itemBtn = Theme.button("Q: " + sc.front);
+                itemBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+                itemBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 35));
+                itemBtn.addActionListener(e -> {
+                    frontArea.setText(sc.front);
+                    backArea.setText(sc.back);
+                });
+                suggestedContainer.add(itemBtn);
+                suggestedContainer.add(Box.createVerticalStrut(6));
+            }
+        }
+        suggestedContainer.revalidate();
+        suggestedContainer.repaint();
+    }
+
     public void refreshDecksDropdown() {
         deckSelector.removeAllItems();
         Set<String> existingDecks = new LinkedHashSet<>();
         
-        for (Flashcard f : AppData.get().getFlashcards()) {
-            if (f.getDeckTitle() != null && !f.getDeckTitle().isBlank()) {
-                existingDecks.add(f.getDeckTitle());
+        // Safely iterate through flashcards to prevent type mismatch casting errors
+        for (Object obj : AppData.get().getFlashcards()) {
+            if (obj instanceof Flashcard) {
+                Flashcard f = (Flashcard) obj;
+                if (f.getDeckTitle() != null && !f.getDeckTitle().isBlank()) {
+                    existingDecks.add(f.getDeckTitle());
+                }
             }
         }
 
@@ -270,6 +342,7 @@ public class CreateFlashcardPage extends JPanel {
             if (!tagText.isBlank()) {
                 for (String t : tagText.split(",")) tags.add(t.trim());
             }
+            flashcardManager.addFlashcard(deck, front, back, tags);
             JOptionPane.showMessageDialog(this, "Successfully added");
             frontArea.setText("");
             backArea.setText("");

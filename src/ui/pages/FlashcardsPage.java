@@ -2,6 +2,9 @@ package ui.pages;
 
 import data.AppData;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -12,11 +15,18 @@ import ui.components.RoundedPanel;
 
 public class FlashcardsPage extends JPanel {
     private JPanel deckListPanel;
-    private JLabel titleLabel;
-    private JTextArea bodyTextArea;
+    private JLabel cardLabel;
+    private RoundedPanel flashcardCard;
     private String selectedDeck = null;
     private List<Flashcard> currentDeckCards;
     private int currentIndex = 0;
+    private boolean showingFront = true;
+
+    // Animation state variables
+    private Timer flipTimer;
+    private boolean isFlipping = false;
+    private float scaleX = 1.0f; 
+    private boolean flippingToBack = false;
 
     public FlashcardsPage(Runnable onNavigateToCreate) {
         setLayout(new BorderLayout());
@@ -40,24 +50,58 @@ public class FlashcardsPage extends JPanel {
         deckScroll.setBorder(null);
         content.add(deckScroll, BorderLayout.WEST);
 
-        RoundedPanel flashcardCard = new RoundedPanel(Theme.SURFACE, 20);
+        // Custom animated card container panel overriding paintComponent for scaling
+        flashcardCard = new RoundedPanel(Theme.SURFACE, 20) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                if (scaleX < 1.0f) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    int w = getWidth();
+                    int h = getHeight();
+                    int newW = Math.max(1, (int) (w * scaleX));
+                    int offsetX = (w - newW) / 2;
+
+                    g2.translate(offsetX, 0);
+                    g2.scale(scaleX, 1.0);
+                    super.paintComponent(g2);
+                    g2.dispose();
+                } else {
+                    super.paintComponent(g);
+                }
+            }
+        };
         flashcardCard.setLayout(new BorderLayout());
-        flashcardCard.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
+        flashcardCard.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        titleLabel = new JLabel("SELECT A DECK", SwingConstants.CENTER);
-        titleLabel.setFont(Theme.HEADING);
-        titleLabel.setForeground(Theme.TEXT);
-        flashcardCard.add(titleLabel, BorderLayout.NORTH);
+        // Center Panel using GridBagLayout to guarantee absolute vertical & horizontal centering
+        JPanel centerPanel = new JPanel(new GridBagLayout());
+        centerPanel.setOpaque(false);
 
-        bodyTextArea = new JTextArea("No flashcards available. Click 'ADD FLASHCARD' to generate them from your notes!");
-        bodyTextArea.setFont(Theme.BODY);
-        bodyTextArea.setForeground(Theme.TEXT);
-        bodyTextArea.setLineWrap(true);
-        bodyTextArea.setWrapStyleWord(true);
-        bodyTextArea.setEditable(false);
-        bodyTextArea.setOpaque(false);
-        bodyTextArea.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
-        flashcardCard.add(bodyTextArea, BorderLayout.CENTER);
+        cardLabel = new JLabel("", SwingConstants.CENTER);
+        cardLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        cardLabel.setForeground(Theme.TEXT);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.anchor = GridBagConstraints.CENTER;
+        centerPanel.add(cardLabel, gbc);
+
+        flashcardCard.add(centerPanel, BorderLayout.CENTER);
+
+        // Click anywhere on the card to trigger animated flip
+        MouseAdapter flipClickListener = new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                startFlipAnimation();
+            }
+        };
+        flashcardCard.addMouseListener(flipClickListener);
+        centerPanel.addMouseListener(flipClickListener);
+        cardLabel.addMouseListener(flipClickListener);
 
         JPanel cardNav = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         cardNav.setOpaque(false);
@@ -75,9 +119,48 @@ public class FlashcardsPage extends JPanel {
         refreshDecks(onNavigateToCreate);
     }
 
+    private void startFlipAnimation() {
+        if (isFlipping || currentDeckCards == null || currentDeckCards.isEmpty()) return;
+
+        isFlipping = true;
+        flippingToBack = showingFront;
+
+        flipTimer = new Timer(15, e -> {
+            if (flippingToBack == showingFront) {
+                scaleX -= 0.15f;
+                if (scaleX <= 0.0f) {
+                    scaleX = 0.0f;
+                    showingFront = !showingFront;
+                    displayCurrentCard();
+                }
+            } else {
+                scaleX += 0.15f;
+                if (scaleX >= 1.0f) {
+                    scaleX = 1.0f;
+                    isFlipping = false;
+                    ((Timer) e.getSource()).stop();
+                }
+            }
+            flashcardCard.repaint();
+        });
+        flipTimer.start();
+    }
+
+    private void setCardText(String text) {
+        String escaped = text != null ? text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br/>") : "";
+        cardLabel.setText("<html><div style='text-align: center; padding: 20px;'>" + escaped + "</div></html>");
+    }
+
     public void refreshDecks(Runnable onNavigateToCreate) {
         deckListPanel.removeAll();
-        List<Flashcard> allCards = AppData.get().getFlashcards();
+        
+        List<Flashcard> allCards = new ArrayList<>();
+        for (Object obj : AppData.get().getFlashcards()) {
+            if (obj instanceof Flashcard) {
+                allCards.add((Flashcard) obj);
+            }
+        }
+
         Set<String> decks = new LinkedHashSet<>();
         Set<String> seenLower = new java.util.HashSet<>();
 
@@ -135,41 +218,50 @@ public class FlashcardsPage extends JPanel {
     }
 
     private void updateCardDisplay(List<Flashcard> allCards) {
-        currentDeckCards = new java.util.ArrayList<>();
+        currentDeckCards = new ArrayList<>();
         if (selectedDeck != null) {
             for (Flashcard f : allCards) {
                 if (f.getDeckTitle().equalsIgnoreCase(selectedDeck)) currentDeckCards.add(f);
             }
         }
         currentIndex = 0;
+        showingFront = true;
+        scaleX = 1.0f;
         displayCurrentCard();
     }
 
     private void displayCurrentCard() {
         if (currentDeckCards != null && !currentDeckCards.isEmpty()) {
             Flashcard f = currentDeckCards.get(currentIndex);
-            titleLabel.setText(f.getFront());
-            bodyTextArea.setText(f.getBack());
+            if (showingFront) {
+                setCardText(f.getFront());
+            } else {
+                setCardText(f.getBack());
+            }
         } else if (selectedDeck != null) {
-            titleLabel.setText(selectedDeck.toUpperCase());
-            bodyTextArea.setText("No flashcards in this deck yet. Click 'ADD FLASHCARD' to generate them from your notes!");
+            setCardText("No flashcards in this deck yet.<br>Click 'ADD FLASHCARD' to generate them from your notes!");
         } else {
-            titleLabel.setText("NO DECKS YET");
-            bodyTextArea.setText("Create a flashcard from your notes to start reviewing!");
+            setCardText("NO DECKS YET<br>Create a flashcard from your notes to start reviewing!");
         }
     }
 
     private void showNextCard() {
         if (currentDeckCards != null && !currentDeckCards.isEmpty()) {
             currentIndex = (currentIndex + 1) % currentDeckCards.size();
+            showingFront = true;
+            scaleX = 1.0f;
             displayCurrentCard();
+            flashcardCard.repaint();
         }
     }
 
     private void showPreviousCard() {
         if (currentDeckCards != null && !currentDeckCards.isEmpty()) {
             currentIndex = (currentIndex - 1 + currentDeckCards.size()) % currentDeckCards.size();
+            showingFront = true;
+            scaleX = 1.0f;
             displayCurrentCard();
+            flashcardCard.repaint();
         }
     }
 }

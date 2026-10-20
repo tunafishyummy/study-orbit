@@ -3,7 +3,7 @@ cd /d "%~dp0"
 if not exist out mkdir out
 if exist sources.txt del sources.txt
 for /f "delims=" %%f in ('dir /s /b src\*.java') do call :writeSource "%%f"
-javac -encoding UTF-8 -d out @sources.txt
+javac -encoding UTF-8 -cp "lib/*" -d out @sources.txt
 set BUILD_RESULT=%errorlevel%
 if exist sources.txt del sources.txt
 if not "%BUILD_RESULT%"=="0" (
