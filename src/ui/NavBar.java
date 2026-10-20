@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 import javax.swing.*;
 
 public class NavBar extends JPanel {
+    private static final int NAVBAR_EDGE_MARGIN = 40;
 
     // Same order as the sidebar in the design
     public static final String[] PAGES = {
@@ -63,12 +64,13 @@ public class NavBar extends JPanel {
         name.setForeground(Theme.NAVBAR_TEXT);
         name.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        add(Box.createVerticalStrut(10));
+        add(Box.createVerticalStrut(NAVBAR_EDGE_MARGIN));
         add(logo);
         add(Box.createVerticalStrut(4));
         add(name);
         add(Box.createVerticalStrut(12));
 
+        add(Box.createVerticalGlue());
         for (String page : PAGES) {
             final NavButton button = new NavButton(page);
             button.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -78,8 +80,11 @@ public class NavBar extends JPanel {
                 onNavigate.accept(page);
             });
             add(button);
-            add(Box.createVerticalStrut(5));
+            if (!page.equals(PAGES[PAGES.length - 1])) {
+                add(Box.createVerticalGlue());
+            }
         }
+        add(Box.createVerticalStrut(NAVBAR_EDGE_MARGIN));
 
         select(selectedPage);
     }
