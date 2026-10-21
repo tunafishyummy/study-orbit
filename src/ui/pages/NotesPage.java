@@ -13,6 +13,7 @@ import javax.swing.*;
 import model.Course;
 import model.Note;
 import ui.Theme;
+import ui.components.NativeFileDialog;
 import ui.components.RoundedComboBox;
 import ui.components.RoundedTextArea;
 import ui.components.RoundedTextField;
@@ -139,14 +140,12 @@ public class NotesPage extends JPanel {
 
     private void uploadAndExtractImageText() {
         Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
-        FileDialog fileDialog = new FileDialog(parentFrame, "Select Image or Document for AI Text Extraction", FileDialog.LOAD);
-        fileDialog.setVisible(true);
+        NativeFileDialog fileDialog = new NativeFileDialog();
+        File selectedFile = fileDialog.open("Select Image or Document for AI Text Extraction",
+                "Images and documents",
+                new String[] { "png", "jpg", "jpeg", "webp", "bmp", "pdf", "docx", "txt" });
 
-        String filename = fileDialog.getFile();
-        String directory = fileDialog.getDirectory(); // Fixed from fileDialog.get()
-
-        if (filename != null && directory != null) {
-            File selectedFile = new File(directory, filename);
+        if (selectedFile != null) {
             
             JDialog loadingDialog = new JDialog(parentFrame, "Processing", true);
             JLabel msg = new JLabel("  Extracting text with Gemini AI...", JLabel.CENTER);
