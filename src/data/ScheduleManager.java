@@ -91,6 +91,11 @@ public class ScheduleManager {
         store.saveDeadlines(deadlines);
     }
 
+    public void addDeadline(String courseCode, String title, LocalDate dueDate, LocalTime dueTime) throws IOException {
+        deadlines.add(new Deadline(courseCode, title, dueDate, dueTime));
+        store.saveDeadlines(deadlines);
+    }
+
     public void updateDeadline(Deadline deadline) throws IOException {
         store.saveDeadlines(deadlines);
     }
