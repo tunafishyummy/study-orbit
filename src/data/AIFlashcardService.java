@@ -108,7 +108,7 @@ public class AIFlashcardService {
         }
 
         // Updated to gemini-3.8-flash
-        String endpoint = "[https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=](https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=)" + apiKey;
+        String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=" + apiKey;
         
         String base64Data = Base64.getEncoder().encodeToString(imageBytes);
 
