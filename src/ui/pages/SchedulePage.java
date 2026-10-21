@@ -52,6 +52,11 @@ public class SchedulePage extends JPanel {
         viewPanel.add(deadlinesCard(), "Deadlines");
         add(viewPanel, BorderLayout.CENTER);
 
+        JPanel bottomBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        bottomBar.setOpaque(false);
+        bottomBar.add(addButton);
+        add(bottomBar, BorderLayout.SOUTH);
+
         schedulePill.addActionListener(e -> showTab(true));
         deadlinesPill.addActionListener(e -> showTab(false));
         addButton.addActionListener(e -> {
@@ -87,7 +92,6 @@ public class SchedulePage extends JPanel {
         right.add(modeLabel);
         right.add(schedulePill);
         right.add(deadlinesPill);
-        right.add(addButton);
         header.add(right, BorderLayout.EAST);
         return header;
     }
