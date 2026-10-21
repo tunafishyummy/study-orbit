@@ -48,6 +48,10 @@ public class ActivityManager {
         store.saveActivity(activity);
     }
 
+    public java.util.List<StudyActivity> getAll() {
+        return new ArrayList<StudyActivity>(activity);
+    }
+
     public boolean isActive(LocalDate date) {
         String profileId = activeProfileId();
         for (int index = 0; index < activity.size(); index++) {

@@ -69,4 +69,8 @@ public class SettingsManager {
     public void setInt(String key, int value) throws IOException {
         set(key, Integer.toString(value));
     }
+
+    public Map<String, String> getAll() {
+        return new LinkedHashMap<String, String>(values);
+    }
 }
