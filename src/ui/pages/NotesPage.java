@@ -2,6 +2,7 @@ package ui.pages;
 
 import data.AIFlashcardService;
 import data.AppData;
+import data.DocumentTextReader;
 import data.NoteManager;
 import java.awt.*;
 import java.io.File;
@@ -31,8 +32,6 @@ public class NotesPage extends JPanel {
     private final JComboBox<String> courseBox = new RoundedComboBox<>();
     private final JTextField tagsField = new RoundedTextField();
     private final JTextArea bodyArea = new RoundedTextArea();
-    private final AIFlashcardService aiService = new AIFlashcardService(
-            AppData.settings().get(data.SettingsManager.API_KEY, ""));
     private Note current; // null = writing a new note
     private boolean loading;
 
@@ -146,46 +145,78 @@ public class NotesPage extends JPanel {
                 "Images and documents",
                 new String[] { "png", "jpg", "jpeg", "webp", "bmp", "pdf", "docx", "txt" });
 
-        if (selectedFile != null) {
-            
-            JDialog loadingDialog = new JDialog(parentFrame, "Processing", true);
-            JLabel msg = new JLabel("  Extracting text with Gemini AI...", JLabel.CENTER);
-            loadingDialog.add(msg);
-            loadingDialog.setSize(260, 90);
-            loadingDialog.setLocationRelativeTo(this);
+        if (selectedFile == null) {
+            return;
+        }
 
-            new Thread(() -> {
-                try {
-                    byte[] fileBytes = Files.readAllBytes(selectedFile.toPath());
-                    String mimeType = "image/jpeg";
-                    String nameLower = selectedFile.getName().toLowerCase();
-                    if (nameLower.endsWith(".png")) {
-                        mimeType = "image/png";
-                    } else if (nameLower.endsWith(".pdf")) {
-                        mimeType = "application/pdf";
+        DocumentTextReader reader = new DocumentTextReader();
+        if (reader.isLocalDocument(selectedFile)) {
+            try {
+                insertExtractedText(reader.read(selectedFile));
+                JOptionPane.showMessageDialog(this, "Document text added.", "Import", JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException exception) {
+                JOptionPane.showMessageDialog(this, "Could not read the document: " + exception.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+            return;
+        }
+
+        JDialog loadingDialog = new JDialog(parentFrame, "Processing", false);
+        JLabel message = new JLabel("  Extracting text with Gemini AI...", JLabel.CENTER);
+        loadingDialog.add(message);
+        loadingDialog.setSize(300, 90);
+        loadingDialog.setLocationRelativeTo(this);
+        loadingDialog.setVisible(true);
+
+        new Thread(() -> {
+            try {
+                byte[] fileBytes = Files.readAllBytes(selectedFile.toPath());
+                AIFlashcardService service = new AIFlashcardService(
+                        AppData.settings().get(data.SettingsManager.API_KEY, ""));
+                String extractedText = service.extractTextFromImage(fileBytes, mimeTypeFor(selectedFile));
+                SwingUtilities.invokeLater(() -> {
+                    loadingDialog.dispose();
+                    if (extractedText.isEmpty() == false) {
+                        insertExtractedText(extractedText);
+                        JOptionPane.showMessageDialog(this, "Text extracted successfully!",
+                                "AI OCR Success", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this, "No text was found in that file.",
+                                "AI OCR", JOptionPane.INFORMATION_MESSAGE);
                     }
+                });
+            } catch (Exception exception) {
+                SwingUtilities.invokeLater(() -> {
+                    loadingDialog.dispose();
+                    JOptionPane.showMessageDialog(this, "Extraction failed: " + exception.getMessage(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                });
+            }
+        }).start();
+    }
 
-                    String extractedText = aiService.extractTextFromImage(fileBytes, mimeType);
-                    SwingUtilities.invokeLater(() -> {
-                        loadingDialog.dispose();
-                        if (!extractedText.isEmpty()) {
-                            if (bodyArea.getText().isBlank()) {
-                                bodyArea.setText(extractedText);
-                            } else {
-                                bodyArea.append("\n\n" + extractedText);
-                            }
-                            JOptionPane.showMessageDialog(this, "Text extracted successfully!", "AI OCR Success", JOptionPane.INFORMATION_MESSAGE);
-                        }
-                    });
-                } catch (Exception ex) {
-                    SwingUtilities.invokeLater(() -> {
-                        loadingDialog.dispose();
-                        JOptionPane.showMessageDialog(this, "Extraction failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    });
-                }
-            }).start();
+    private String mimeTypeFor(File file) {
+        String name = file.getName().toLowerCase();
+        if (name.endsWith(".png")) {
+            return "image/png";
+        }
+        if (name.endsWith(".webp")) {
+            return "image/webp";
+        }
+        if (name.endsWith(".bmp")) {
+            return "image/bmp";
+        }
+        if (name.endsWith(".pdf")) {
+            return "application/pdf";
+        }
+        return "image/jpeg";
+    }
 
-            loadingDialog.setVisible(true);
+    private void insertExtractedText(String text) {
+        if (bodyArea.getText().isBlank()) {
+            bodyArea.setText(text);
+        } else {
+            bodyArea.append("\n\n" + text);
         }
     }
 
