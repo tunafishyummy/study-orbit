@@ -38,6 +38,13 @@ public class DataStore {
         return DriverManager.getConnection(url);
     }
 
+    private LocalDateTime readTime(String value) {
+        if (value == null || value.isEmpty()) {
+            return LocalDateTime.now();
+        }
+        return LocalDateTime.parse(value);
+    }
+
     private void initDatabase() {
         String createCourses = "CREATE TABLE IF NOT EXISTS courses (code TEXT PRIMARY KEY, title TEXT NOT NULL, color_hex TEXT)";
         String createNotes = "CREATE TABLE IF NOT EXISTS notes (id TEXT PRIMARY KEY, title TEXT NOT NULL, body TEXT, course_code TEXT, tags TEXT, created TEXT, edited TEXT)";
@@ -90,7 +97,7 @@ public class DataStore {
                     String tagText = rs.getString("tags");
                     List<String> tags = new ArrayList<>();
                     if (tagText != null && !tagText.isBlank()) for (String t : tagText.split(",")) tags.add(t.trim());
-                    notes.add(new Note(rs.getString("id"), rs.getString("title"), rs.getString("body"), rs.getString("course_code"), tags, LocalDateTime.parse(rs.getString("created")), LocalDateTime.parse(rs.getString("edited"))));
+                    notes.add(new Note(rs.getString("id"), rs.getString("title"), rs.getString("body"), rs.getString("course_code"), tags, readTime(rs.getString("created")), readTime(rs.getString("edited"))));
                 }
             }
             try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT * FROM flashcards")) {
@@ -98,7 +105,7 @@ public class DataStore {
                     String tagText = rs.getString("tags");
                     List<String> tags = new ArrayList<>();
                     if (tagText != null && !tagText.isBlank()) for (String t : tagText.split(",")) tags.add(t.trim());
-                    flashcards.add(new Flashcard(rs.getString("id"), rs.getString("deck_title"), rs.getString("course_code"), rs.getString("front"), rs.getString("back"), tags, LocalDateTime.parse(rs.getString("created"))));
+                    flashcards.add(new Flashcard(rs.getString("id"), rs.getString("deck_title"), rs.getString("course_code"), rs.getString("front"), rs.getString("back"), tags, readTime(rs.getString("created"))));
                 }
             }
         } catch (SQLException e) {
@@ -163,7 +170,7 @@ public class DataStore {
                         rs.getString("id"),
                         rs.getString("name"),
                         rs.getString("avatar_color"),
-                        LocalDateTime.parse(rs.getString("created"))));
+                        readTime(rs.getString("created"))));
             }
         } catch (SQLException e) {
             throw new IOException("Error loading profiles", e);
