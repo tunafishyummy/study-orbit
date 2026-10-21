@@ -69,7 +69,7 @@ public class CreateFlashcardPage extends JPanel {
     public CreateFlashcardPage(Runnable onBack) {
         this.onBackCallback = onBack;
         flashcardManager = new FlashcardManager(AppData.get().getStoreReference());
-        aiService = new AIFlashcardService("GEMINI_API_KEY");
+        aiService = new AIFlashcardService(AppData.settings().get(data.SettingsManager.API_KEY, ""));
 
         setLayout(new BorderLayout());
         setBackground(Theme.BG);
