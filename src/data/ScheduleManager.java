@@ -86,6 +86,14 @@ public class ScheduleManager {
         store.saveClasses(classes);
     }
 
+    public void saveClasses() throws IOException {
+        store.saveClasses(classes);
+    }
+
+    public void saveDeadlines() throws IOException {
+        store.saveDeadlines(deadlines);
+    }
+
     public void addDeadline(String courseCode, String title, LocalDate dueDate) throws IOException {
         deadlines.add(new Deadline(courseCode, title, dueDate));
         store.saveDeadlines(deadlines);

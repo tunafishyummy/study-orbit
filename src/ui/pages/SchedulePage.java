@@ -18,6 +18,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -43,10 +44,13 @@ public class SchedulePage extends JPanel {
     private final JButton schedulePill = pill("Schedule");
     private final JButton deadlinesPill = pill("Deadlines");
     private final JButton addButton = Theme.primaryButton("Add class");
+    private final JButton saveButton = Theme.primaryButton("Save changes");
     private final WeekGrid weekGrid = new WeekGrid();
     private final JLabel weekLabel = new JLabel();
     private final JPanel weekColumns = new JPanel();
     private boolean scheduleMode = true;
+    private boolean classesChanged;
+    private boolean deadlinesChanged;
     private LocalDate weekStart = startOfWeek(LocalDate.now());
 
     public SchedulePage() {
@@ -61,8 +65,12 @@ public class SchedulePage extends JPanel {
         viewPanel.add(deadlinesCard(), "Deadlines");
         add(viewPanel, BorderLayout.CENTER);
 
-        JPanel bottomBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        saveButton.setEnabled(false);
+        saveButton.addActionListener(e -> saveChanges());
+
+        JPanel bottomBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         bottomBar.setOpaque(false);
+        bottomBar.add(saveButton);
         bottomBar.add(addButton);
         add(bottomBar, BorderLayout.SOUTH);
 
@@ -212,6 +220,32 @@ public class SchedulePage extends JPanel {
     private void navigateWeek(int days) {
         weekStart = weekStart.plusDays(days);
         refreshDeadlines();
+    }
+
+    private void markClassesChanged() {
+        classesChanged = true;
+        saveButton.setEnabled(true);
+    }
+
+    private void markDeadlinesChanged() {
+        deadlinesChanged = true;
+        saveButton.setEnabled(true);
+    }
+
+    private void saveChanges() {
+        try {
+            if (classesChanged) {
+                schedule.saveClasses();
+                classesChanged = false;
+            }
+            if (deadlinesChanged) {
+                schedule.saveDeadlines();
+                deadlinesChanged = false;
+            }
+            saveButton.setEnabled(classesChanged || deadlinesChanged);
+        } catch (Exception exception) {
+            System.out.println("Could not save changes: " + exception.getMessage());
+        }
     }
 
     private void refresh() {
@@ -391,6 +425,8 @@ public class SchedulePage extends JPanel {
             menu.add(delete);
 
             addMouseListener(new MouseAdapter() {
+                private Point pressedAt;
+
                 @Override
                 public void mouseEntered(MouseEvent event) {
                     hovered = true;
@@ -405,20 +441,54 @@ public class SchedulePage extends JPanel {
 
                 @Override
                 public void mousePressed(MouseEvent event) {
-                    showMenu(event);
+                    if (event.isPopupTrigger()) {
+                        menu.show(DeadlineCard.this, event.getX(), event.getY());
+                        return;
+                    }
+                    pressedAt = event.getPoint();
                 }
 
                 @Override
                 public void mouseReleased(MouseEvent event) {
-                    showMenu(event);
-                }
-
-                private void showMenu(MouseEvent event) {
                     if (event.isPopupTrigger()) {
                         menu.show(DeadlineCard.this, event.getX(), event.getY());
+                        return;
+                    }
+                    if (pressedAt == null) {
+                        return;
+                    }
+                    boolean moved = Math.abs(event.getX() - pressedAt.x) > 8
+                            || Math.abs(event.getY() - pressedAt.y) > 8;
+                    pressedAt = null;
+                    if (moved) {
+                        dropOn(event.getPoint());
                     }
                 }
             });
+
+            addMouseMotionListener(new MouseMotionAdapter() {
+                @Override
+                public void mouseDragged(MouseEvent event) {
+                    setCursor(new Cursor(Cursor.MOVE_CURSOR));
+                }
+            });
+        }
+
+        private void dropOn(Point point) {
+            Point local = SwingUtilities.convertPoint(DeadlineCard.this, point, weekColumns);
+            Component target = weekColumns.getComponentAt(local);
+            if (target instanceof JComponent) {
+                Object value = ((JComponent) target).getClientProperty("date");
+                if (value instanceof LocalDate) {
+                    LocalDate date = (LocalDate) value;
+                    if (date.equals(deadline.getDueDate()) == false) {
+                        deadline.setDueDate(date);
+                        markDeadlinesChanged();
+                        refreshDeadlines();
+                    }
+                }
+            }
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
         }
 
         private Color readableOn(Color color) {
@@ -508,7 +578,7 @@ public class SchedulePage extends JPanel {
         JTextField titleField = new RoundedTextField();
         JTextField dateField = new RoundedTextField();
         JTextField timeField = new RoundedTextField();
-        dateField.setText(LocalDate.now().plusDays(7).toString());
+        dateField.setText(weekStart.toString());
         timeField.setText("23:59");
 
         JComboBox<String> courseBox = new RoundedComboBox<>();
@@ -562,8 +632,92 @@ public class SchedulePage extends JPanel {
         private final int START_HOUR = 7;
         private final int END_HOUR = 17;
 
+        private ScheduleClass draggedClass;
+        private boolean draggingClass;
+
         WeekGrid() {
             setOpaque(false);
+
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent event) {
+                    draggedClass = classAt(event.getPoint());
+                    draggingClass = false;
+                }
+
+                @Override
+                public void mouseReleased(MouseEvent event) {
+                    if (draggingClass && draggedClass != null) {
+                        int dayIndex = dayIndexAt(event.getX());
+                        if (dayIndex >= 0) {
+                            String day = DAYS[dayIndex];
+                            if (day.equals(draggedClass.getDay()) == false) {
+                                draggedClass.setDay(day);
+                                markClassesChanged();
+                            }
+                        }
+                    }
+                    draggedClass = null;
+                    draggingClass = false;
+                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                    repaint();
+                }
+            });
+
+            addMouseMotionListener(new MouseMotionAdapter() {
+                @Override
+                public void mouseDragged(MouseEvent event) {
+                    if (draggedClass == null) {
+                        return;
+                    }
+                    draggingClass = true;
+                    setCursor(new Cursor(Cursor.MOVE_CURSOR));
+                    repaint();
+                }
+            });
+        }
+
+        private ScheduleClass classAt(Point point) {
+            int labelWidth = 64;
+            int headerHeight = 28;
+            double columnWidth = (getWidth() - labelWidth) / 7.0;
+            double rowHeight = (getHeight() - headerHeight) / (double) (END_HOUR - START_HOUR);
+
+            List<ScheduleClass> classes = schedule.getClasses();
+            for (int index = 0; index < classes.size(); index++) {
+                ScheduleClass item = classes.get(index);
+                int dayIndex = Arrays.asList(DAYS).indexOf(item.getDay());
+                if (dayIndex < 0) {
+                    continue;
+                }
+                double startMinutes = item.getStart().getHour() * 60.0 + item.getStart().getMinute() - START_HOUR * 60.0;
+                double endMinutes = item.getEnd().getHour() * 60.0 + item.getEnd().getMinute() - START_HOUR * 60.0;
+                int x = (int) (labelWidth + dayIndex * columnWidth) + 3;
+                int y = (int) (headerHeight + (startMinutes / 60.0) * rowHeight);
+                int width = (int) columnWidth - 6;
+                int height = (int) (((endMinutes - startMinutes) / 60.0) * rowHeight);
+                if (height < 18) {
+                    height = 18;
+                }
+                Rectangle bounds = new Rectangle(x, y, width, height);
+                if (bounds.contains(point)) {
+                    return item;
+                }
+            }
+            return null;
+        }
+
+        private int dayIndexAt(int x) {
+            int labelWidth = 64;
+            double columnWidth = (getWidth() - labelWidth) / 7.0;
+            if (x < labelWidth) {
+                return -1;
+            }
+            int index = (int) ((x - labelWidth) / columnWidth);
+            if (index < 0 || index > 6) {
+                return -1;
+            }
+            return index;
         }
 
         @Override
@@ -633,7 +787,11 @@ public class SchedulePage extends JPanel {
                 color = Theme.parse(course.getColorHex());
             }
 
-            g2.setColor(color);
+            if (draggingClass && item == draggedClass) {
+                g2.setColor(color.brighter());
+            } else {
+                g2.setColor(color);
+            }
             g2.fillRoundRect(x, y, width, height, 8, 8);
 
             g2.setColor(Color.WHITE);
