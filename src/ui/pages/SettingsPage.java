@@ -161,6 +161,33 @@ public class SettingsPage extends JPanel {
         JPanel row = row("Large Text", "Make the app easier to read");
         row.add(switchHolder(largeToggle), BorderLayout.EAST);
         body.add(row);
+        body.add(Box.createVerticalStrut(8));
+        body.add(line());
+        body.add(Box.createVerticalStrut(8));
+
+        body.add(row("Time format", "12 hour or 24 hour clock"));
+        body.add(Box.createVerticalStrut(6));
+
+        JComboBox<String> timeBox = new RoundedComboBox<>(new String[] { "12-hour", "24-hour" });
+        if ("24".equals(AppData.settings().get(SettingsManager.TIME_FORMAT, "12"))) {
+            timeBox.setSelectedItem("24-hour");
+        }
+        timeBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        timeBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+        timeBox.addActionListener(e -> {
+            String value = "12";
+            if ("24-hour".equals(timeBox.getSelectedItem())) {
+                value = "24";
+            }
+            try {
+                AppData.settings().set(SettingsManager.TIME_FORMAT, value);
+                Theme.setTime24("24".equals(value));
+                rebuild();
+            } catch (IOException exception) {
+                showError(exception);
+            }
+        });
+        body.add(timeBox);
         body.add(Box.createVerticalGlue());
 
         card.add(body, BorderLayout.CENTER);

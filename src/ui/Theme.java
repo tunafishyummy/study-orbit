@@ -1,6 +1,8 @@
 package ui;
 
 import java.awt.*;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import javax.swing.*;
 import ui.components.RoundedButton;
@@ -37,6 +39,7 @@ public final class Theme {
     };
     private static final Font KUMBH_SANS = Assets.font("KumbhSans.ttf", Font.PLAIN, 14);
     private static boolean largeText;
+    private static boolean time24;
     public static Font TITLE = font(Font.BOLD, 26);
     public static Font HEADING = font(Font.BOLD, 16);
     public static Font BODY = font(Font.PLAIN, 14);
@@ -97,6 +100,17 @@ public final class Theme {
 
     public static boolean isLargeText() {
         return largeText;
+    }
+
+    public static void setTime24(boolean value) {
+        time24 = value;
+    }
+
+    public static String formatTime(LocalTime time) {
+        if (time24) {
+            return time.format(DateTimeFormatter.ofPattern("HH:mm"));
+        }
+        return time.format(DateTimeFormatter.ofPattern("h:mm a"));
     }
 
     public static JPanel card() {

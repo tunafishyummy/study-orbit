@@ -11,6 +11,7 @@ public class SettingsManager {
     public static final String DEADLINE_REMINDERS = "deadline_reminders";
     public static final String DAILY_REVIEW_REMINDERS = "daily_review_reminders";
     public static final String API_KEY = "api_key";
+    public static final String TIME_FORMAT = "time_format";
     public static final String FIRST_RUN_DONE = "first_run_done";
     public static final String WEEKLY_GOAL = "weekly_goal";
 

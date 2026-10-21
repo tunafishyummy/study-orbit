@@ -512,7 +512,7 @@ public class SchedulePage extends JPanel {
     }
 
     private String formatTime(LocalTime time) {
-        return time.format(DateTimeFormatter.ofPattern("h:mm a"));
+        return Theme.formatTime(time);
     }
 
     private class WeekGrid extends JPanel {
