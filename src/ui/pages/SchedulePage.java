@@ -12,20 +12,27 @@ import ui.components.RoundedPanel;
 import ui.components.RoundedTextField;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
-// Screen 8, the weekly schedule and the deadline list
+// Screen 8, the weekly schedule and the deadline calendar
 public class SchedulePage extends JPanel {
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("H:mm");
+    private static final String[] DEADLINE_DAYS = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 
     private final ScheduleManager schedule = AppData.schedule();
     private final NoteManager notes = AppData.get();
@@ -37,8 +44,10 @@ public class SchedulePage extends JPanel {
     private final JButton deadlinesPill = pill("Deadlines");
     private final JButton addButton = Theme.primaryButton("Add class");
     private final WeekGrid weekGrid = new WeekGrid();
-    private final JPanel deadlineList = new JPanel();
+    private final JLabel weekLabel = new JLabel();
+    private final JPanel weekColumns = new JPanel();
     private boolean scheduleMode = true;
+    private LocalDate weekStart = startOfWeek(LocalDate.now());
 
     public SchedulePage() {
         setBackground(Theme.BG);
@@ -157,85 +166,253 @@ public class SchedulePage extends JPanel {
     private JPanel deadlinesCard() {
         JPanel card = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS);
         card.setLayout(new BorderLayout(0, 14));
-        card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        card.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
 
-        JLabel heading = new JLabel("Deadlines", SwingConstants.CENTER);
-        heading.setFont(Theme.font(Font.BOLD, 24));
-        heading.setForeground(Theme.TEXT);
-        card.add(heading, BorderLayout.NORTH);
+        JPanel weekHeader = new JPanel(new BorderLayout());
+        weekHeader.setOpaque(false);
 
-        deadlineList.setOpaque(false);
-        deadlineList.setLayout(new BoxLayout(deadlineList, BoxLayout.Y_AXIS));
+        JButton previous = arrowButton("<");
+        previous.addActionListener(e -> navigateWeek(-7));
+        JButton next = arrowButton(">");
+        next.addActionListener(e -> navigateWeek(7));
 
-        JScrollPane scroll = new JScrollPane(deadlineList);
-        scroll.setBorder(null);
-        scroll.setOpaque(false);
-        scroll.getViewport().setOpaque(false);
-        card.add(scroll, BorderLayout.CENTER);
+        weekLabel.setFont(Theme.font(Font.BOLD, 22));
+        weekLabel.setForeground(Theme.TEXT);
+        weekLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        weekHeader.add(previous, BorderLayout.WEST);
+        weekHeader.add(weekLabel, BorderLayout.CENTER);
+        weekHeader.add(next, BorderLayout.EAST);
+        card.add(weekHeader, BorderLayout.NORTH);
+
+        JPanel white = new RoundedPanel(Color.WHITE, Theme.CORNER_RADIUS);
+        white.setLayout(new BorderLayout());
+        white.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        weekColumns.setOpaque(false);
+        weekColumns.setLayout(new GridLayout(1, 7, 6, 0));
+        white.add(weekColumns, BorderLayout.CENTER);
+        card.add(white, BorderLayout.CENTER);
         return card;
+    }
+
+    private JButton arrowButton(String text) {
+        JButton button = new JButton(text);
+        button.setBackground(Theme.PRIMARY);
+        button.setForeground(Color.WHITE);
+        button.setFont(Theme.font(Font.BOLD, 14));
+        button.setFocusPainted(false);
+        button.setOpaque(true);
+        button.setBorderPainted(false);
+        button.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
+    }
+
+    private void navigateWeek(int days) {
+        weekStart = weekStart.plusDays(days);
+        refreshDeadlines();
     }
 
     private void refresh() {
         weekGrid.repaint();
-
-        deadlineList.removeAll();
-        List<Deadline> deadlines = schedule.getDeadlines();
-        deadlines.sort(Comparator.comparing(Deadline::getDueDate));
-
-        if (deadlines.isEmpty()) {
-            deadlineList.add(Theme.muted("No deadlines yet. Use the add deadline button."));
-        }
-        for (int index = 0; index < deadlines.size(); index++) {
-            deadlineList.add(deadlineRow(deadlines.get(index)));
-            deadlineList.add(Box.createVerticalStrut(6));
-        }
-        deadlineList.revalidate();
-        deadlineList.repaint();
+        refreshDeadlines();
     }
 
-    private JPanel deadlineRow(Deadline deadline) {
-        JPanel row = new JPanel(new BorderLayout(8, 0));
-        row.setOpaque(false);
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
-
-        JCheckBox done = new JCheckBox();
-        done.setOpaque(false);
-        done.setSelected(deadline.isDone());
-        done.addActionListener(e -> {
-            deadline.setDone(done.isSelected());
-            try {
-                schedule.updateDeadline(deadline);
-            } catch (Exception exception) {
-                System.out.println("Could not update the deadline: " + exception.getMessage());
-            }
-            refresh();
-        });
-        row.add(done, BorderLayout.WEST);
-
-        String text = deadline.getTitle() + "  -  " + deadline.getDueDate();
-        if (deadline.getCourseCode().isEmpty() == false) {
-            text = deadline.getCourseCode() + "  -  " + text;
-        }
-        JLabel label = new JLabel(text);
-        label.setFont(Theme.BODY);
-        if (deadline.isDone()) {
-            label.setForeground(Theme.MUTED);
+    private void refreshDeadlines() {
+        LocalDate weekEnd = weekStart.plusDays(6);
+        String label;
+        if (weekStart.getMonth() == weekEnd.getMonth()) {
+            label = weekStart.format(DateTimeFormatter.ofPattern("MMMM d"))
+                    + " - " + weekEnd.format(DateTimeFormatter.ofPattern("d, yyyy"));
         } else {
-            label.setForeground(Theme.TEXT);
+            label = weekStart.format(DateTimeFormatter.ofPattern("MMMM d"))
+                    + " - " + weekEnd.format(DateTimeFormatter.ofPattern("MMMM d, yyyy"));
         }
-        row.add(label, BorderLayout.CENTER);
+        weekLabel.setText(label);
 
-        JButton delete = Theme.button("Delete");
-        delete.addActionListener(e -> {
-            try {
-                schedule.deleteDeadline(deadline);
-            } catch (Exception exception) {
-                System.out.println("Could not delete the deadline: " + exception.getMessage());
+        weekColumns.removeAll();
+        List<Deadline> deadlines = schedule.getDeadlines();
+        deadlines.sort(Comparator.comparing(Deadline::getDueTime));
+
+        for (int dayIndex = 0; dayIndex < 7; dayIndex++) {
+            weekColumns.add(dayColumn(weekStart.plusDays(dayIndex), deadlines));
+        }
+
+        weekColumns.revalidate();
+        weekColumns.repaint();
+    }
+
+    private JPanel dayColumn(LocalDate date, List<Deadline> deadlines) {
+        JPanel column = new JPanel(new BorderLayout(0, 6));
+        column.setOpaque(false);
+
+        JPanel head = new JPanel();
+        head.setOpaque(false);
+        head.setLayout(new BoxLayout(head, BoxLayout.Y_AXIS));
+
+        JLabel dayName = new JLabel(date.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.ENGLISH));
+        dayName.setFont(Theme.font(Font.BOLD, 15));
+        dayName.setForeground(new Color(0x111111));
+        dayName.setAlignmentX(Component.CENTER_ALIGNMENT);
+        head.add(dayName);
+
+        JLabel dayDate = new JLabel(date.format(DateTimeFormatter.ofPattern("MMM d")));
+        dayDate.setFont(Theme.font(Font.PLAIN, 12));
+        dayDate.setForeground(new Color(0x666666));
+        dayDate.setAlignmentX(Component.CENTER_ALIGNMENT);
+        head.add(dayDate);
+        column.add(head, BorderLayout.NORTH);
+
+        JPanel cards = new JPanel();
+        cards.setOpaque(false);
+        cards.setLayout(new BoxLayout(cards, BoxLayout.Y_AXIS));
+
+        int count = 0;
+        for (int index = 0; index < deadlines.size(); index++) {
+            Deadline deadline = deadlines.get(index);
+            if (deadline.getDueDate().equals(date)) {
+                DeadlineCard card = new DeadlineCard(deadline);
+                card.setAlignmentX(Component.LEFT_ALIGNMENT);
+                cards.add(card);
+                cards.add(Box.createVerticalStrut(6));
+                count = count + 1;
             }
-            refresh();
-        });
-        row.add(delete, BorderLayout.EAST);
-        return row;
+        }
+        if (count == 0) {
+            JLabel empty = new JLabel(" ");
+            empty.setAlignmentX(Component.LEFT_ALIGNMENT);
+            cards.add(empty);
+        }
+
+        JScrollPane scroll = new JScrollPane(cards);
+        scroll.setBorder(null);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        column.add(scroll, BorderLayout.CENTER);
+        return column;
+    }
+
+    private void saveDeadline(Deadline deadline) {
+        try {
+            schedule.updateDeadline(deadline);
+        } catch (Exception exception) {
+            System.out.println("Could not update the deadline: " + exception.getMessage());
+        }
+        refreshDeadlines();
+    }
+
+    private class DeadlineCard extends JPanel {
+        private final Deadline deadline;
+        private final Color color;
+        private boolean hovered;
+
+        DeadlineCard(Deadline deadline) {
+            this.deadline = deadline;
+
+            Color base = Theme.PRIMARY;
+            Course course = notes.findCourse(deadline.getCourseCode());
+            if (course != null) {
+                base = Theme.parse(course.getColorHex());
+            }
+            if (deadline.isDone()) {
+                base = new Color(0x555555);
+            }
+            this.color = base;
+
+            setOpaque(false);
+            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+            setBorder(new EmptyBorder(8, 10, 8, 10));
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setToolTipText("<html>" + deadline.getCourseCode() + "<br>" + deadline.getTitle()
+                    + "<br>Due " + deadline.getDueDate() + " " + formatTime(deadline.getDueTime()) + "</html>");
+
+            JLabel code = new JLabel(deadline.getCourseCode());
+            code.setFont(Theme.font(Font.BOLD, 12));
+            code.setForeground(Color.WHITE);
+            code.setAlignmentX(Component.LEFT_ALIGNMENT);
+            add(code);
+
+            JLabel title = new JLabel(deadline.getTitle());
+            title.setFont(Theme.font(Font.BOLD, 11));
+            title.setForeground(Color.WHITE);
+            title.setAlignmentX(Component.LEFT_ALIGNMENT);
+            if (deadline.isDone()) {
+                title.setText("<html><strike>" + deadline.getTitle() + "</strike></html>");
+            }
+            add(title);
+
+            JLabel due = new JLabel("Due " + formatTime(deadline.getDueTime()));
+            due.setFont(Theme.font(Font.PLAIN, 10));
+            due.setForeground(new Color(0xE5E5E5));
+            due.setAlignmentX(Component.LEFT_ALIGNMENT);
+            add(due);
+
+            JPopupMenu menu = new JPopupMenu();
+            JMenuItem toggle = new JMenuItem(deadline.isDone() ? "Mark as not done" : "Mark as done");
+            toggle.addActionListener(e -> {
+                deadline.setDone(deadline.isDone() == false);
+                saveDeadline(deadline);
+            });
+            JMenuItem delete = new JMenuItem("Delete deadline");
+            delete.addActionListener(e -> {
+                try {
+                    schedule.deleteDeadline(deadline);
+                } catch (Exception exception) {
+                    System.out.println("Could not delete the deadline: " + exception.getMessage());
+                }
+                refreshDeadlines();
+            });
+            menu.add(toggle);
+            menu.add(delete);
+
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent event) {
+                    hovered = true;
+                    repaint();
+                }
+
+                @Override
+                public void mouseExited(MouseEvent event) {
+                    hovered = false;
+                    repaint();
+                }
+
+                @Override
+                public void mousePressed(MouseEvent event) {
+                    showMenu(event);
+                }
+
+                @Override
+                public void mouseReleased(MouseEvent event) {
+                    showMenu(event);
+                }
+
+                private void showMenu(MouseEvent event) {
+                    if (event.isPopupTrigger()) {
+                        menu.show(DeadlineCard.this, event.getX(), event.getY());
+                    }
+                }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            if (hovered) {
+                g2.setColor(color.brighter());
+            } else {
+                g2.setColor(color);
+            }
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+            g2.dispose();
+            super.paintComponent(g);
+        }
     }
 
     private void addClass() {
@@ -288,7 +465,9 @@ public class SchedulePage extends JPanel {
     private void addDeadline() {
         JTextField titleField = new RoundedTextField();
         JTextField dateField = new RoundedTextField();
+        JTextField timeField = new RoundedTextField();
         dateField.setText(LocalDate.now().plusDays(7).toString());
+        timeField.setText("23:59");
 
         JComboBox<String> courseBox = new RoundedComboBox<>();
         courseBox.addItem("");
@@ -303,6 +482,8 @@ public class SchedulePage extends JPanel {
         form.add(titleField);
         form.add(new JLabel("Due date (2026-10-30)"));
         form.add(dateField);
+        form.add(new JLabel("Due time (23:59)"));
+        form.add(timeField);
         form.add(new JLabel("Course (optional)"));
         form.add(courseBox);
 
@@ -314,16 +495,24 @@ public class SchedulePage extends JPanel {
             return;
         }
         try {
+            LocalDate dueDate = LocalDate.parse(dateField.getText().trim());
+            LocalTime dueTime = LocalTime.parse(timeField.getText().trim(), TIME_FORMAT);
             schedule.addDeadline((String) courseBox.getSelectedItem(), titleField.getText().trim(),
-                    LocalDate.parse(dateField.getText().trim()));
-            refresh();
+                    dueDate, dueTime);
+            weekStart = startOfWeek(dueDate);
+            refreshDeadlines();
         } catch (Exception exception) {
-            JOptionPane.showMessageDialog(this, "Use a date like 2026-10-30.");
+            JOptionPane.showMessageDialog(this, "Use a date like 2026-10-30 and a time like 23:59.");
         }
     }
 
+    private static LocalDate startOfWeek(LocalDate date) {
+        int offset = date.getDayOfWeek().getValue() % 7;
+        return date.minusDays(offset);
+    }
+
     private String formatTime(LocalTime time) {
-        return time.format(DateTimeFormatter.ofPattern("h:mm"));
+        return time.format(DateTimeFormatter.ofPattern("h:mm a"));
     }
 
     private class WeekGrid extends JPanel {
