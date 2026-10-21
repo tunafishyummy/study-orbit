@@ -1,9 +1,12 @@
 package ui.pages;
 
-import data.AIFlashcardService;
+import ai.AiClient;
+import ai.AiConfig;
+import ai.StudyGenerator;
 import data.AppData;
 import data.FlashcardManager;
 import java.awt.*;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -11,7 +14,9 @@ import java.util.Set;
 import javax.swing.*;
 import model.Flashcard;
 import model.Note;
+import ui.ImportDocumentDialog;
 import ui.Theme;
+import ui.components.ProcessingCard;
 import ui.components.RoundedComboBox;
 import ui.components.RoundedPanel;
 import ui.components.RoundedTextArea;
@@ -29,10 +34,13 @@ public class CreateFlashcardPage extends JPanel {
     private JTextField tagsField;
     private ScrollablePanel suggestedContainer;
     private FlashcardManager flashcardManager;
-    private final List<AIFlashcardService.SuggestedCard> activeSuggestions = new ArrayList<>();
+    private JLabel aiStatusLabel;
+    private JButton generateButton;
+    private JButton importButton;
+    private ProcessingCard processingCard;
+    private final List<Flashcard> activeSuggestions = new ArrayList<Flashcard>();
     private final Runnable onBackCallback;
 
-    // Custom ScrollablePanel that forces exact viewport width matching to eliminate horizontal scrolling
     private static class ScrollablePanel extends JPanel implements Scrollable {
         public ScrollablePanel(LayoutManager layout) {
             super(layout);
@@ -56,7 +64,7 @@ public class CreateFlashcardPage extends JPanel {
 
         @Override
         public boolean getScrollableTracksViewportWidth() {
-            return true; // Crucial: forces child components to match viewport width exactly, preventing horizontal scrollbars
+            return true;
         }
 
         @Override
@@ -90,7 +98,6 @@ public class CreateFlashcardPage extends JPanel {
         splitContent.setOpaque(false);
         splitContent.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0));
 
-        // Left Panel: Reference Note Viewer
         RoundedPanel leftPanel = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS);
         leftPanel.setLayout(new BorderLayout(0, 10));
         leftPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -124,7 +131,6 @@ public class CreateFlashcardPage extends JPanel {
         leftPanel.add(noteScroll, BorderLayout.CENTER);
         splitContent.add(leftPanel);
 
-        // Right Panel: Form + AI Suggested Flashcards
         RoundedPanel rightPanel = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS);
         rightPanel.setLayout(new BorderLayout());
         rightPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -204,19 +210,39 @@ public class CreateFlashcardPage extends JPanel {
         suggestedTitle.setForeground(Theme.TEXT);
         suggestedTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
         rightContentContainer.add(suggestedTitle);
-        rightContentContainer.add(Box.createVerticalStrut(6));
+        rightContentContainer.add(Box.createVerticalStrut(4));
 
-        JButton generateAiBtn = Theme.button("Generate Cards from Note (AI)");
-        generateAiBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-        generateAiBtn.addActionListener(e -> fetchAiSuggestions());
-        rightContentContainer.add(generateAiBtn);
-        rightContentContainer.add(Box.createVerticalStrut(10));
+        JLabel suggestedHint = Theme.muted("The AI reads a document or note and suggests cards. Accept the ones you like.");
+        suggestedHint.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rightContentContainer.add(suggestedHint);
+        rightContentContainer.add(Box.createVerticalStrut(8));
 
-        // Fixed BoxLayout initialization error
+        JPanel aiButtonRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        aiButtonRow.setOpaque(false);
+        aiButtonRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        importButton = Theme.button("Import Document");
+        importButton.addActionListener(e -> generateFromDocument());
+        generateButton = Theme.button("Generate From Selected Note");
+        generateButton.addActionListener(e -> generateFromSelectedNote());
+        aiButtonRow.add(importButton);
+        aiButtonRow.add(generateButton);
+        rightContentContainer.add(aiButtonRow);
+        rightContentContainer.add(Box.createVerticalStrut(8));
+
+        aiStatusLabel = Theme.muted("No suggestions yet.");
+        aiStatusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rightContentContainer.add(aiStatusLabel);
+        rightContentContainer.add(Box.createVerticalStrut(8));
+
+        processingCard = new ProcessingCard("Processing your document");
+        processingCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+        processingCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 76));
+        rightContentContainer.add(processingCard);
+        rightContentContainer.add(Box.createVerticalStrut(8));
+
         suggestedContainer = new ScrollablePanel(null);
         suggestedContainer.setLayout(new BoxLayout(suggestedContainer, BoxLayout.Y_AXIS));
         suggestedContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
-
         rightContentContainer.add(suggestedContainer);
 
         JScrollPane rightScroll = new JScrollPane(rightContentContainer);
@@ -231,7 +257,7 @@ public class CreateFlashcardPage extends JPanel {
 
         refreshDecksDropdown();
 
-        if (!notes.isEmpty()) {
+        if (notes.isEmpty() == false) {
             noteSelector.setSelectedIndex(0);
             updateNoteContent();
         } else {
@@ -240,11 +266,11 @@ public class CreateFlashcardPage extends JPanel {
     }
 
     private JLabel label(String text) {
-        JLabel l = new JLabel(text);
-        l.setFont(Theme.BODY);
-        l.setForeground(Theme.MUTED);
-        l.setAlignmentX(Component.LEFT_ALIGNMENT);
-        return l;
+        JLabel label = new JLabel(text);
+        label.setFont(Theme.BODY);
+        label.setForeground(Theme.MUTED);
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return label;
     }
 
     public void clearSuggestions() {
@@ -254,81 +280,114 @@ public class CreateFlashcardPage extends JPanel {
         suggestedContainer.repaint();
     }
 
-    private AIFlashcardService aiService() {
-        return new AIFlashcardService(AppData.settings().get(data.SettingsManager.API_KEY, ""));
+    private void generateFromDocument() {
+        String document = ImportDocumentDialog.show(this);
+        if (document != null) {
+            generateSuggestions(document);
+        }
     }
 
-    private void fetchAiSuggestions() {
+    private void generateFromSelectedNote() {
         Note selected = (Note) noteSelector.getSelectedItem();
-        if (selected == null || selected.getBody().isBlank()) {
-            JOptionPane.showMessageDialog(this, "Please select a valid note first.", "Warning", JOptionPane.WARNING_MESSAGE);
+        if (selected == null) {
+            JOptionPane.showMessageDialog(this, "There is no note to read yet. Create one in the Notes tab first.",
+                    "No note selected", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
-        suggestedContainer.removeAll();
-        JLabel loadingLabel = Theme.muted("Generating suggestions with Gemini API...");
-        loadingLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        suggestedContainer.add(loadingLabel);
-        suggestedContainer.revalidate();
-        suggestedContainer.repaint();
-
-        new Thread(() -> {
-            try {
-                List<AIFlashcardService.SuggestedCard> suggestions = aiService().generateSuggestions(selected.getTitle(), selected.getBody());
-                SwingUtilities.invokeLater(() -> {
-                    activeSuggestions.clear();
-                    activeSuggestions.addAll(suggestions);
-                    renderSuggestions();
-                });
-            } catch (Exception ex) {
-                SwingUtilities.invokeLater(() -> {
-                    suggestedContainer.removeAll();
-                    JLabel errLabel = new JLabel("Failed to generate: " + ex.getMessage());
-                    errLabel.setForeground(Theme.PRIMARY);
-                    errLabel.setFont(Theme.BODY);
-                    errLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-                    suggestedContainer.add(errLabel);
-                    suggestedContainer.revalidate();
-                    suggestedContainer.repaint();
-                });
-            }
-        }).start();
+        if (selected.getBody() == null || selected.getBody().isBlank()) {
+            JOptionPane.showMessageDialog(this, "This note still has no text inside.",
+                    "Empty note", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        generateSuggestions(selected.getBody());
     }
 
-    private void fetchReplacementCard() {
-        Note selected = (Note) noteSelector.getSelectedItem();
-        if (selected == null || selected.getBody().isBlank()) return;
+    private void generateSuggestions(String document) {
+        generateButton.setEnabled(false);
+        importButton.setEnabled(false);
+        processingCard.start("Reading your document...");
+        activeSuggestions.clear();
+        renderSuggestions();
 
-        new Thread(() -> {
-            try {
-                List<AIFlashcardService.SuggestedCard> newCards = aiService().generateSuggestions(selected.getTitle(), selected.getBody());
-                if (!newCards.isEmpty()) {
-                    SwingUtilities.invokeLater(() -> {
-                        activeSuggestions.add(newCards.get(0));
-                        renderSuggestions();
-                    });
+        new SwingWorker<List<Flashcard>, String>() {
+            @Override
+            protected List<Flashcard> doInBackground() throws Exception {
+                AiConfig config = AiConfig.load();
+                AiClient client = new AiClient(config);
+                if (config.isDemoMode() == false && client.isAvailable() == false) {
+                    if (config.isLocal()) {
+                        throw new IOException("The local AI is not running. Start Ollama first with \"ollama run "
+                                + config.getModel() + "\", or pick another provider in Settings.");
+                    }
+                    throw new IOException("Could not reach " + config.getBaseUrl()
+                            + ". Check the internet connection and the key in Settings.");
                 }
-            } catch (Exception ignored) {}
-        }).start();
+                StudyGenerator generator = new StudyGenerator(client, config);
+                return generator.suggestFlashcards(document, deckTitle(), message -> publish(message));
+            }
+
+            @Override
+            protected void process(List<String> updates) {
+                processingCard.update(updates.get(updates.size() - 1));
+            }
+
+            @Override
+            protected void done() {
+                generateButton.setEnabled(true);
+                importButton.setEnabled(true);
+                processingCard.stop();
+                try {
+                    List<Flashcard> result = get();
+                    activeSuggestions.addAll(result);
+                    renderSuggestions();
+                    if (result.isEmpty()) {
+                        aiStatusLabel.setText("The AI did not find clear cards in this document.");
+                    } else {
+                        aiStatusLabel.setText("Found " + result.size() + " cards. Press Add on the ones you want, then save.");
+                    }
+                } catch (Exception exception) {
+                    Throwable cause = exception.getCause() != null ? exception.getCause() : exception;
+                    aiStatusLabel.setText("Generation failed.");
+                    JOptionPane.showMessageDialog(CreateFlashcardPage.this, cause.getMessage(),
+                            "The AI could not finish", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
+    }
+
+    private String deckTitle() {
+        String selected = (String) deckSelector.getSelectedItem();
+        if (NEW_DECK_OPTION.equals(selected)) {
+            String typed = newDeckField.getText().trim();
+            if (typed.isEmpty()) {
+                return "General";
+            }
+            return typed;
+        }
+        if (selected == null || selected.isBlank()) {
+            return "General";
+        }
+        return selected;
     }
 
     private void renderSuggestions() {
         suggestedContainer.removeAll();
         if (activeSuggestions.isEmpty()) {
-            JLabel emptyLabel = Theme.muted("No suggestions generated.");
+            JLabel emptyLabel = Theme.muted("No suggestions yet. Generate from a note or import a document.");
             emptyLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
             suggestedContainer.add(emptyLabel);
         } else {
-            for (int i = 0; i < activeSuggestions.size(); i++) {
-                AIFlashcardService.SuggestedCard sc = activeSuggestions.get(i);
-                
+            for (int index = 0; index < activeSuggestions.size(); index++) {
+                final Flashcard suggestion = activeSuggestions.get(index);
+                final int position = index;
+
                 RoundedPanel card = new RoundedPanel(Theme.BG, Theme.CORNER_RADIUS, Theme.BORDER);
                 card.setLayout(new BorderLayout(8, 8));
                 card.setBorder(BorderFactory.createEmptyBorder(12, 14, 12, 14));
                 card.setAlignmentX(Component.LEFT_ALIGNMENT);
                 card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 160));
 
-                JTextArea cardText = new JTextArea("Front: " + sc.front + "\nBack: " + sc.back);
+                JTextArea cardText = new JTextArea("Front: " + suggestion.getFront() + "\nBack: " + suggestion.getBack());
                 cardText.setFont(Theme.BODY);
                 cardText.setForeground(Theme.TEXT);
                 cardText.setEditable(false);
@@ -341,21 +400,16 @@ public class CreateFlashcardPage extends JPanel {
                 btnRow.setOpaque(false);
 
                 JButton addBtn = Theme.primaryButton("Add");
-                JButton deleteBtn = Theme.button("Delete");
-
-                final int index = i;
                 addBtn.addActionListener(e -> {
-                    frontArea.setText(sc.front);
-                    backArea.setText(sc.back);
-                    activeSuggestions.remove(index);
-                    renderSuggestions();
-                    fetchReplacementCard();
+                    frontArea.setText(suggestion.getFront());
+                    backArea.setText(suggestion.getBack());
+                    aiStatusLabel.setText("Card loaded into the form. Press Save Flashcard.");
                 });
 
+                JButton deleteBtn = Theme.button("Ignore");
                 deleteBtn.addActionListener(e -> {
-                    activeSuggestions.remove(index);
+                    activeSuggestions.remove(position);
                     renderSuggestions();
-                    fetchReplacementCard();
                 });
 
                 btnRow.add(addBtn);
@@ -373,13 +427,9 @@ public class CreateFlashcardPage extends JPanel {
     public void refreshDecksDropdown() {
         deckSelector.removeAllItems();
         Set<String> existingDecks = new LinkedHashSet<>();
-        
-        for (Object obj : AppData.get().getFlashcards()) {
-            if (obj instanceof Flashcard) {
-                Flashcard f = (Flashcard) obj;
-                if (f.getDeckTitle() != null && !f.getDeckTitle().isBlank()) {
-                    existingDecks.add(f.getDeckTitle());
-                }
+        for (Flashcard card : AppData.get().getFlashcards()) {
+            if (card.getDeckTitle() != null && card.getDeckTitle().isBlank() == false) {
+                existingDecks.add(card.getDeckTitle());
             }
         }
 
@@ -408,13 +458,13 @@ public class CreateFlashcardPage extends JPanel {
         clearSuggestions();
         List<Note> notes = AppData.get().getAllNotes();
         noteSelector.removeAllItems();
-        for (Note n : notes) {
-            noteSelector.addItem(n);
+        for (int index = 0; index < notes.size(); index++) {
+            noteSelector.addItem(notes.get(index));
         }
-        
+
         refreshDecksDropdown();
 
-        if (!notes.isEmpty()) {
+        if (notes.isEmpty() == false) {
             noteSelector.setSelectedIndex(0);
             updateNoteContent();
         } else {
@@ -432,11 +482,12 @@ public class CreateFlashcardPage extends JPanel {
     private void saveFlashcard() {
         String selectedOption = (String) deckSelector.getSelectedItem();
         String deck;
-
         if (NEW_DECK_OPTION.equals(selectedOption)) {
             deck = newDeckField.getText().trim();
+        } else if (selectedOption == null) {
+            deck = "";
         } else {
-            deck = selectedOption != null ? selectedOption.trim() : "";
+            deck = selectedOption.trim();
         }
 
         String front = frontArea.getText().trim();
@@ -444,18 +495,26 @@ public class CreateFlashcardPage extends JPanel {
         String tagText = tagsField.getText().trim();
 
         if (deck.isEmpty() || front.isEmpty() || back.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Deck title, front, and back cannot be empty.", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Deck title, front, and back cannot be empty.",
+                    "Warning", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         try {
-            List<String> tags = new java.util.ArrayList<>();
-            if (!tagText.isBlank()) {
-                for (String t : tagText.split(",")) tags.add(t.trim());
+            List<String> tags = new ArrayList<String>();
+            if (tagText.isBlank() == false) {
+                String[] parts = tagText.split(",");
+                for (int index = 0; index < parts.length; index++) {
+                    if (parts[index].isBlank() == false) {
+                        tags.add(parts[index].trim());
+                    }
+                }
             }
-            // the card belongs to the course of the note it was made from
             Note source = (Note) noteSelector.getSelectedItem();
-            String courseCode = source == null ? "" : source.getCourseCode();
+            String courseCode = "";
+            if (source != null) {
+                courseCode = source.getCourseCode();
+            }
             flashcardManager.addFlashcard(deck, courseCode, front, back, tags);
             JOptionPane.showMessageDialog(this, "Successfully added");
             frontArea.setText("");
@@ -464,8 +523,9 @@ public class CreateFlashcardPage extends JPanel {
             newDeckField.setText("");
             refreshDecksDropdown();
             deckSelector.setSelectedItem(deck);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error saving: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception exception) {
+            JOptionPane.showMessageDialog(this, "Error saving: " + exception.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }
