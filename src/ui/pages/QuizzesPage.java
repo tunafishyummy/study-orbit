@@ -320,6 +320,11 @@ public class QuizzesPage extends JPanel {
 
     private void showResult() {
         resultLabel.setText("You scored " + score + " / " + questions.size());
+        try {
+            AppData.activity().recordQuiz(questions.size());
+        } catch (java.io.IOException exception) {
+            // keep the result visible even if the activity log fails
+        }
         viewLayout.show(viewPanel, "result");
     }
 
