@@ -1,10 +1,9 @@
 package ui.pages;
 
+import java.awt.*;
+import javax.swing.*;
 import ui.Assets;
 import ui.Theme;
-
-import javax.swing.*;
-import java.awt.*;
 
 // Screen 1, the welcome page
 public class SplashPage extends JPanel {

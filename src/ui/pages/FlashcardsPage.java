@@ -59,7 +59,6 @@ public class FlashcardsPage extends JPanel {
                 if (scaleX < 1.0f) {
                     Graphics2D g2 = (Graphics2D) g.create();
                     int w = getWidth();
-                    int h = getHeight();
                     int newW = Math.max(1, (int) (w * scaleX));
                     int offsetX = (w - newW) / 2;
 

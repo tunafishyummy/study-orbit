@@ -1,10 +1,10 @@
 package ui;
 
-import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import javax.swing.*;
 
 // loads images from the assets folder that compile copies next to the classes
 public final class Assets {

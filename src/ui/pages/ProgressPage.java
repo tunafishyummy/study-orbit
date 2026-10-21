@@ -1,9 +1,8 @@
 package ui.pages;
 
-import ui.Theme;
-
-import javax.swing.*;
 import java.awt.*;
+import javax.swing.*;
+import ui.Theme;
 
 // Screen 10, streaks and study days
 public class ProgressPage extends JPanel {
