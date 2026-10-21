@@ -46,7 +46,7 @@ public class DataStore {
         String createSettings = "CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)";
         String createActivity = "CREATE TABLE IF NOT EXISTS activity (log_date TEXT, profile_id TEXT, notes_made INTEGER, cards_reviewed INTEGER, quizzes_taken INTEGER, PRIMARY KEY (log_date, profile_id))";
         String createClasses = "CREATE TABLE IF NOT EXISTS schedule_class (id TEXT PRIMARY KEY, course_code TEXT, day TEXT, start_time TEXT, end_time TEXT, room TEXT)";
-        String createDeadlines = "CREATE TABLE IF NOT EXISTS deadline (id TEXT PRIMARY KEY, course_code TEXT, title TEXT, due_date TEXT, done INTEGER, reminder_on INTEGER)";
+        String createDeadlines = "CREATE TABLE IF NOT EXISTS deadline (id TEXT PRIMARY KEY, course_code TEXT, title TEXT, due_date TEXT, due_time TEXT, done INTEGER, reminder_on INTEGER)";
 
         try (Connection conn = connect(); Statement stmt = conn.createStatement()) {
             stmt.execute(createCourses);
@@ -60,6 +60,12 @@ public class DataStore {
             // older databases were made before flashcards had a course, so add the column once
             try {
                 stmt.execute("ALTER TABLE flashcards ADD COLUMN course_code TEXT");
+            } catch (SQLException alreadyThere) {
+                // column exists already: nothing to do
+            }
+            // older deadlines had no due time, so add the column once
+            try {
+                stmt.execute("ALTER TABLE deadline ADD COLUMN due_time TEXT");
             } catch (SQLException alreadyThere) {
                 // column exists already: nothing to do
             }
@@ -310,11 +316,17 @@ public class DataStore {
                 if (rs.getInt("reminder_on") == 1) {
                     reminderOn = true;
                 }
+                String timeText = rs.getString("due_time");
+                LocalTime dueTime = LocalTime.of(23, 59);
+                if (timeText != null && timeText.isEmpty() == false) {
+                    dueTime = LocalTime.parse(timeText);
+                }
                 deadlines.add(new Deadline(
                         rs.getString("id"),
                         rs.getString("course_code"),
                         rs.getString("title"),
                         LocalDate.parse(rs.getString("due_date")),
+                        dueTime,
                         done,
                         reminderOn));
             }
@@ -330,7 +342,7 @@ public class DataStore {
                 stmt.execute("DELETE FROM deadline");
             }
             try (PreparedStatement pstmt = conn.prepareStatement(
-                    "INSERT INTO deadline (id, course_code, title, due_date, done, reminder_on) VALUES (?, ?, ?, ?, ?, ?)")) {
+                    "INSERT INTO deadline (id, course_code, title, due_date, due_time, done, reminder_on) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
                 for (int index = 0; index < deadlines.size(); index++) {
                     Deadline item = deadlines.get(index);
                     int done = 0;
@@ -345,8 +357,9 @@ public class DataStore {
                     pstmt.setString(2, item.getCourseCode());
                     pstmt.setString(3, item.getTitle());
                     pstmt.setString(4, item.getDueDate().toString());
-                    pstmt.setInt(5, done);
-                    pstmt.setInt(6, reminderOn);
+                    pstmt.setString(5, item.getDueTime().toString());
+                    pstmt.setInt(6, done);
+                    pstmt.setInt(7, reminderOn);
                     pstmt.executeUpdate();
                 }
             }
