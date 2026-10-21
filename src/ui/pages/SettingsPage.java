@@ -2,16 +2,20 @@ package ui.pages;
 
 import data.AppData;
 import data.SettingsManager;
+import logic.BackupService;
 import model.Profile;
 import ui.StudyOrbitApp;
 import ui.Theme;
 import ui.components.Avatar;
+import ui.components.NativeFileDialog;
+import ui.components.RoundedComboBox;
 import ui.components.RoundedPanel;
 import ui.components.RoundedTextField;
 import ui.components.ToggleSwitch;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,9 +61,22 @@ public class SettingsPage extends JPanel {
 
         c.gridx = 0;
         c.gridy = 2;
+        c.gridwidth = 1;
+        c.weightx = 0.42;
+        c.weighty = 0.3;
+        c.insets = new Insets(0, 0, 16, 16);
+        grid.add(studyCard(), c);
+
+        c.gridx = 1;
+        c.weightx = 0.58;
+        c.insets = new Insets(0, 0, 16, 0);
+        grid.add(dataCard(), c);
+
+        c.gridx = 0;
+        c.gridy = 3;
         c.gridwidth = 2;
         c.weightx = 1;
-        c.weighty = 0.2;
+        c.weighty = 0.1;
         c.insets = new Insets(0, 0, 0, 0);
         grid.add(helpCard(), c);
 
@@ -98,14 +115,20 @@ public class SettingsPage extends JPanel {
         names.add(sub);
         who.add(names);
 
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JPanel buttons = new JPanel(new GridLayout(2, 2, 8, 8));
         buttons.setOpaque(false);
         JButton switchButton = Theme.button("Switch profile");
         switchButton.addActionListener(e -> switchProfile());
         JButton newButton = Theme.button("New profile");
         newButton.addActionListener(e -> newProfile());
+        JButton renameButton = Theme.button("Rename");
+        renameButton.addActionListener(e -> renameProfile());
+        JButton deleteButton = Theme.button("Delete");
+        deleteButton.addActionListener(e -> deleteProfile());
         buttons.add(switchButton);
         buttons.add(newButton);
+        buttons.add(renameButton);
+        buttons.add(deleteButton);
 
         body.add(who, BorderLayout.CENTER);
         body.add(buttons, BorderLayout.SOUTH);
@@ -228,6 +251,111 @@ public class SettingsPage extends JPanel {
 
         card.add(body, BorderLayout.CENTER);
         return card;
+    }
+
+    private JPanel studyCard() {
+        JPanel card = card("Study");
+
+        JPanel body = new JPanel();
+        body.setOpaque(false);
+        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
+        body.setBorder(BorderFactory.createEmptyBorder(14, 20, 14, 20));
+
+        body.add(row("Weekly goal", "Days you want to study each week"));
+        body.add(Box.createVerticalStrut(8));
+
+        JComboBox<Integer> goalBox = new RoundedComboBox<>(new Integer[] { 3, 4, 5, 6, 7 });
+        goalBox.setSelectedItem(AppData.settings().getInt(SettingsManager.WEEKLY_GOAL, 5));
+        goalBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        goalBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+        goalBox.addActionListener(e -> {
+            Integer value = (Integer) goalBox.getSelectedItem();
+            if (value == null) {
+                return;
+            }
+            try {
+                AppData.settings().setInt(SettingsManager.WEEKLY_GOAL, value);
+            } catch (IOException exception) {
+                showError(exception);
+            }
+        });
+        body.add(goalBox);
+        body.add(Box.createVerticalGlue());
+
+        card.add(body, BorderLayout.CENTER);
+        return card;
+    }
+
+    private JPanel dataCard() {
+        JPanel card = card("Data");
+
+        JPanel body = new JPanel();
+        body.setOpaque(false);
+        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
+        body.setBorder(BorderFactory.createEmptyBorder(14, 20, 14, 20));
+
+        body.add(row("Export backup", "Save all data to a json file"));
+        body.add(Box.createVerticalStrut(10));
+
+        JButton export = Theme.primaryButton("Export all data");
+        export.setAlignmentX(Component.LEFT_ALIGNMENT);
+        export.addActionListener(e -> exportBackup());
+        body.add(export);
+        body.add(Box.createVerticalGlue());
+
+        card.add(body, BorderLayout.CENTER);
+        return card;
+    }
+
+    private void exportBackup() {
+        NativeFileDialog fileDialog = new NativeFileDialog();
+        File file = fileDialog.save("Export backup", "JSON file", new String[] { "json" },
+                "study-orbit-backup.json");
+        if (file == null) {
+            return;
+        }
+        try {
+            new BackupService().export(file);
+            JOptionPane.showMessageDialog(this, "Backup saved to " + file.getName());
+        } catch (IOException exception) {
+            showError(exception);
+        }
+    }
+
+    private void renameProfile() {
+        Profile profile = AppData.profiles().getActiveProfile();
+        if (profile == null) {
+            newProfile();
+            return;
+        }
+        String name = JOptionPane.showInputDialog(this, "Profile name", profile.getName());
+        if (name == null || name.trim().isEmpty()) {
+            return;
+        }
+        try {
+            AppData.profiles().updateProfile(profile, name.trim(), profile.getAvatarColor());
+            rebuild();
+        } catch (IOException exception) {
+            showError(exception);
+        }
+    }
+
+    private void deleteProfile() {
+        Profile profile = AppData.profiles().getActiveProfile();
+        if (profile == null) {
+            return;
+        }
+        int choice = JOptionPane.showConfirmDialog(this, "Delete " + profile.getName() + "?",
+                "Delete profile", JOptionPane.YES_NO_OPTION);
+        if (choice != JOptionPane.YES_OPTION) {
+            return;
+        }
+        try {
+            AppData.profiles().deleteProfile(profile);
+            rebuild();
+        } catch (IOException exception) {
+            showError(exception);
+        }
     }
 
     private void switchProfile() {
