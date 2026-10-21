@@ -2,6 +2,7 @@ package ui.pages;
 
 import data.ActivityManager;
 import data.AppData;
+import data.SettingsManager;
 import ui.Theme;
 
 import javax.swing.*;
@@ -19,13 +20,13 @@ public class ProgressPage extends JPanel {
 
     private final JLabel streakValue = new JLabel();
     private final JLabel longestCaption = new JLabel();
-    private final JLabel goalCaption = new JLabel();
     private final GoalRing goalRing = new GoalRing();
+    private final JLabel goalCaption = new JLabel();
     private final JLabel cardsValue = new JLabel();
     private final JLabel quizzesValue = new JLabel();
     private final JLabel notesValue = new JLabel();
-    private final JLabel monthTitle = new JLabel();
-    private final MonthGrid monthGrid = new MonthGrid();
+    private final JLabel monthHeading = new JLabel();
+    private final StudyGrid studyGrid = new StudyGrid();
 
     public ProgressPage() {
         setBackground(Theme.BG);
@@ -34,16 +35,17 @@ public class ProgressPage extends JPanel {
 
         add(Theme.header("Progress and Streaks"), BorderLayout.NORTH);
 
-        JPanel row1 = new JPanel(new GridLayout(1, 3, 16, 16));
-        row1.setOpaque(false);
-        row1.add(streakCard());
-        row1.add(goalCard());
-        row1.add(thisWeekCard());
-
-        JPanel rows = new JPanel(new BorderLayout(0, 16));
+        JPanel rows = new JPanel(new GridLayout(2, 1, 16, 16));
         rows.setOpaque(false);
-        rows.add(row1, BorderLayout.NORTH);
-        rows.add(monthCard(), BorderLayout.CENTER);
+
+        JPanel row = new JPanel(new GridLayout(1, 3, 16, 16));
+        row.setOpaque(false);
+        row.add(streakCard());
+        row.add(goalCard());
+        row.add(weekCard());
+
+        rows.add(row);
+        rows.add(studyDaysCard());
         add(rows, BorderLayout.CENTER);
 
         refresh();
@@ -57,7 +59,7 @@ public class ProgressPage extends JPanel {
 
     private JPanel streakCard() {
         JPanel card = Theme.card();
-        card.setLayout(new BorderLayout(0, 8));
+        card.setLayout(new BorderLayout());
 
         JLabel heading = new JLabel("Current Streak");
         heading.setFont(Theme.BODY);
@@ -85,22 +87,20 @@ public class ProgressPage extends JPanel {
 
     private JPanel goalCard() {
         JPanel card = Theme.card();
-        card.setLayout(new BorderLayout(0, 8));
+        card.setLayout(new FlowLayout(FlowLayout.LEFT, 18, 10));
 
-        JPanel body = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 0));
-        body.setOpaque(false);
-        body.add(goalRing);
+        card.add(goalRing);
 
         JPanel labels = new JPanel();
         labels.setOpaque(false);
         labels.setLayout(new BoxLayout(labels, BoxLayout.Y_AXIS));
 
-        JLabel title = new JLabel("Weekly goal");
-        title.setFont(Theme.HEADING);
-        title.setForeground(Theme.TEXT);
-        title.setAlignmentX(Component.LEFT_ALIGNMENT);
-        labels.add(Box.createVerticalStrut(24));
-        labels.add(title);
+        JLabel goal = new JLabel("Weekly goal");
+        goal.setFont(Theme.HEADING);
+        goal.setForeground(Theme.TEXT);
+        goal.setAlignmentX(Component.LEFT_ALIGNMENT);
+        labels.add(Box.createVerticalStrut(30));
+        labels.add(goal);
 
         goalCaption.setFont(Theme.BODY);
         goalCaption.setForeground(Theme.MUTED);
@@ -108,12 +108,11 @@ public class ProgressPage extends JPanel {
         labels.add(Box.createVerticalStrut(4));
         labels.add(goalCaption);
 
-        body.add(labels);
-        card.add(body, BorderLayout.CENTER);
+        card.add(labels);
         return card;
     }
 
-    private JPanel thisWeekCard() {
+    private JPanel weekCard() {
         JPanel card = Theme.card();
         card.setLayout(new BorderLayout(0, 10));
 
@@ -126,28 +125,11 @@ public class ProgressPage extends JPanel {
         list.setOpaque(false);
         list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
         list.add(statRow("Cards Reviewed", cardsValue));
-        list.add(Box.createVerticalStrut(10));
+        list.add(Box.createVerticalStrut(8));
         list.add(statRow("Quizzes Taken", quizzesValue));
-        list.add(Box.createVerticalStrut(10));
+        list.add(Box.createVerticalStrut(8));
         list.add(statRow("Notes Made", notesValue));
         card.add(list, BorderLayout.CENTER);
-        return card;
-    }
-
-    private JPanel monthCard() {
-        JPanel card = Theme.card();
-        card.setLayout(new BorderLayout(0, 10));
-
-        monthTitle.setFont(Theme.HEADING);
-        monthTitle.setForeground(Theme.TEXT);
-        card.add(monthTitle, BorderLayout.NORTH);
-
-        monthGrid.setPreferredSize(new Dimension(0, 150));
-        monthGrid.setMinimumSize(new Dimension(0, 150));
-        JPanel holder = new JPanel(new BorderLayout());
-        holder.setOpaque(false);
-        holder.add(monthGrid, BorderLayout.NORTH);
-        card.add(holder, BorderLayout.CENTER);
         return card;
     }
 
@@ -157,20 +139,29 @@ public class ProgressPage extends JPanel {
 
         JLabel name = new JLabel(label);
         name.setFont(Theme.BODY);
-        name.setForeground(Theme.MUTED);
+        name.setForeground(Theme.TEXT);
         row.add(name, BorderLayout.WEST);
 
         value.setFont(Theme.font(Font.BOLD, 16));
         value.setForeground(Theme.TEXT);
         row.add(value, BorderLayout.EAST);
-
-        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 26));
         return row;
+    }
+
+    private JPanel studyDaysCard() {
+        JPanel card = Theme.card();
+        card.setLayout(new BorderLayout(0, 12));
+
+        monthHeading.setFont(Theme.HEADING);
+        monthHeading.setForeground(Theme.TEXT);
+        card.add(monthHeading, BorderLayout.NORTH);
+        card.add(studyGrid, BorderLayout.CENTER);
+        return card;
     }
 
     private void refresh() {
         ActivityManager activity = AppData.activity();
-        int goal = AppData.settings().getInt(data.SettingsManager.WEEKLY_GOAL, 5);
+        int goal = AppData.settings().getInt(SettingsManager.WEEKLY_GOAL, 5);
         if (goal < 1) {
             goal = 1;
         }
@@ -185,7 +176,7 @@ public class ProgressPage extends JPanel {
         notesValue.setText(Integer.toString(activity.getNotesThisWeek()));
 
         LocalDate today = LocalDate.now();
-        monthTitle.setText(today.getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH) + " study days");
+        monthHeading.setText(today.getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH) + " study days");
 
         Set<LocalDate> activeDates = new HashSet<LocalDate>();
         LocalDate cursor = today.withDayOfMonth(1);
@@ -195,7 +186,7 @@ public class ProgressPage extends JPanel {
             }
             cursor = cursor.plusDays(1);
         }
-        monthGrid.setActiveDates(activeDates);
+        studyGrid.showMonth(today, activeDates);
     }
 
     private static class GoalRing extends JComponent {
@@ -203,7 +194,7 @@ public class ProgressPage extends JPanel {
         private int goal = 1;
 
         GoalRing() {
-            setPreferredSize(new Dimension(110, 110));
+            setPreferredSize(new Dimension(96, 96));
         }
 
         void setValues(int done, int goal) {
@@ -218,11 +209,11 @@ public class ProgressPage extends JPanel {
             Graphics2D g2 = (Graphics2D) g;
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            int size = Math.min(getWidth(), getHeight()) - 16;
+            int size = Math.min(getWidth(), getHeight()) - 14;
             int x = (getWidth() - size) / 2;
             int y = (getHeight() - size) / 2;
-            g2.setStroke(new BasicStroke(10f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-            g2.setColor(Theme.STUDY_CELL);
+            g2.setStroke(new BasicStroke(9f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g2.setColor(Theme.BORDER);
             g2.drawArc(x, y, size, size, 0, 360);
 
             int angle = (int) Math.round(360.0 * done / goal);
@@ -232,7 +223,7 @@ public class ProgressPage extends JPanel {
             g2.setColor(Theme.PRIMARY);
             g2.drawArc(x, y, size, size, 90, -angle);
 
-            g2.setFont(Theme.font(Font.BOLD, 20));
+            g2.setFont(Theme.font(Font.BOLD, 18));
             g2.setColor(Theme.TEXT);
             String text = done + "/" + goal;
             FontMetrics metrics = g2.getFontMetrics();
@@ -242,14 +233,18 @@ public class ProgressPage extends JPanel {
         }
     }
 
-    private static class MonthGrid extends JComponent {
+    private static class StudyGrid extends JPanel {
+        private static final String[] DAYS = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+
+        private LocalDate first = LocalDate.now().withDayOfMonth(1);
         private Set<LocalDate> activeDates = new HashSet<LocalDate>();
 
-        MonthGrid() {
+        StudyGrid() {
             setOpaque(false);
         }
 
-        void setActiveDates(Set<LocalDate> activeDates) {
+        void showMonth(LocalDate anyDay, Set<LocalDate> activeDates) {
+            this.first = anyDay.withDayOfMonth(1);
             this.activeDates = activeDates;
             repaint();
         }
@@ -260,53 +255,50 @@ public class ProgressPage extends JPanel {
             Graphics2D g2 = (Graphics2D) g;
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-            LocalDate today = LocalDate.now();
-            LocalDate first = today.withDayOfMonth(1);
             int days = first.lengthOfMonth();
             int offset = first.getDayOfWeek().getValue() % 7;
             int rows = (offset + days + 6) / 7;
-            String[] names = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 
             int gap = 8;
-            double cellWidth = (getWidth() - gap * 6) / 7.0;
+            double colWidth = (getWidth() - gap * 6) / 7.0;
             int headerHeight = 30;
-            double cellHeight = (getHeight() - headerHeight - gap * (rows - 1)) / (double) rows;
-
-            g2.setFont(Theme.font(Font.PLAIN, 14));
-            g2.setColor(Theme.MUTED);
-            for (int index = 0; index < names.length; index++) {
-                int textWidth = g2.getFontMetrics().stringWidth(names[index]);
-                int center = (int) (index * (cellWidth + gap) + cellWidth / 2) - textWidth / 2;
-                g2.drawString(names[index], center, 18);
+            int rowHeight = 40;
+            int available = (getHeight() - headerHeight - gap * (rows - 1)) / rows;
+            if (available < rowHeight) {
+                rowHeight = available;
+            }
+            if (rowHeight < 24) {
+                rowHeight = 24;
             }
 
             g2.setFont(Theme.font(Font.PLAIN, 13));
+            g2.setColor(Theme.MUTED);
+            for (int index = 0; index < DAYS.length; index++) {
+                int x = (int) (index * (colWidth + gap));
+                g2.drawString(DAYS[index], x + 8, 18);
+            }
+
             for (int day = 1; day <= days; day++) {
                 int slot = offset + day - 1;
                 int row = slot / 7;
                 int column = slot % 7;
-                int x = (int) (column * (cellWidth + gap));
-                int y = (int) (headerHeight + row * (cellHeight + gap));
+                int x = (int) (column * (colWidth + gap));
+                int y = headerHeight + row * (rowHeight + gap);
                 LocalDate date = first.withDayOfMonth(day);
 
-                boolean active = activeDates.contains(date);
-                if (active) {
+                if (activeDates.contains(date)) {
                     g2.setColor(Theme.PRIMARY);
                 } else {
                     g2.setColor(Theme.STUDY_CELL);
                 }
-                g2.fillRoundRect(x, y, (int) cellWidth, (int) cellHeight, 6, 6);
+                g2.fillRoundRect(x, y, (int) colWidth, rowHeight, 6, 6);
 
-                String text = Integer.toString(day);
-                int textWidth = g2.getFontMetrics().stringWidth(text);
-                int center = x + (int) cellWidth / 2 - textWidth / 2;
-                int baseline = y + (int) cellHeight / 2 + 5;
-                if (active) {
+                if (activeDates.contains(date)) {
                     g2.setColor(Color.WHITE);
                 } else {
                     g2.setColor(new Color(0xCFCFCF));
                 }
-                g2.drawString(text, center, baseline);
+                g2.drawString(Integer.toString(day), x + 10, y + 25);
             }
         }
     }
