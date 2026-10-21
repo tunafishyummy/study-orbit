@@ -369,7 +369,8 @@ public class SchedulePage extends JPanel {
             setCursor(new Cursor(Cursor.HAND_CURSOR));
             setMaximumSize(new Dimension(Integer.MAX_VALUE, 74));
             setPreferredSize(new Dimension(150, 74));
-            setToolTipText("<html>" + deadline.getCourseCode() + "<br>" + deadline.getTitle()
+            setToolTipText("<html>" + escapeHtml(deadline.getCourseCode()) + "<br>"
+                    + escapeHtml(deadline.getTitle())
                     + "<br>Due " + deadline.getDueDate() + " " + formatTime(deadline.getDueTime()) + "</html>");
 
             JPanel header = new JPanel();
@@ -399,7 +400,7 @@ public class SchedulePage extends JPanel {
             title.setFont(Theme.font(Font.BOLD, 10));
             title.setForeground(Color.WHITE);
             if (deadline.isDone()) {
-                title.setText("<html><strike>" + deadline.getTitle() + "</strike></html>");
+                title.setText("<html><strike>" + escapeHtml(deadline.getTitle()) + "</strike></html>");
             }
             footer.add(title, BorderLayout.CENTER);
 
@@ -497,6 +498,10 @@ public class SchedulePage extends JPanel {
                 return new Color(0x14121F);
             }
             return Color.WHITE;
+        }
+
+        private String escapeHtml(String value) {
+            return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
         }
 
         @Override
