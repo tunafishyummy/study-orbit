@@ -268,8 +268,12 @@ public class NotesPage extends JPanel {
             return;
         }
         try {
-            if (current == null) current = manager.addNote(title, bodyArea.getText(), selectedCourseCode(), parseTags());
-            else manager.updateNote(current, title, bodyArea.getText(), selectedCourseCode(), parseTags());
+            if (current == null) {
+                current = manager.addNote(title, bodyArea.getText(), selectedCourseCode(), parseTags());
+                AppData.activity().recordNote();
+            } else {
+                manager.updateNote(current, title, bodyArea.getText(), selectedCourseCode(), parseTags());
+            }
             refreshList();
         } catch (IOException ex) {
             error(ex);
