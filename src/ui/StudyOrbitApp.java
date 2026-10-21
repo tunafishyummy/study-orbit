@@ -11,6 +11,8 @@ import ui.pages.*;
 
 public class StudyOrbitApp extends JFrame {
 
+    private static final int TITLE_BAR_ICON_SIZE = 16;
+
     private CardLayout pageLayout;
     private JPanel pages;
     private CardLayout appLayout;
@@ -270,15 +272,23 @@ public class StudyOrbitApp extends JFrame {
     }
 
     private enum WindowControl {
-        MINIMIZE, MAXIMIZE, CLOSE
+        MINIMIZE("TitleMinimize.png"),
+        MAXIMIZE("TitleMaximize.png"),
+        CLOSE("TitleClose.png");
+
+        private final String iconName;
+
+        WindowControl(String iconName) {
+            this.iconName = iconName;
+        }
     }
 
     private static class WindowControlButton extends JButton {
         private final WindowControl control;
-        private boolean maximized;
 
         WindowControlButton(WindowControl control) {
             this.control = control;
+            setIcon(loadIcon(control.iconName));
             setPreferredSize(new Dimension(46, 36));
             setFocusable(false);
             setContentAreaFilled(false);
@@ -289,42 +299,26 @@ public class StudyOrbitApp extends JFrame {
         }
 
         void setMaximized(boolean maximized) {
-            this.maximized = maximized;
-            repaint();
+            if (control == WindowControl.MAXIMIZE) {
+                String iconName = maximized ? "TitleRestore.png" : control.iconName;
+                setIcon(loadIcon(iconName));
+            }
+        }
+
+        private static ImageIcon loadIcon(String iconName) {
+            Image image = Assets.image("icons/" + iconName);
+            return new ImageIcon(image.getScaledInstance(
+                    TITLE_BAR_ICON_SIZE, TITLE_BAR_ICON_SIZE, Image.SCALE_SMOOTH));
         }
 
         @Override
         protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            if (getModel().isRollover() || getModel().isPressed()) {
-                g2.setColor(control == WindowControl.CLOSE ? new Color(0xC42B1C) : new Color(0x3D3D3D));
-                g2.fillRect(0, 0, getWidth(), getHeight());
+            boolean highlighted = getModel().isRollover() || getModel().isPressed();
+            if (highlighted) {
+                g.setColor(control == WindowControl.CLOSE ? new Color(0xC42B1C) : new Color(0x3D3D3D));
+                g.fillRect(0, 0, getWidth(), getHeight());
             }
-
-            g2.setColor(control == WindowControl.CLOSE && (getModel().isRollover() || getModel().isPressed())
-                    ? Color.WHITE : Theme.TEXT);
-            g2.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-            int centerX = getWidth() / 2;
-            int centerY = getHeight() / 2;
-            switch (control) {
-                case MINIMIZE:
-                    g2.drawLine(centerX - 5, centerY + 4, centerX + 5, centerY + 4);
-                    break;
-                case MAXIMIZE:
-                    if (maximized) {
-                        g2.drawRect(centerX - 4, centerY - 5, 9, 8);
-                        g2.drawRect(centerX - 6, centerY - 3, 9, 8);
-                    } else {
-                        g2.drawRect(centerX - 5, centerY - 5, 10, 10);
-                    }
-                    break;
-                case CLOSE:
-                    g2.drawLine(centerX - 4, centerY - 4, centerX + 4, centerY + 4);
-                    g2.drawLine(centerX + 4, centerY - 4, centerX - 4, centerY + 4);
-                    break;
-            }
-            g2.dispose();
+            super.paintComponent(g);
         }
     }
 }

@@ -11,7 +11,7 @@ public class NavBar extends JPanel {
     private NavButton activeButton;
     private JLabel navTitle;
 
-    // Same order as the sidebar in the design
+    // Same order as the sidebar in the design qazwsx
     public static final String[] PAGES = {
         "Dashboard", "Courses", "Notes", "Flashcards", "Quizzes",
         "Schedule", "Search", "Progress", "Settings"
