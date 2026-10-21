@@ -36,9 +36,10 @@ public final class Theme {
             new Color(0x64748B)
     };
     private static final Font KUMBH_SANS = Assets.font("KumbhSans.ttf", Font.PLAIN, 14);
-    public static final Font TITLE = font(Font.BOLD, 26);
-    public static final Font HEADING = font(Font.BOLD, 16);
-    public static final Font BODY = font(Font.PLAIN, 14);
+    private static boolean largeText;
+    public static Font TITLE = font(Font.BOLD, 26);
+    public static Font HEADING = font(Font.BOLD, 16);
+    public static Font BODY = font(Font.PLAIN, 14);
 
     private Theme() {}
 
@@ -80,7 +81,22 @@ public final class Theme {
     }
 
     public static Font font(int style, float size) {
-        return KUMBH_SANS.deriveFont(style, size);
+        float actual = size;
+        if (largeText) {
+            actual = size * 1.2f;
+        }
+        return KUMBH_SANS.deriveFont(style, actual);
+    }
+
+    public static void setLargeText(boolean value) {
+        largeText = value;
+        TITLE = font(Font.BOLD, 26);
+        HEADING = font(Font.BOLD, 16);
+        BODY = font(Font.PLAIN, 14);
+    }
+
+    public static boolean isLargeText() {
+        return largeText;
     }
 
     public static JPanel card() {
