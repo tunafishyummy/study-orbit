@@ -1,18 +1,22 @@
 package ui.pages;
 
-import data.AIFlashcardService;
+import ai.AiClient;
+import ai.AiConfig;
+import ai.StudyGenerator;
 import data.AppData;
 import data.NoteManager;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
 import model.Course;
 import model.Note;
+import ui.ImportDocumentDialog;
 import ui.Theme;
+import ui.components.NativeFileDialog;
+import ui.components.ProcessingCard;
 import ui.components.RoundedComboBox;
 import ui.components.RoundedTextArea;
 import ui.components.RoundedTextField;
@@ -30,7 +34,7 @@ public class NotesPage extends JPanel {
     private final JComboBox<String> courseBox = new RoundedComboBox<>();
     private final JTextField tagsField = new RoundedTextField();
     private final JTextArea bodyArea = new RoundedTextArea();
-    private final AIFlashcardService aiService = new AIFlashcardService("GEMINI_API_KEY");
+    private ProcessingCard processingCard;
     private Note current; // null = writing a new note
     private boolean loading;
 
@@ -80,6 +84,12 @@ public class NotesPage extends JPanel {
         topContainer.add(Box.createVerticalStrut(8));
         topContainer.add(buildNoteToolbar());
 
+        processingCard = new ProcessingCard("Processing your document");
+        processingCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+        processingCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 76));
+        topContainer.add(Box.createVerticalStrut(8));
+        topContainer.add(processingCard);
+
         editor.add(topContainer, BorderLayout.NORTH);
 
         bodyArea.setFont(Theme.font(Font.PLAIN, 15));
@@ -115,78 +125,69 @@ public class NotesPage extends JPanel {
         JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         toolbar.setOpaque(false);
 
-        JPopupMenu uploadMenu = new JPopupMenu();
-        uploadMenu.setBackground(Theme.SURFACE);
-        uploadMenu.setBorder(BorderFactory.createLineBorder(Theme.BORDER));
-
-        JMenuItem uploadFileItem = new JMenuItem("📁 Upload files");
-        uploadFileItem.setFont(Theme.BODY);
-        uploadFileItem.setBackground(Theme.SURFACE);
-        uploadFileItem.setForeground(Theme.TEXT);
-        uploadFileItem.addActionListener(e -> uploadAndExtractImageText());
-        uploadMenu.add(uploadFileItem);
-
-        JButton uploadOcrBtn = Theme.primaryButton("📷 Upload & Extract Text (AI)");
-        uploadOcrBtn.setToolTipText("Upload image or document for Gemini AI text extraction");
-        
-        uploadOcrBtn.addActionListener(e -> {
-            uploadMenu.show(uploadOcrBtn, 0, uploadOcrBtn.getHeight());
-        });
-
-        toolbar.add(uploadOcrBtn);
+        JButton importButton = Theme.button("Import Document (AI)");
+        importButton.setToolTipText("The AI reads a document and drafts a note you can edit");
+        importButton.addActionListener(e -> importFromDocument(importButton));
+        toolbar.add(importButton);
         return toolbar;
     }
 
-    private void uploadAndExtractImageText() {
-        Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
-        FileDialog fileDialog = new FileDialog(parentFrame, "Select Image or Document for AI Text Extraction", FileDialog.LOAD);
-        fileDialog.setVisible(true);
-
-        String filename = fileDialog.getFile();
-        String directory = fileDialog.getDirectory(); // Fixed from fileDialog.get()
-
-        if (filename != null && directory != null) {
-            File selectedFile = new File(directory, filename);
-            
-            JDialog loadingDialog = new JDialog(parentFrame, "Processing", true);
-            JLabel msg = new JLabel("  Extracting text with Gemini AI...", JLabel.CENTER);
-            loadingDialog.add(msg);
-            loadingDialog.setSize(260, 90);
-            loadingDialog.setLocationRelativeTo(this);
-
-            new Thread(() -> {
-                try {
-                    byte[] fileBytes = Files.readAllBytes(selectedFile.toPath());
-                    String mimeType = "image/jpeg";
-                    String nameLower = selectedFile.getName().toLowerCase();
-                    if (nameLower.endsWith(".png")) {
-                        mimeType = "image/png";
-                    } else if (nameLower.endsWith(".pdf")) {
-                        mimeType = "application/pdf";
-                    }
-
-                    String extractedText = aiService.extractTextFromImage(fileBytes, mimeType);
-                    SwingUtilities.invokeLater(() -> {
-                        loadingDialog.dispose();
-                        if (!extractedText.isEmpty()) {
-                            if (bodyArea.getText().isBlank()) {
-                                bodyArea.setText(extractedText);
-                            } else {
-                                bodyArea.append("\n\n" + extractedText);
-                            }
-                            JOptionPane.showMessageDialog(this, "Text extracted successfully!", "AI OCR Success", JOptionPane.INFORMATION_MESSAGE);
-                        }
-                    });
-                } catch (Exception ex) {
-                    SwingUtilities.invokeLater(() -> {
-                        loadingDialog.dispose();
-                        JOptionPane.showMessageDialog(this, "Extraction failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    });
-                }
-            }).start();
-
-            loadingDialog.setVisible(true);
+    private void importFromDocument(JButton source) {
+        String document = ImportDocumentDialog.show(this);
+        if (document == null) {
+            return;
         }
+        source.setEnabled(false);
+        processingCard.start("Reading your document...");
+
+        new SwingWorker<String[], String>() {
+            @Override
+            protected String[] doInBackground() throws Exception {
+                AiConfig config = AiConfig.load();
+                AiClient client = new AiClient(config);
+                if (config.isDemoMode() == false && client.isAvailable() == false) {
+                    if (config.isLocal()) {
+                        throw new IOException("The local AI is not running. Start Ollama first with \"ollama run "
+                                + config.getModel() + "\", or pick another provider in Settings.");
+                    }
+                    throw new IOException("Could not reach " + config.getBaseUrl()
+                            + ". Check the internet connection and the key in Settings.");
+                }
+                StudyGenerator generator = new StudyGenerator(client, config);
+                return generator.suggestNote(document, message -> publish(message));
+            }
+
+            @Override
+            protected void process(List<String> updates) {
+                processingCard.update(updates.get(updates.size() - 1));
+            }
+
+            @Override
+            protected void done() {
+                source.setEnabled(true);
+                processingCard.stop();
+                try {
+                    String[] result = get();
+                    current = null;
+                    list.clearSelection();
+                    titleField.setText(result[0]);
+                    bodyArea.setText(result[1]);
+                    bodyArea.setCaretPosition(0);
+                    String filter = (String) filterBox.getSelectedItem();
+                    if (filter == null || filter.equals(ALL)) {
+                        courseBox.setSelectedItem(NONE);
+                    } else {
+                        courseBox.setSelectedItem(filter);
+                    }
+                    JOptionPane.showMessageDialog(NotesPage.this,
+                            "The AI drafted a note from your document. Check it, then press Save note.");
+                } catch (Exception exception) {
+                    Throwable cause = exception.getCause() != null ? exception.getCause() : exception;
+                    JOptionPane.showMessageDialog(NotesPage.this, cause.getMessage(),
+                            "The AI could not finish", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
     }
 
     public void reload() {
@@ -269,8 +270,12 @@ public class NotesPage extends JPanel {
             return;
         }
         try {
-            if (current == null) current = manager.addNote(title, bodyArea.getText(), selectedCourseCode(), parseTags());
-            else manager.updateNote(current, title, bodyArea.getText(), selectedCourseCode(), parseTags());
+            if (current == null) {
+                current = manager.addNote(title, bodyArea.getText(), selectedCourseCode(), parseTags());
+                AppData.activity().recordNote();
+            } else {
+                manager.updateNote(current, title, bodyArea.getText(), selectedCourseCode(), parseTags());
+            }
             refreshList();
         } catch (IOException ex) {
             error(ex);
@@ -295,11 +300,12 @@ public class NotesPage extends JPanel {
             JOptionPane.showMessageDialog(this, "Save the note first, then export it.");
             return;
         }
-        JFileChooser fc = new JFileChooser();
-        fc.setSelectedFile(new File(current.getTitle().replaceAll("[^a-zA-Z0-9-_ ]", "") + ".txt"));
-        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+        NativeFileDialog fileDialog = new NativeFileDialog();
+        File target = fileDialog.save("Export note", "Text file", new String[] { "txt" },
+                current.getTitle().replaceAll("[^a-zA-Z0-9-_ ]", "") + ".txt");
+        if (target != null) {
             try {
-                manager.exportNote(current, fc.getSelectedFile().toPath());
+                manager.exportNote(current, target.toPath());
             } catch (IOException ex) {
                 error(ex);
             }

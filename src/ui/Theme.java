@@ -1,6 +1,9 @@
 package ui;
 
 import java.awt.*;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import javax.swing.*;
 import ui.components.RoundedButton;
 import ui.components.RoundedPanel;
@@ -20,10 +23,27 @@ public final class Theme {
     public static final Color PRIMARY = new Color(0x6151D9);
     public static final Color SELECT = PRIMARY;
     public static final Color STUDY_CELL = new Color(0x3B3B3B);
+    public static final Color HEADER_BLUE = new Color(0x7EC8F0);
+    public static final Color[] COURSE_PALETTE = {
+            new Color(0x6151D9),
+            new Color(0x0D9488),
+            new Color(0xD97706),
+            new Color(0xDC2626),
+            new Color(0xDB2777),
+            new Color(0x16A34A),
+            new Color(0x2563EB),
+            new Color(0x0891B2),
+            new Color(0x65A30D),
+            new Color(0xEA580C),
+            new Color(0x7C3AED),
+            new Color(0x64748B)
+    };
     private static final Font KUMBH_SANS = Assets.font("KumbhSans.ttf", Font.PLAIN, 14);
-    public static final Font TITLE = font(Font.BOLD, 26);
-    public static final Font HEADING = font(Font.BOLD, 16);
-    public static final Font BODY = font(Font.PLAIN, 14);
+    private static boolean largeText;
+    private static boolean time24;
+    public static Font TITLE = font(Font.BOLD, 26);
+    public static Font HEADING = font(Font.BOLD, 16);
+    public static Font BODY = font(Font.PLAIN, 14);
 
     private Theme() {}
 
@@ -65,7 +85,33 @@ public final class Theme {
     }
 
     public static Font font(int style, float size) {
-        return KUMBH_SANS.deriveFont(style, size);
+        float actual = size;
+        if (largeText) {
+            actual = size * 1.2f;
+        }
+        return KUMBH_SANS.deriveFont(style, actual);
+    }
+
+    public static void setLargeText(boolean value) {
+        largeText = value;
+        TITLE = font(Font.BOLD, 26);
+        HEADING = font(Font.BOLD, 16);
+        BODY = font(Font.PLAIN, 14);
+    }
+
+    public static boolean isLargeText() {
+        return largeText;
+    }
+
+    public static void setTime24(boolean value) {
+        time24 = value;
+    }
+
+    public static String formatTime(LocalTime time) {
+        if (time24) {
+            return time.format(DateTimeFormatter.ofPattern("HH:mm"));
+        }
+        return time.format(DateTimeFormatter.ofPattern("h:mm a"));
     }
 
     public static JPanel card() {
@@ -127,6 +173,24 @@ public final class Theme {
         } catch (Exception e) {
             return PRIMARY;
         }
+    }
+
+    public static Color nextCourseColor(List<String> usedHex) {
+        boolean[] used = new boolean[COURSE_PALETTE.length];
+        for (int index = 0; index < usedHex.size(); index++) {
+            Color color = parse(usedHex.get(index));
+            for (int paletteIndex = 0; paletteIndex < COURSE_PALETTE.length; paletteIndex++) {
+                if (COURSE_PALETTE[paletteIndex].equals(color)) {
+                    used[paletteIndex] = true;
+                }
+            }
+        }
+        for (int index = 0; index < used.length; index++) {
+            if (used[index] == false) {
+                return COURSE_PALETTE[index];
+            }
+        }
+        return COURSE_PALETTE[usedHex.size() % COURSE_PALETTE.length];
     }
 
     public static String toHex(Color c) {

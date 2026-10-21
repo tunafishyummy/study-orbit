@@ -1,9 +1,12 @@
 package ui.pages;
 
-import java.awt.*;
-import javax.swing.*;
+import data.AppData;
+import model.Profile;
 import ui.Assets;
 import ui.Theme;
+
+import javax.swing.*;
+import java.awt.*;
 
 // Screen 1, the welcome page
 public class SplashPage extends JPanel {
@@ -38,7 +41,12 @@ public class SplashPage extends JPanel {
         motto.setFont(Theme.font(Font.PLAIN, 16));
         motto.setForeground(Theme.MUTED);
 
-        JLabel profile = new JLabel("No selected profile");
+        Profile activeProfile = AppData.profiles().getActiveProfile();
+        String profileName = "No selected profile";
+        if (activeProfile != null) {
+            profileName = activeProfile.getName();
+        }
+        JLabel profile = new JLabel(profileName);
         profile.setFont(Theme.font(Font.BOLD, 18));
         profile.setForeground(Theme.TEXT);
         Chevron chevron = new Chevron();
@@ -50,7 +58,16 @@ public class SplashPage extends JPanel {
         continueButton.setBorderPainted(false);
         continueButton.setFocusPainted(false);
         continueButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        continueButton.addActionListener(e -> onContinue.run());
+        continueButton.addActionListener(e -> {
+            if (AppData.profiles().isFirstRun()) {
+                SetupWizard wizard = new SetupWizard();
+                wizard.setVisible(true);
+                if (wizard.isFinished() == false) {
+                    return;
+                }
+            }
+            onContinue.run();
+        });
 
         JPanel controls = new JPanel();
         controls.setOpaque(false);

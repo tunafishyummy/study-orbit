@@ -89,6 +89,22 @@ public class NoteManager {
         save();
     }
 
+    public void addFlashcard(String deckTitle, String front, String back, List<String> tags) throws IOException {
+        if (deckTitle == null || deckTitle.isBlank()) {
+            throw new IllegalArgumentException("Deck title is required.");
+        }
+        if (front == null || front.isBlank() || back == null || back.isBlank()) {
+            throw new IllegalArgumentException("Front and back are required.");
+        }
+        flashcards.add(new Flashcard(deckTitle.trim(), front.trim(), back.trim(), tags));
+        save();
+    }
+
+    public void deleteFlashcard(Flashcard f) throws IOException {
+        flashcards.remove(f);
+        save();
+    }
+
     public void exportNote(Note n, Path target) throws IOException {
         String text = n.getTitle() + "\n"
                 + "Course: " + (n.getCourseCode().isEmpty() ? "None" : n.getCourseCode()) + "\n"

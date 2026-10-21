@@ -4,6 +4,8 @@ import data.AppData;
 import data.NoteManager;
 import java.awt.*;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.*;
 import model.Course;
 import ui.Theme;
@@ -33,7 +35,7 @@ public class CoursesPage extends JPanel {
             JLabel lbl = new JLabel("  " + c);
             lbl.setOpaque(true);
             lbl.setFont(Theme.BODY);
-            lbl.setBorder(BorderFactory.createMatteBorder(0, 10, 0, 0, Theme.PRIMARY));
+            lbl.setBorder(BorderFactory.createMatteBorder(0, 10, 0, 0, Theme.parse(c.getColorHex())));
             lbl.setPreferredSize(new Dimension(100, 32));
             if (sel) {
                 lbl.setBackground(Theme.SELECT);
@@ -62,14 +64,19 @@ public class CoursesPage extends JPanel {
         form.add(titleField);
         JButton add = Theme.primaryButton("Add course");
         add.addActionListener(e -> run(() -> {
-            manager.addCourse(codeField.getText(), titleField.getText(), Theme.toHex(Theme.PRIMARY));
+            List<String> usedColors = new ArrayList<String>();
+            for (Course each : manager.getCourses()) {
+                usedColors.add(each.getColorHex());
+            }
+            Color nextColor = Theme.nextCourseColor(usedColors);
+            manager.addCourse(codeField.getText(), titleField.getText(), Theme.toHex(nextColor));
             clearForm();
         }));
         JButton update = Theme.button("Update selected");
         update.addActionListener(e -> run(() -> {
             Course sel = list.getSelectedValue();
             if (sel == null) throw new IllegalArgumentException("Select a course to update.");
-            manager.updateCourse(sel.getCode(), codeField.getText(), titleField.getText(), Theme.toHex(Theme.PRIMARY));
+            manager.updateCourse(sel.getCode(), codeField.getText(), titleField.getText(), sel.getColorHex());
         }));
         JButton delete = Theme.button("Delete selected");
         delete.addActionListener(e -> run(() -> {

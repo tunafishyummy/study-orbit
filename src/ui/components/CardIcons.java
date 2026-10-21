@@ -19,10 +19,15 @@ public final class CardIcons {
         return new Glyph(Glyph.BELL);
     }
 
+    public static Icon spark() {
+        return new Glyph(Glyph.SPARK);
+    }
+
     private static class Glyph implements Icon {
         static final int PERSON = 0;
         static final int PALETTE = 1;
         static final int BELL = 2;
+        static final int SPARK = 3;
 
         private final int kind;
 
@@ -55,10 +60,13 @@ public final class CardIcons {
                 g2.fillOval(4, 4, 3, 3);
                 g2.fillOval(9, 3, 3, 3);
                 g2.fillOval(9, 9, 3, 3);
-            } else {
+            } else if (kind == BELL) {
                 g2.fillArc(3, 2, 10, 11, 0, 180);
                 g2.fillRect(3, 7, 10, 3);
                 g2.fillOval(6, 12, 4, 3);
+            } else {
+                g2.fillPolygon(new int[] { 8, 9, 15, 9, 8, 7, 1, 7 },
+                        new int[] { 1, 6, 8, 10, 15, 10, 8, 6 }, 8);
             }
             g2.dispose();
         }
