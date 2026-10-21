@@ -4,12 +4,20 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import model.Course;
+import model.Deadline;
 import model.Flashcard;
 import model.Note;
+import model.Profile;
+import model.ScheduleClass;
+import model.StudyActivity;
 
 public class DataStore {
     private final String url;
@@ -34,11 +42,21 @@ public class DataStore {
         String createCourses = "CREATE TABLE IF NOT EXISTS courses (code TEXT PRIMARY KEY, title TEXT NOT NULL, color_hex TEXT)";
         String createNotes = "CREATE TABLE IF NOT EXISTS notes (id TEXT PRIMARY KEY, title TEXT NOT NULL, body TEXT, course_code TEXT, tags TEXT, created TEXT, edited TEXT)";
         String createFlashcards = "CREATE TABLE IF NOT EXISTS flashcards (id TEXT PRIMARY KEY, deck_title TEXT NOT NULL, front TEXT NOT NULL, back TEXT NOT NULL, tags TEXT, created TEXT, course_code TEXT)";
+        String createProfiles = "CREATE TABLE IF NOT EXISTS profiles (id TEXT PRIMARY KEY, name TEXT NOT NULL, avatar_color TEXT, created TEXT)";
+        String createSettings = "CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)";
+        String createActivity = "CREATE TABLE IF NOT EXISTS activity (log_date TEXT, profile_id TEXT, notes_made INTEGER, cards_reviewed INTEGER, quizzes_taken INTEGER, PRIMARY KEY (log_date, profile_id))";
+        String createClasses = "CREATE TABLE IF NOT EXISTS schedule_class (id TEXT PRIMARY KEY, course_code TEXT, day TEXT, start_time TEXT, end_time TEXT, room TEXT)";
+        String createDeadlines = "CREATE TABLE IF NOT EXISTS deadline (id TEXT PRIMARY KEY, course_code TEXT, title TEXT, due_date TEXT, done INTEGER, reminder_on INTEGER)";
 
         try (Connection conn = connect(); Statement stmt = conn.createStatement()) {
             stmt.execute(createCourses);
             stmt.execute(createNotes);
             stmt.execute(createFlashcards);
+            stmt.execute(createProfiles);
+            stmt.execute(createSettings);
+            stmt.execute(createActivity);
+            stmt.execute(createClasses);
+            stmt.execute(createDeadlines);
             // older databases were made before flashcards had a course, so add the column once
             try {
                 stmt.execute("ALTER TABLE flashcards ADD COLUMN course_code TEXT");
