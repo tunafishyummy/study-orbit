@@ -60,6 +60,9 @@ public class ProfileManager {
         if (active == null) {
             settings.set(SettingsManager.ACTIVE_PROFILE, "");
         }
+        if (profiles.isEmpty()) {
+            settings.setBoolean(SettingsManager.FIRST_RUN_DONE, false);
+        }
     }
 
     public boolean isFirstRun() {
