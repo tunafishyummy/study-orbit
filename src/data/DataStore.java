@@ -212,4 +212,45 @@ public class DataStore {
         }
     }
 
+    public List<StudyActivity> loadActivity() throws IOException {
+        List<StudyActivity> activity = new ArrayList<StudyActivity>();
+        try (Connection conn = connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM activity")) {
+            while (rs.next()) {
+                activity.add(new StudyActivity(
+                        LocalDate.parse(rs.getString("log_date")),
+                        rs.getString("profile_id"),
+                        rs.getInt("notes_made"),
+                        rs.getInt("cards_reviewed"),
+                        rs.getInt("quizzes_taken")));
+            }
+        } catch (SQLException e) {
+            throw new IOException("Error loading activity", e);
+        }
+        return activity;
+    }
+
+    public void saveActivity(List<StudyActivity> activity) throws IOException {
+        try (Connection conn = connect()) {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("DELETE FROM activity");
+            }
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                    "INSERT INTO activity (log_date, profile_id, notes_made, cards_reviewed, quizzes_taken) VALUES (?, ?, ?, ?, ?)")) {
+                for (int index = 0; index < activity.size(); index++) {
+                    StudyActivity entry = activity.get(index);
+                    pstmt.setString(1, entry.getDate().toString());
+                    pstmt.setString(2, entry.getProfileId());
+                    pstmt.setInt(3, entry.getNotesMade());
+                    pstmt.setInt(4, entry.getCardsReviewed());
+                    pstmt.setInt(5, entry.getQuizzesTaken());
+                    pstmt.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new IOException("Error saving activity", e);
+        }
+    }
+
 }
