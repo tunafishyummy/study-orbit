@@ -294,11 +294,12 @@ public class NotesPage extends JPanel {
             JOptionPane.showMessageDialog(this, "Save the note first, then export it.");
             return;
         }
-        JFileChooser fc = new JFileChooser();
-        fc.setSelectedFile(new File(current.getTitle().replaceAll("[^a-zA-Z0-9-_ ]", "") + ".txt"));
-        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+        NativeFileDialog fileDialog = new NativeFileDialog();
+        File target = fileDialog.save("Export note", "Text file", new String[] { "txt" },
+                current.getTitle().replaceAll("[^a-zA-Z0-9-_ ]", "") + ".txt");
+        if (target != null) {
             try {
-                manager.exportNote(current, fc.getSelectedFile().toPath());
+                manager.exportNote(current, target.toPath());
             } catch (IOException ex) {
                 error(ex);
             }
