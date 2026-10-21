@@ -1,12 +1,17 @@
 package ui.pages;
 
+import ai.AiClient;
+import ai.AiConfig;
+import ai.StudyGenerator;
 import data.AppData;
 import data.NoteManager;
 import data.QuizBuilder;
 import model.Course;
 import model.Flashcard;
 import model.QuizQuestion;
+import ui.ImportDocumentDialog;
 import ui.Theme;
+import ui.components.ProcessingCard;
 import ui.components.RoundedComboBox;
 import ui.components.RoundedTextField;
 
@@ -15,6 +20,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +48,8 @@ public class QuizzesPage extends JPanel {
     private final JLabel feedbackLabel = new JLabel(" ");
     private final JButton actionButton = Theme.primaryButton("Check answer");
     private final JLabel resultLabel = new JLabel();
+    private JLabel aiStatusLabel;
+    private ProcessingCard processingCard;
 
     private List<QuizQuestion> questions = new ArrayList<QuizQuestion>();
     private int index;
@@ -107,6 +115,22 @@ public class QuizzesPage extends JPanel {
         start.setAlignmentX(Component.LEFT_ALIGNMENT);
         start.addActionListener(e -> startQuiz());
         card.add(start);
+        card.add(Box.createVerticalStrut(8));
+
+        JButton aiButton = Theme.button("Generate with AI");
+        aiButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        aiButton.addActionListener(e -> generateWithAi(aiButton));
+        card.add(aiButton);
+        card.add(Box.createVerticalStrut(6));
+
+        aiStatusLabel = Theme.muted("Or import a document and let the AI write the questions.");
+        aiStatusLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        card.add(aiStatusLabel);
+
+        processingCard = new ProcessingCard("Writing quiz questions");
+        processingCard.setAlignmentX(Component.LEFT_ALIGNMENT);
+        processingCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 76));
+        card.add(processingCard);
         card.add(Box.createVerticalGlue());
         return card;
     }
@@ -210,6 +234,62 @@ public class QuizzesPage extends JPanel {
         if (previous != null) {
             courseBox.setSelectedItem(previous);
         }
+    }
+
+    private void generateWithAi(JButton source) {
+        String document = ImportDocumentDialog.show(this);
+        if (document == null) {
+            return;
+        }
+        source.setEnabled(false);
+        processingCard.start("Reading your document...");
+
+        new SwingWorker<List<QuizQuestion>, String>() {
+            @Override
+            protected List<QuizQuestion> doInBackground() throws Exception {
+                AiConfig config = AiConfig.load();
+                AiClient client = new AiClient(config);
+                if (config.isDemoMode() == false && client.isAvailable() == false) {
+                    if (config.isLocal()) {
+                        throw new IOException("The local AI is not running. Start Ollama first with \"ollama run "
+                                + config.getModel() + "\", or pick another provider in Settings.");
+                    }
+                    throw new IOException("Could not reach " + config.getBaseUrl()
+                            + ". Check the internet connection and the key in Settings.");
+                }
+                StudyGenerator generator = new StudyGenerator(client, config);
+                return generator.suggestQuiz(document, "Imported document", message -> publish(message));
+            }
+
+            @Override
+            protected void process(List<String> updates) {
+                processingCard.update(updates.get(updates.size() - 1));
+            }
+
+            @Override
+            protected void done() {
+                source.setEnabled(true);
+                processingCard.stop();
+                try {
+                    List<QuizQuestion> result = get();
+                    if (result.isEmpty()) {
+                        aiStatusLabel.setText("The AI did not find clear questions. Try a clearer document.");
+                        return;
+                    }
+                    questions = result;
+                    index = 0;
+                    score = 0;
+                    aiStatusLabel.setText("Generated " + result.size() + " questions.");
+                    viewLayout.show(viewPanel, "question");
+                    showQuestion();
+                } catch (Exception exception) {
+                    Throwable cause = exception.getCause() != null ? exception.getCause() : exception;
+                    aiStatusLabel.setText("Generation failed.");
+                    JOptionPane.showMessageDialog(QuizzesPage.this, cause.getMessage(),
+                            "The AI could not finish", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
     }
 
     private void startQuiz() {
