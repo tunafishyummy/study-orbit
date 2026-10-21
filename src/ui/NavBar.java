@@ -158,9 +158,21 @@ public class NavBar extends JPanel {
         return null;
     }
 
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (activeButton == null) return;
+
+        int expansion = tabVerticalExpansion(activeButton);
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setColor(Theme.BG);
+        g2.fillRect(0, activeButton.getY() - expansion, getWidth(),
+                activeButton.getHeight() + expansion * 2);
+        g2.dispose();
+    }
+
     private class NavButton extends JButton {
         private final String page;
-        private boolean active;
 
         NavButton(String page) {
             super(page);
@@ -179,21 +191,8 @@ public class NavBar extends JPanel {
         }
 
         void setActive(boolean value) {
-            this.active = value;
             setPageIcon(value);
             repaint();
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            if (active) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(Theme.SELECT);
-                g2.fillRoundRect(6, 2, getWidth() - 12, getHeight() - 4, 14, 14);
-                g2.dispose();
-            }
-            super.paintComponent(g);
         }
 
         private void setPageIcon(boolean highlighted) {
