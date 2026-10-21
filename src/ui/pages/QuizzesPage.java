@@ -16,6 +16,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import model.Note;
 import model.QuizQuestion;
+import ui.ImportDocumentDialog;
 import ui.Theme;
 import ui.components.RoundedTextField;
 
@@ -47,6 +48,7 @@ public class QuizzesPage extends JPanel {
     private final Stepper attemptsStepper = new Stepper(new String[]{"1", "2", "3"}, 0);
     private final JButton generateButton = Theme.primaryButton("Generate");
     private boolean generating;
+    private String importedDocument;
 
     // ----- quiz view -----
     private final JLabel progressLabel = new JLabel();
@@ -109,6 +111,11 @@ public class QuizzesPage extends JPanel {
         top.add(chipRow);
         top.add(Box.createVerticalStrut(6));
         top.add(hint);
+        top.add(Box.createVerticalStrut(6));
+        JButton importButton = Theme.button("Import Document");
+        importButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        importButton.addActionListener(e -> importDocument());
+        top.add(importButton);
         panel.add(top, BorderLayout.NORTH);
 
         plusButton.addActionListener(e -> showNotePicker());
@@ -191,20 +198,23 @@ public class QuizzesPage extends JPanel {
         chipRow.revalidate();
         chipRow.repaint();
 
-        StringBuilder preview = new StringBuilder();
-        for (Note note : selected) {
-            if (preview.length() > 0) preview.append("\n\n");
-            preview.append(note.getTitle()).append("\n").append(note.getBody());
-        }
-        if (selected.isEmpty()) {
+        if (selected.isEmpty() && importedDocument != null) {
+            previewArea.setForeground(Theme.TEXT);
+            previewArea.setText(importedDocument);
+        } else if (selected.isEmpty()) {
             previewArea.setForeground(Theme.MUTED);
-            previewArea.setText("Press + to add the notes you want to be quizzed on.");
+            previewArea.setText("Press + to add the notes you want to be quizzed on, or import a document.");
         } else {
+            StringBuilder preview = new StringBuilder();
+            for (Note note : selected) {
+                if (preview.length() > 0) preview.append("\n\n");
+                preview.append(note.getTitle()).append("\n").append(note.getBody());
+            }
             previewArea.setForeground(Theme.TEXT);
             previewArea.setText(preview.toString());
         }
         previewArea.setCaretPosition(0);
-        generateButton.setEnabled(!selected.isEmpty() && !generating);
+        generateButton.setEnabled((!selected.isEmpty() || importedDocument != null) && !generating);
     }
 
     // drops notes that were deleted and picks up edits made on the Notes page
@@ -244,6 +254,7 @@ public class QuizzesPage extends JPanel {
                 String label = note.getTitle() + (note.getCourseCode().isEmpty() ? "" : "  (" + note.getCourseCode() + ")");
                 JMenuItem item = menuItem(label);
                 item.addActionListener(e -> {
+                    importedDocument = null;
                     selected.add(note);
                     refreshSetup();
                 });
@@ -263,9 +274,20 @@ public class QuizzesPage extends JPanel {
         return item;
     }
 
+    private void importDocument() {
+        String document = ImportDocumentDialog.show(this);
+        if (document == null) {
+            return;
+        }
+        importedDocument = document;
+        selected.clear();
+        refreshSetup();
+    }
+
     private void generate() {
-        if (selected.isEmpty() || generating) return;
+        if ((selected.isEmpty() && importedDocument == null) || generating) return;
         final List<Note> notes = new ArrayList<>(selected);
+        final String document = importedDocument;
         final int count = Integer.parseInt(lengthStepper.value().split(" ")[0]);
         final String ambiguity = ambiguityStepper.value();
         final String type = typeStepper.value();
@@ -277,7 +299,12 @@ public class QuizzesPage extends JPanel {
 
         new Thread(() -> {
             try {
-                List<QuizQuestion> result = service.generate(notes, count, ambiguity, type);
+                List<QuizQuestion> result;
+                if (document != null && notes.isEmpty()) {
+                    result = service.generateFromDocument(document, count, ambiguity, type);
+                } else {
+                    result = service.generate(notes, count, ambiguity, type);
+                }
                 SwingUtilities.invokeLater(() -> {
                     doneGenerating();
                     maxAttempts = attempts;
