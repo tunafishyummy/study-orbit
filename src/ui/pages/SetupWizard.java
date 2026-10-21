@@ -35,13 +35,15 @@ public class SetupWizard extends JDialog {
     private final JTextField startField = new RoundedTextField();
     private final JTextField endField = new RoundedTextField();
     private final JTextField roomField = new RoundedTextField();
+    private final DefaultListModel<String> classModel = new DefaultListModel<String>();
     private final JTextField deadlineTitle = new RoundedTextField();
     private final JTextField deadlineDate = new RoundedTextField();
+    private final DefaultListModel<String> deadlineModel = new DefaultListModel<String>();
 
     public SetupWizard() {
         setTitle("Set up Study Orbit");
         setModal(true);
-        setSize(520, 500);
+        setSize(560, 640);
         setLocationRelativeTo(null);
         getContentPane().setBackground(Theme.BG);
 
@@ -61,7 +63,7 @@ public class SetupWizard extends JDialog {
         JPanel panel = new JPanel();
         panel.setBackground(Theme.BG);
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
+        panel.setBorder(BorderFactory.createEmptyBorder(24, 32, 24, 32));
 
         JLabel heading = new JLabel(title);
         heading.setFont(Theme.TITLE);
@@ -73,7 +75,7 @@ public class SetupWizard extends JDialog {
         JLabel hint = Theme.muted(subtitle);
         hint.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(hint);
-        panel.add(Box.createVerticalStrut(20));
+        panel.add(Box.createVerticalStrut(16));
         return panel;
     }
 
@@ -121,15 +123,7 @@ public class SetupWizard extends JDialog {
         panel.add(add);
         panel.add(Box.createVerticalStrut(10));
 
-        JList<String> list = new JList<String>(courseModel);
-        list.setBackground(Theme.SURFACE);
-        list.setForeground(Theme.TEXT);
-        list.setFont(Theme.BODY);
-        JScrollPane scroll = new JScrollPane(list);
-        scroll.setPreferredSize(new Dimension(400, 110));
-        scroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
-        scroll.setAlignmentX(Component.LEFT_ALIGNMENT);
-        panel.add(scroll);
+        panel.add(listScroll(courseModel, 110));
         panel.add(Box.createVerticalStrut(14));
 
         panel.add(buttons("Back", () -> steps.show(stepPanel, "name"),
@@ -142,47 +136,63 @@ public class SetupWizard extends JDialog {
     }
 
     private JPanel buildScheduleStep() {
-        JPanel panel = page("Schedule", "Add one class and one deadline. You can add more later.");
+        JPanel panel = page("Schedule", "Add as many classes and deadlines as you need.");
 
-        panel.add(label("Class course"));
-        courseBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
-        courseBox.setAlignmentX(Component.LEFT_ALIGNMENT);
-        panel.add(courseBox);
-        panel.add(Box.createVerticalStrut(8));
-
-        panel.add(label("Day"));
-        dayBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
-        dayBox.setAlignmentX(Component.LEFT_ALIGNMENT);
-        panel.add(dayBox);
-        panel.add(Box.createVerticalStrut(8));
-
-        panel.add(label("Start, end and room"));
-        JPanel times = new JPanel(new GridLayout(1, 3, 8, 0));
-        times.setOpaque(false);
-        times.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(label("Class"));
+        JPanel classRow = new JPanel(new GridLayout(0, 2, 8, 8));
+        classRow.setOpaque(false);
+        classRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        classRow.add(courseBox);
+        classRow.add(dayBox);
         startField.setText("9:00");
         endField.setText("10:30");
-        times.add(startField);
-        times.add(endField);
-        times.add(roomField);
-        panel.add(times);
-        panel.add(Box.createVerticalStrut(12));
-
-        panel.add(label("Deadline title"));
-        deadlineTitle.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
-        deadlineTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
-        panel.add(deadlineTitle);
+        classRow.add(startField);
+        classRow.add(endField);
+        classRow.add(roomField);
+        JButton addClassButton = Theme.button("Add class");
+        addClassButton.addActionListener(e -> addClassToList());
+        classRow.add(addClassButton);
+        panel.add(classRow);
+        panel.add(Box.createVerticalStrut(6));
+        JLabel timeHint = Theme.muted("Times look like 9:00 and 10:30, room is optional");
+        timeHint.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(timeHint);
         panel.add(Box.createVerticalStrut(8));
+        panel.add(listScroll(classModel, 90));
+        panel.add(Box.createVerticalStrut(14));
 
-        panel.add(label("Deadline date (2026-10-30)"));
-        deadlineDate.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
-        deadlineDate.setAlignmentX(Component.LEFT_ALIGNMENT);
-        panel.add(deadlineDate);
-        panel.add(Box.createVerticalStrut(16));
+        panel.add(label("Deadline"));
+        JPanel deadlineRow = new JPanel(new GridLayout(0, 2, 8, 8));
+        deadlineRow.setOpaque(false);
+        deadlineRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        deadlineDate.setText(LocalDate.now().plusDays(7).toString());
+        deadlineRow.add(deadlineTitle);
+        deadlineRow.add(deadlineDate);
+        JButton addDeadlineButton = Theme.button("Add deadline");
+        addDeadlineButton.addActionListener(e -> addDeadlineToList());
+        deadlineRow.add(addDeadlineButton);
+        deadlineRow.add(new JLabel(""));
+        panel.add(deadlineRow);
+        panel.add(Box.createVerticalStrut(8));
+        panel.add(listScroll(deadlineModel, 90));
+        panel.add(Box.createVerticalStrut(14));
 
         panel.add(buttons("Back", () -> steps.show(stepPanel, "courses"), "Finish", this::finish));
         panel.add(Box.createVerticalGlue());
         return panel;
+    }
+
+    private JScrollPane listScroll(DefaultListModel<String> model, int height) {
+        JList<String> list = new JList<String>(model);
+        list.setBackground(Theme.SURFACE);
+        list.setForeground(Theme.TEXT);
+        list.setFont(Theme.BODY);
+
+        JScrollPane scroll = new JScrollPane(list);
+        scroll.setPreferredSize(new Dimension(400, height));
+        scroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
+        scroll.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return scroll;
     }
 
     private JPanel buttons(String leftText, Runnable leftAction, String rightText, Runnable rightAction) {
@@ -226,6 +236,46 @@ public class SetupWizard extends JDialog {
         }
     }
 
+    private void addClassToList() {
+        String course = (String) courseBox.getSelectedItem();
+        if (course == null || course.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Add a course first.");
+            return;
+        }
+        try {
+            LocalTime startTime = LocalTime.parse(startField.getText().trim(), TIME_FORMAT);
+            LocalTime endTime = LocalTime.parse(endField.getText().trim(), TIME_FORMAT);
+            AppData.schedule().addClass(course, (String) dayBox.getSelectedItem(),
+                    startTime, endTime, roomField.getText().trim());
+            classModel.addElement(course + "  " + dayBox.getSelectedItem() + "  "
+                    + startField.getText().trim() + " - " + endField.getText().trim()
+                    + "  " + roomField.getText().trim());
+            roomField.setText("");
+        } catch (Exception exception) {
+            JOptionPane.showMessageDialog(this, "Use a time like 9:00 or 10:30.");
+        }
+    }
+
+    private void addDeadlineToList() {
+        String title = deadlineTitle.getText().trim();
+        if (title.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Enter the deadline title.");
+            return;
+        }
+        String course = (String) courseBox.getSelectedItem();
+        if (course == null) {
+            course = "";
+        }
+        try {
+            LocalDate dueDate = LocalDate.parse(deadlineDate.getText().trim());
+            AppData.schedule().addDeadline(course, title, dueDate);
+            deadlineModel.addElement(title + "  " + dueDate);
+            deadlineTitle.setText("");
+        } catch (Exception exception) {
+            JOptionPane.showMessageDialog(this, "Use a date like 2026-10-30.");
+        }
+    }
+
     private List<String> usedColors() {
         List<String> used = new ArrayList<String>();
         List<Course> courses = AppData.get().getCourses();
@@ -249,51 +299,10 @@ public class SetupWizard extends JDialog {
                     nameField.getText().trim(), Theme.toHex(Theme.nextCourseColor(usedColors())));
             AppData.profiles().setActiveProfile(profile);
             AppData.profiles().finishFirstRun();
-
-            saveClass();
-            saveDeadline();
-
             finished = true;
             dispose();
         } catch (Exception exception) {
             JOptionPane.showMessageDialog(this, exception.getMessage());
-        }
-    }
-
-    private void saveClass() {
-        String course = (String) courseBox.getSelectedItem();
-        if (course == null || course.isEmpty()) {
-            return;
-        }
-        String start = startField.getText().trim();
-        String end = endField.getText().trim();
-        if (start.isEmpty() || end.isEmpty()) {
-            return;
-        }
-        try {
-            LocalTime startTime = LocalTime.parse(start, TIME_FORMAT);
-            LocalTime endTime = LocalTime.parse(end, TIME_FORMAT);
-            AppData.schedule().addClass(course, (String) dayBox.getSelectedItem(),
-                    startTime, endTime, roomField.getText().trim());
-        } catch (Exception exception) {
-            // skip an invalid class instead of blocking the setup
-        }
-    }
-
-    private void saveDeadline() {
-        String title = deadlineTitle.getText().trim();
-        String date = deadlineDate.getText().trim();
-        if (title.isEmpty() || date.isEmpty()) {
-            return;
-        }
-        String course = (String) courseBox.getSelectedItem();
-        if (course == null) {
-            course = "";
-        }
-        try {
-            AppData.schedule().addDeadline(course, title, LocalDate.parse(date));
-        } catch (Exception exception) {
-            // skip an invalid deadline instead of blocking the setup
         }
     }
 }
