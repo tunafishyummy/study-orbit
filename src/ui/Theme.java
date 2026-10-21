@@ -23,6 +23,7 @@ public final class Theme {
     public static final Color PRIMARY = new Color(0x6151D9);
     public static final Color SELECT = PRIMARY;
     public static final Color STUDY_CELL = new Color(0x3B3B3B);
+    public static final Color HEADER_BLUE = new Color(0x7EC8F0);
     public static final Color[] COURSE_PALETTE = {
             new Color(0x6151D9),
             new Color(0x0D9488),
