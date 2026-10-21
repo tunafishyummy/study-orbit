@@ -8,7 +8,14 @@ import java.awt.*;
 // a simple profile avatar with a drawn person shape
 public class Avatar extends JComponent {
 
+    private final Color color;
+
     public Avatar() {
+        this(Theme.PRIMARY);
+    }
+
+    public Avatar(Color color) {
+        this.color = color;
         setPreferredSize(new Dimension(96, 96));
     }
 
@@ -20,7 +27,7 @@ public class Avatar extends JComponent {
         int size = Math.min(getWidth(), getHeight());
         g2.setColor(Theme.BG);
         g2.fillOval(0, 0, size, size);
-        g2.setColor(Theme.PRIMARY);
+        g2.setColor(color);
         g2.setStroke(new BasicStroke(2f));
         g2.drawOval(1, 1, size - 2, size - 2);
 
