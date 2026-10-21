@@ -1,11 +1,10 @@
 package ui.pages;
 
-import ui.Theme;
-
-import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import javax.swing.*;
+import ui.Theme;
 
 // Screen 3, the student dashboard
 public class DashboardPage extends JPanel {

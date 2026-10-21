@@ -98,6 +98,7 @@ public class StudyOrbitApp extends JFrame {
         pages.add(notesPage, "Notes");
         pages.add(flashcardsPage, "Flashcards");
         pages.add(createFlashcardPage, "CreateFlashcard");
+        pages.add(new QuizzesPage(), "Quizzes");
         pages.add(new SchedulePage(), "Schedule");
         pages.add(new SearchPage(searchOpener()), "Search");
         pages.add(new ProgressPage(), "Progress");

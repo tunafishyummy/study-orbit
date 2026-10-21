@@ -1,10 +1,9 @@
 package ui.pages;
 
+import java.awt.*;
+import javax.swing.*;
 import ui.Theme;
 import ui.components.RoundedPanel;
-
-import javax.swing.*;
-import java.awt.*;
 
 // Screen 8, the weekly schedule and the deadline list
 public class SchedulePage extends JPanel {

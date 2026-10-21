@@ -1,12 +1,11 @@
 package ui.pages;
 
+import java.awt.*;
+import javax.swing.*;
 import ui.Theme;
 import ui.components.Avatar;
 import ui.components.RoundedPanel;
 import ui.components.ToggleSwitch;
-
-import javax.swing.*;
-import java.awt.*;
 
 // Screen 11, settings and accessibility
 public class SettingsPage extends JPanel {
