@@ -29,7 +29,6 @@ public class CreateFlashcardPage extends JPanel {
     private JTextField tagsField;
     private ScrollablePanel suggestedContainer;
     private FlashcardManager flashcardManager;
-    private AIFlashcardService aiService;
     private final List<AIFlashcardService.SuggestedCard> activeSuggestions = new ArrayList<>();
     private final Runnable onBackCallback;
 
@@ -69,7 +68,6 @@ public class CreateFlashcardPage extends JPanel {
     public CreateFlashcardPage(Runnable onBack) {
         this.onBackCallback = onBack;
         flashcardManager = new FlashcardManager(AppData.get().getStoreReference());
-        aiService = new AIFlashcardService(AppData.settings().get(data.SettingsManager.API_KEY, ""));
 
         setLayout(new BorderLayout());
         setBackground(Theme.BG);
@@ -256,6 +254,10 @@ public class CreateFlashcardPage extends JPanel {
         suggestedContainer.repaint();
     }
 
+    private AIFlashcardService aiService() {
+        return new AIFlashcardService(AppData.settings().get(data.SettingsManager.API_KEY, ""));
+    }
+
     private void fetchAiSuggestions() {
         Note selected = (Note) noteSelector.getSelectedItem();
         if (selected == null || selected.getBody().isBlank()) {
@@ -272,7 +274,7 @@ public class CreateFlashcardPage extends JPanel {
 
         new Thread(() -> {
             try {
-                List<AIFlashcardService.SuggestedCard> suggestions = aiService.generateSuggestions(selected.getTitle(), selected.getBody());
+                List<AIFlashcardService.SuggestedCard> suggestions = aiService().generateSuggestions(selected.getTitle(), selected.getBody());
                 SwingUtilities.invokeLater(() -> {
                     activeSuggestions.clear();
                     activeSuggestions.addAll(suggestions);
@@ -299,7 +301,7 @@ public class CreateFlashcardPage extends JPanel {
 
         new Thread(() -> {
             try {
-                List<AIFlashcardService.SuggestedCard> newCards = aiService.generateSuggestions(selected.getTitle(), selected.getBody());
+                List<AIFlashcardService.SuggestedCard> newCards = aiService().generateSuggestions(selected.getTitle(), selected.getBody());
                 if (!newCards.isEmpty()) {
                     SwingUtilities.invokeLater(() -> {
                         activeSuggestions.add(newCards.get(0));
