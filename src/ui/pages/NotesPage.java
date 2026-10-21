@@ -31,7 +31,8 @@ public class NotesPage extends JPanel {
     private final JComboBox<String> courseBox = new RoundedComboBox<>();
     private final JTextField tagsField = new RoundedTextField();
     private final JTextArea bodyArea = new RoundedTextArea();
-    private final AIFlashcardService aiService = new AIFlashcardService("GEMINI_API_KEY");
+    private final AIFlashcardService aiService = new AIFlashcardService(
+            AppData.settings().get(data.SettingsManager.API_KEY, ""));
     private Note current; // null = writing a new note
     private boolean loading;
 
