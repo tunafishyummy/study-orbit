@@ -190,7 +190,7 @@ public class SchedulePage extends JPanel {
         white.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         weekColumns.setOpaque(false);
-        weekColumns.setLayout(new GridLayout(1, 7, 6, 0));
+        weekColumns.setLayout(new GridLayout(1, 7, 0, 0));
         white.add(weekColumns, BorderLayout.CENTER);
         card.add(white, BorderLayout.CENTER);
         return card;
@@ -236,7 +236,13 @@ public class SchedulePage extends JPanel {
         deadlines.sort(Comparator.comparing(Deadline::getDueTime));
 
         for (int dayIndex = 0; dayIndex < 7; dayIndex++) {
-            weekColumns.add(dayColumn(weekStart.plusDays(dayIndex), deadlines));
+            LocalDate date = weekStart.plusDays(dayIndex);
+            JPanel column = dayColumn(date, deadlines);
+            column.putClientProperty("date", date);
+            if (dayIndex < 6) {
+                column.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(0xE0E0E0)));
+            }
+            weekColumns.add(column);
         }
 
         weekColumns.revalidate();
@@ -306,6 +312,7 @@ public class SchedulePage extends JPanel {
     }
 
     private class DeadlineCard extends JPanel {
+        private static final int HEADER_HEIGHT = 40;
         private final Deadline deadline;
         private final Color color;
         private boolean hovered;
@@ -319,37 +326,51 @@ public class SchedulePage extends JPanel {
                 base = Theme.parse(course.getColorHex());
             }
             if (deadline.isDone()) {
-                base = new Color(0x555555);
+                base = new Color(0x4B4B4B);
             }
             this.color = base;
 
             setOpaque(false);
-            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-            setBorder(new EmptyBorder(8, 10, 8, 10));
+            setLayout(new BorderLayout());
             setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setMaximumSize(new Dimension(Integer.MAX_VALUE, 74));
+            setPreferredSize(new Dimension(150, 74));
             setToolTipText("<html>" + deadline.getCourseCode() + "<br>" + deadline.getTitle()
                     + "<br>Due " + deadline.getDueDate() + " " + formatTime(deadline.getDueTime()) + "</html>");
 
+            JPanel header = new JPanel();
+            header.setOpaque(false);
+            header.setPreferredSize(new Dimension(0, HEADER_HEIGHT));
+            header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
+            header.setBorder(new EmptyBorder(6, 9, 4, 9));
+
+            Color headerText = readableOn(base);
             JLabel code = new JLabel(deadline.getCourseCode());
             code.setFont(Theme.font(Font.BOLD, 12));
-            code.setForeground(Color.WHITE);
+            code.setForeground(headerText);
             code.setAlignmentX(Component.LEFT_ALIGNMENT);
-            add(code);
-
-            JLabel title = new JLabel(deadline.getTitle());
-            title.setFont(Theme.font(Font.BOLD, 11));
-            title.setForeground(Color.WHITE);
-            title.setAlignmentX(Component.LEFT_ALIGNMENT);
-            if (deadline.isDone()) {
-                title.setText("<html><strike>" + deadline.getTitle() + "</strike></html>");
-            }
-            add(title);
+            header.add(code);
 
             JLabel due = new JLabel("Due " + formatTime(deadline.getDueTime()));
             due.setFont(Theme.font(Font.PLAIN, 10));
-            due.setForeground(new Color(0xE5E5E5));
+            due.setForeground(headerText);
             due.setAlignmentX(Component.LEFT_ALIGNMENT);
-            add(due);
+            header.add(due);
+
+            JPanel footer = new JPanel(new BorderLayout());
+            footer.setOpaque(false);
+            footer.setBorder(new EmptyBorder(4, 9, 6, 9));
+
+            JLabel title = new JLabel(deadline.getTitle());
+            title.setFont(Theme.font(Font.BOLD, 10));
+            title.setForeground(Color.WHITE);
+            if (deadline.isDone()) {
+                title.setText("<html><strike>" + deadline.getTitle() + "</strike></html>");
+            }
+            footer.add(title, BorderLayout.CENTER);
+
+            add(header, BorderLayout.NORTH);
+            add(footer, BorderLayout.CENTER);
 
             JPopupMenu menu = new JPopupMenu();
             JMenuItem toggle = new JMenuItem(deadline.isDone() ? "Mark as not done" : "Mark as done");
@@ -400,16 +421,37 @@ public class SchedulePage extends JPanel {
             });
         }
 
+        private Color readableOn(Color color) {
+            double luminance = (0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue()) / 255.0;
+            if (luminance > 0.55) {
+                return new Color(0x14121F);
+            }
+            return Color.WHITE;
+        }
+
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int width = getWidth();
+            int height = getHeight();
+            Shape clip = new java.awt.geom.RoundRectangle2D.Float(0, 0, width, height, 10, 10);
+            g2.clip(clip);
+
             if (hovered) {
                 g2.setColor(color.brighter());
             } else {
                 g2.setColor(color);
             }
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+            g2.fillRect(0, 0, width, HEADER_HEIGHT);
+
+            g2.setColor(new Color(0x211E3F));
+            g2.fillRect(0, HEADER_HEIGHT, width, height - HEADER_HEIGHT);
+
+            g2.setClip(null);
+            g2.setColor(new Color(0, 0, 0, 40));
+            g2.drawRoundRect(0, 0, width - 1, height - 1, 10, 10);
             g2.dispose();
             super.paintComponent(g);
         }
