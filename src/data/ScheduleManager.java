@@ -64,9 +64,6 @@ public class ScheduleManager {
             if (deadline.isDone() || deadline.isReminderOn() == false) {
                 continue;
             }
-            if (deadline.getDueDate().isBefore(LocalDate.now())) {
-                continue;
-            }
             if (deadline.getDueDate().isAfter(limit)) {
                 continue;
             }
