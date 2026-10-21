@@ -1,6 +1,7 @@
 package ui;
 
 import java.awt.*;
+import java.util.List;
 import javax.swing.*;
 import ui.components.RoundedButton;
 import ui.components.RoundedPanel;
@@ -141,6 +142,24 @@ public final class Theme {
         } catch (Exception e) {
             return PRIMARY;
         }
+    }
+
+    public static Color nextCourseColor(List<String> usedHex) {
+        boolean[] used = new boolean[COURSE_PALETTE.length];
+        for (int index = 0; index < usedHex.size(); index++) {
+            Color color = parse(usedHex.get(index));
+            for (int paletteIndex = 0; paletteIndex < COURSE_PALETTE.length; paletteIndex++) {
+                if (COURSE_PALETTE[paletteIndex].equals(color)) {
+                    used[paletteIndex] = true;
+                }
+            }
+        }
+        for (int index = 0; index < used.length; index++) {
+            if (used[index] == false) {
+                return COURSE_PALETTE[index];
+            }
+        }
+        return COURSE_PALETTE[usedHex.size() % COURSE_PALETTE.length];
     }
 
     public static String toHex(Color c) {
