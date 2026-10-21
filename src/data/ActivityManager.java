@@ -84,7 +84,7 @@ public class ActivityManager {
     }
 
     public int getLongestStreak() {
-        List<LocalDate> dates = new ArrayList<LocalDate>();
+        java.util.TreeSet<LocalDate> dates = new java.util.TreeSet<LocalDate>();
         String profileId = activeProfileId();
         for (int index = 0; index < activity.size(); index++) {
             StudyActivity entry = activity.get(index);
@@ -92,13 +92,11 @@ public class ActivityManager {
                 dates.add(entry.getDate());
             }
         }
-        java.util.Collections.sort(dates);
 
         int longest = 0;
         int run = 0;
         LocalDate previous = null;
-        for (int index = 0; index < dates.size(); index++) {
-            LocalDate date = dates.get(index);
+        for (LocalDate date : dates) {
             if (previous != null && date.equals(previous.plusDays(1))) {
                 run = run + 1;
             } else {
