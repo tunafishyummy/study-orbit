@@ -38,6 +38,7 @@ public class SetupWizard extends JDialog {
     private final DefaultListModel<String> classModel = new DefaultListModel<String>();
     private final JTextField deadlineTitle = new RoundedTextField();
     private final JTextField deadlineDate = new RoundedTextField();
+    private final JTextField deadlineTime = new RoundedTextField();
     private final DefaultListModel<String> deadlineModel = new DefaultListModel<String>();
 
     public SetupWizard() {
@@ -162,16 +163,20 @@ public class SetupWizard extends JDialog {
         panel.add(Box.createVerticalStrut(14));
 
         panel.add(label("Deadline"));
+        JLabel deadlineHint = Theme.muted("Title, date (2026-10-30) and time (23:59)");
+        deadlineHint.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(deadlineHint);
         JPanel deadlineRow = new JPanel(new GridLayout(0, 2, 8, 8));
         deadlineRow.setOpaque(false);
         deadlineRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         deadlineDate.setText(LocalDate.now().plusDays(7).toString());
+        deadlineTime.setText("23:59");
         deadlineRow.add(deadlineTitle);
         deadlineRow.add(deadlineDate);
+        deadlineRow.add(deadlineTime);
         JButton addDeadlineButton = Theme.button("Add deadline");
         addDeadlineButton.addActionListener(e -> addDeadlineToList());
         deadlineRow.add(addDeadlineButton);
-        deadlineRow.add(new JLabel(""));
         panel.add(deadlineRow);
         panel.add(Box.createVerticalStrut(8));
         panel.add(listScroll(deadlineModel, 90));
@@ -268,11 +273,12 @@ public class SetupWizard extends JDialog {
         }
         try {
             LocalDate dueDate = LocalDate.parse(deadlineDate.getText().trim());
-            AppData.schedule().addDeadline(course, title, dueDate);
-            deadlineModel.addElement(title + "  " + dueDate);
+            LocalTime dueTime = LocalTime.parse(deadlineTime.getText().trim(), TIME_FORMAT);
+            AppData.schedule().addDeadline(course, title, dueDate, dueTime);
+            deadlineModel.addElement(title + "  " + dueDate + "  " + deadlineTime.getText().trim());
             deadlineTitle.setText("");
         } catch (Exception exception) {
-            JOptionPane.showMessageDialog(this, "Use a date like 2026-10-30.");
+            JOptionPane.showMessageDialog(this, "Use a date like 2026-10-30 and a time like 23:59.");
         }
     }
 
