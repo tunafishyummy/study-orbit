@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Base64;
 
 public class AIFlashcardService {
+    private static final String MODEL = "gemini-3.8-flash";
     private final String apiKey;
 
     public static class SuggestedCard {
@@ -34,8 +35,9 @@ public class AIFlashcardService {
             throw new IllegalStateException("API key is missing.");
         }
 
-        String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=" + apiKey;
-        
+        String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL
+                + ":generateContent?key=" + apiKey;
+
         String prompt = "Extract 3 to 5 key flashcard questions and answers from the following note titled '" 
                 + noteTitle.replace("\"", "'") + "'.\n\n"
                 + "Note Content:\n" + noteBody.replace("\"", "'") + "\n\n"
@@ -72,6 +74,9 @@ public class AIFlashcardService {
 
         List<SuggestedCard> suggestions = new ArrayList<>();
         JsonObject jsonResponse = JsonParser.parseString(response.body()).getAsJsonObject();
+        if (jsonResponse.has("candidates") == false || jsonResponse.getAsJsonArray("candidates").size() == 0) {
+            throw new RuntimeException("The AI returned no suggestions. Check the API key and try again.");
+        }
         String rawText = jsonResponse.getAsJsonArray("candidates")
                 .get(0).getAsJsonObject()
                 .getAsJsonObject("content")
@@ -108,7 +113,8 @@ public class AIFlashcardService {
         }
 
         // Updated to gemini-3.8-flash
-        String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=" + apiKey;
+        String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL
+                + ":generateContent?key=" + apiKey;
         
         String base64Data = Base64.getEncoder().encodeToString(imageBytes);
 
@@ -149,6 +155,9 @@ public class AIFlashcardService {
         }
 
         JsonObject jsonResponse = JsonParser.parseString(response.body()).getAsJsonObject();
+        if (jsonResponse.has("candidates") == false || jsonResponse.getAsJsonArray("candidates").size() == 0) {
+            throw new RuntimeException("The AI returned no text. Check the API key and try again.");
+        }
         return jsonResponse.getAsJsonArray("candidates")
                 .get(0).getAsJsonObject()
                 .getAsJsonObject("content")
