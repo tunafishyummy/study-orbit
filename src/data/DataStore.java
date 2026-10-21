@@ -146,4 +146,44 @@ public class DataStore {
             throw new IOException("Error saving to SQLite", e);
         }
     }
+
+    public List<Profile> loadProfiles() throws IOException {
+        List<Profile> profiles = new ArrayList<Profile>();
+        try (Connection conn = connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM profiles")) {
+            while (rs.next()) {
+                profiles.add(new Profile(
+                        rs.getString("id"),
+                        rs.getString("name"),
+                        rs.getString("avatar_color"),
+                        LocalDateTime.parse(rs.getString("created"))));
+            }
+        } catch (SQLException e) {
+            throw new IOException("Error loading profiles", e);
+        }
+        return profiles;
+    }
+
+    public void saveProfiles(List<Profile> profiles) throws IOException {
+        try (Connection conn = connect()) {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("DELETE FROM profiles");
+            }
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                    "INSERT INTO profiles (id, name, avatar_color, created) VALUES (?, ?, ?, ?)")) {
+                for (int index = 0; index < profiles.size(); index++) {
+                    Profile profile = profiles.get(index);
+                    pstmt.setString(1, profile.getId());
+                    pstmt.setString(2, profile.getName());
+                    pstmt.setString(3, profile.getAvatarColor());
+                    pstmt.setString(4, profile.getCreated().toString());
+                    pstmt.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new IOException("Error saving profiles", e);
+        }
+    }
+
 }
