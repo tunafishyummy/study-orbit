@@ -20,6 +20,20 @@ public final class Theme {
     public static final Color PRIMARY = new Color(0x6151D9);
     public static final Color SELECT = PRIMARY;
     public static final Color STUDY_CELL = new Color(0x3B3B3B);
+    public static final Color[] COURSE_PALETTE = {
+            new Color(0x6151D9),
+            new Color(0x0D9488),
+            new Color(0xD97706),
+            new Color(0xDC2626),
+            new Color(0xDB2777),
+            new Color(0x16A34A),
+            new Color(0x2563EB),
+            new Color(0x0891B2),
+            new Color(0x65A30D),
+            new Color(0xEA580C),
+            new Color(0x7C3AED),
+            new Color(0x64748B)
+    };
     private static final Font KUMBH_SANS = Assets.font("KumbhSans.ttf", Font.PLAIN, 14);
     public static final Font TITLE = font(Font.BOLD, 26);
     public static final Font HEADING = font(Font.BOLD, 16);
