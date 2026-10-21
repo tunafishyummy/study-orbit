@@ -253,4 +253,106 @@ public class DataStore {
         }
     }
 
+    public List<ScheduleClass> loadClasses() throws IOException {
+        List<ScheduleClass> classes = new ArrayList<ScheduleClass>();
+        try (Connection conn = connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM schedule_class")) {
+            while (rs.next()) {
+                classes.add(new ScheduleClass(
+                        rs.getString("id"),
+                        rs.getString("course_code"),
+                        rs.getString("day"),
+                        LocalTime.parse(rs.getString("start_time")),
+                        LocalTime.parse(rs.getString("end_time")),
+                        rs.getString("room")));
+            }
+        } catch (SQLException e) {
+            throw new IOException("Error loading classes", e);
+        }
+        return classes;
+    }
+
+    public void saveClasses(List<ScheduleClass> classes) throws IOException {
+        try (Connection conn = connect()) {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("DELETE FROM schedule_class");
+            }
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                    "INSERT INTO schedule_class (id, course_code, day, start_time, end_time, room) VALUES (?, ?, ?, ?, ?, ?)")) {
+                for (int index = 0; index < classes.size(); index++) {
+                    ScheduleClass item = classes.get(index);
+                    pstmt.setString(1, item.getId());
+                    pstmt.setString(2, item.getCourseCode());
+                    pstmt.setString(3, item.getDay());
+                    pstmt.setString(4, item.getStart().toString());
+                    pstmt.setString(5, item.getEnd().toString());
+                    pstmt.setString(6, item.getRoom());
+                    pstmt.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new IOException("Error saving classes", e);
+        }
+    }
+
+    public List<Deadline> loadDeadlines() throws IOException {
+        List<Deadline> deadlines = new ArrayList<Deadline>();
+        try (Connection conn = connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM deadline")) {
+            while (rs.next()) {
+                boolean done = false;
+                if (rs.getInt("done") == 1) {
+                    done = true;
+                }
+                boolean reminderOn = false;
+                if (rs.getInt("reminder_on") == 1) {
+                    reminderOn = true;
+                }
+                deadlines.add(new Deadline(
+                        rs.getString("id"),
+                        rs.getString("course_code"),
+                        rs.getString("title"),
+                        LocalDate.parse(rs.getString("due_date")),
+                        done,
+                        reminderOn));
+            }
+        } catch (SQLException e) {
+            throw new IOException("Error loading deadlines", e);
+        }
+        return deadlines;
+    }
+
+    public void saveDeadlines(List<Deadline> deadlines) throws IOException {
+        try (Connection conn = connect()) {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("DELETE FROM deadline");
+            }
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                    "INSERT INTO deadline (id, course_code, title, due_date, done, reminder_on) VALUES (?, ?, ?, ?, ?, ?)")) {
+                for (int index = 0; index < deadlines.size(); index++) {
+                    Deadline item = deadlines.get(index);
+                    int done = 0;
+                    if (item.isDone()) {
+                        done = 1;
+                    }
+                    int reminderOn = 0;
+                    if (item.isReminderOn()) {
+                        reminderOn = 1;
+                    }
+                    pstmt.setString(1, item.getId());
+                    pstmt.setString(2, item.getCourseCode());
+                    pstmt.setString(3, item.getTitle());
+                    pstmt.setString(4, item.getDueDate().toString());
+                    pstmt.setInt(5, done);
+                    pstmt.setInt(6, reminderOn);
+                    pstmt.executeUpdate();
+                }
+            }
+        } catch (SQLException e) {
+            throw new IOException("Error saving deadlines", e);
+        }
+    }
+
 }
