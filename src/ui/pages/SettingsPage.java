@@ -1,5 +1,7 @@
 package ui.pages;
 
+import ai.AiClient;
+import ai.AiConfig;
 import data.AppData;
 import data.SettingsManager;
 import logic.BackupService;
@@ -7,6 +9,7 @@ import model.Profile;
 import ui.StudyOrbitApp;
 import ui.Theme;
 import ui.components.Avatar;
+import ui.components.CardIcons;
 import ui.components.NativeFileDialog;
 import ui.components.RoundedComboBox;
 import ui.components.RoundedPanel;
@@ -22,6 +25,15 @@ import java.util.List;
 
 // Screen 11, settings and accessibility
 public class SettingsPage extends JPanel {
+
+    private JComboBox<String> providerBox;
+    private JTextField baseUrlField;
+    private JTextField modelField;
+    private JPasswordField apiKeyField;
+    private ToggleSwitch demoToggle;
+    private JButton testButton;
+    private JLabel aiStatusLabel;
+    private boolean loadingAiFields;
 
     public SettingsPage() {
         setBackground(Theme.BG);
@@ -51,36 +63,44 @@ public class SettingsPage extends JPanel {
         c.gridx = 0;
         c.gridy = 1;
         c.weightx = 0.42;
+        c.weighty = 0.25;
         c.insets = new Insets(0, 0, 16, 16);
         grid.add(notificationsCard(), c);
 
         c.gridx = 1;
         c.weightx = 0.58;
         c.insets = new Insets(0, 0, 16, 0);
-        grid.add(apiCard(), c);
+        grid.add(studyCard(), c);
 
         c.gridx = 0;
         c.gridy = 2;
-        c.gridwidth = 1;
-        c.weightx = 0.42;
-        c.weighty = 0.3;
-        c.insets = new Insets(0, 0, 16, 16);
-        grid.add(studyCard(), c);
-
-        c.gridx = 1;
-        c.weightx = 0.58;
+        c.gridwidth = 2;
+        c.weightx = 1;
+        c.weighty = 0.35;
         c.insets = new Insets(0, 0, 16, 0);
-        grid.add(dataCard(), c);
+        grid.add(aiAssistantCard(), c);
 
         c.gridx = 0;
         c.gridy = 3;
-        c.gridwidth = 2;
-        c.weightx = 1;
-        c.weighty = 0.1;
+        c.gridwidth = 1;
+        c.weightx = 0.42;
+        c.weighty = 0.15;
+        c.insets = new Insets(0, 0, 0, 16);
+        grid.add(dataCard(), c);
+
+        c.gridx = 1;
+        c.gridwidth = 1;
+        c.weightx = 0.58;
         c.insets = new Insets(0, 0, 0, 0);
         grid.add(helpCard(), c);
 
-        add(grid, BorderLayout.CENTER);
+        JScrollPane scroll = new JScrollPane(grid);
+        scroll.setBorder(null);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        add(scroll, BorderLayout.CENTER);
     }
 
     private JPanel profileCard() {
@@ -226,38 +246,210 @@ public class SettingsPage extends JPanel {
         return card;
     }
 
-    private JPanel apiCard() {
-        JPanel card = card("AI key");
+    private JPanel aiAssistantCard() {
+        JPanel card = card("AI Assistant", Theme.HEADER_BLUE, CardIcons.spark());
 
-        JPanel body = new JPanel();
+        JPanel body = new JPanel(new BorderLayout(0, 10));
         body.setOpaque(false);
-        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-        body.setBorder(BorderFactory.createEmptyBorder(14, 20, 14, 20));
+        body.setBorder(BorderFactory.createEmptyBorder(14, 24, 12, 24));
 
-        body.add(row("Gemini API key", "Used for AI flashcards and text extraction"));
-        body.add(Box.createVerticalStrut(8));
+        AiConfig config = AiConfig.load();
 
-        JTextField keyField = new RoundedTextField();
-        keyField.setText(AppData.settings().get(SettingsManager.API_KEY, ""));
-        keyField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
-        keyField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        body.add(keyField);
-        body.add(Box.createVerticalStrut(10));
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setOpaque(false);
+        GridBagConstraints f = new GridBagConstraints();
+        f.fill = GridBagConstraints.HORIZONTAL;
+        f.insets = new Insets(0, 0, 8, 8);
 
-        JButton save = Theme.primaryButton("Save key");
-        save.setAlignmentX(Component.LEFT_ALIGNMENT);
-        save.addActionListener(e -> {
-            try {
-                AppData.settings().set(SettingsManager.API_KEY, keyField.getText().trim());
-                JOptionPane.showMessageDialog(this, "API key saved.");
-            } catch (IOException exception) {
-                showError(exception);
+        providerBox = new RoundedComboBox<>(new String[] { "Local Ollama", "Groq", "Gemini", "DeepSeek", "Custom" });
+        providerBox.setFont(Theme.BODY);
+        providerBox.setSelectedItem(providerLabel(config.getProvider()));
+
+        baseUrlField = new RoundedTextField();
+        baseUrlField.setText(config.getBaseUrl());
+        baseUrlField.setFont(Theme.BODY);
+
+        modelField = new RoundedTextField();
+        modelField.setText(config.getModel());
+        modelField.setFont(Theme.BODY);
+
+        apiKeyField = new JPasswordField(config.getApiKey());
+        apiKeyField.setFont(Theme.BODY);
+        apiKeyField.setForeground(Theme.TEXT);
+        apiKeyField.setBackground(Theme.SURFACE);
+        apiKeyField.setCaretColor(Theme.TEXT);
+        apiKeyField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Theme.BORDER),
+                BorderFactory.createEmptyBorder(6, 10, 6, 10)));
+        apiKeyField.setEnabled(config.isLocal() == false);
+
+        loadingAiFields = true;
+        providerBox.addActionListener(e -> {
+            if (loadingAiFields) {
+                return;
             }
+            String key = providerKey((String) providerBox.getSelectedItem());
+            baseUrlField.setText(AiConfig.defaultBaseUrl(key));
+            modelField.setText(AiConfig.defaultModel(key));
+            apiKeyField.setEnabled(AiConfig.LOCAL.equals(key) == false);
         });
-        body.add(save);
+        loadingAiFields = false;
+
+        f.gridx = 0;
+        f.gridy = 0;
+        f.weightx = 0;
+        f.gridwidth = 1;
+        form.add(fieldLabel("Provider"), f);
+        f.gridx = 1;
+        f.weightx = 0.4;
+        form.add(providerBox, f);
+        f.gridx = 2;
+        f.weightx = 0;
+        form.add(fieldLabel("Model"), f);
+        f.gridx = 3;
+        f.weightx = 0.6;
+        form.add(modelField, f);
+
+        f.gridx = 0;
+        f.gridy = 1;
+        f.weightx = 0;
+        f.gridwidth = 1;
+        form.add(fieldLabel("Base URL"), f);
+        f.gridx = 1;
+        f.gridwidth = 3;
+        f.weightx = 1;
+        form.add(baseUrlField, f);
+
+        f.gridx = 0;
+        f.gridy = 2;
+        f.weightx = 0;
+        f.gridwidth = 1;
+        form.add(fieldLabel("API Key"), f);
+        f.gridx = 1;
+        f.gridwidth = 3;
+        form.add(apiKeyField, f);
+
+        JPanel center = new JPanel(new BorderLayout(0, 8));
+        center.setOpaque(false);
+        center.add(form, BorderLayout.NORTH);
+
+        JPanel demoRow = new JPanel(new BorderLayout(10, 0));
+        demoRow.setOpaque(false);
+        JPanel demoTexts = new JPanel();
+        demoTexts.setOpaque(false);
+        demoTexts.setLayout(new BoxLayout(demoTexts, BoxLayout.Y_AXIS));
+        JLabel demoTitle = new JLabel("Demo mode");
+        demoTitle.setFont(Theme.HEADING);
+        demoTitle.setForeground(Theme.TEXT);
+        demoTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel demoCaption = Theme.muted("Uses sample content instead of a model, for presentations without wifi.");
+        demoCaption.setAlignmentX(Component.LEFT_ALIGNMENT);
+        demoTexts.add(demoTitle);
+        demoTexts.add(demoCaption);
+        demoToggle = new ToggleSwitch(config.isDemoMode());
+        demoRow.add(demoTexts, BorderLayout.CENTER);
+        demoRow.add(switchHolder(demoToggle), BorderLayout.EAST);
+        center.add(demoRow, BorderLayout.CENTER);
+
+        body.add(center, BorderLayout.CENTER);
+
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        actions.setOpaque(false);
+        JButton saveButton = Theme.primaryButton("Save Settings");
+        saveButton.addActionListener(e -> saveAiSettings());
+        testButton = Theme.button("Test Connection");
+        testButton.addActionListener(e -> testAiConnection());
+        aiStatusLabel = Theme.muted("The key stays on this computer in data/ai.properties.");
+        actions.add(saveButton);
+        actions.add(testButton);
+        actions.add(aiStatusLabel);
+        body.add(actions, BorderLayout.SOUTH);
 
         card.add(body, BorderLayout.CENTER);
         return card;
+    }
+
+    private JLabel fieldLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(Theme.BODY);
+        label.setForeground(Theme.MUTED);
+        return label;
+    }
+
+    private String providerKey(String label) {
+        if ("Groq".equals(label)) {
+            return AiConfig.GROQ;
+        }
+        if ("Gemini".equals(label)) {
+            return AiConfig.GEMINI;
+        }
+        if ("DeepSeek".equals(label)) {
+            return AiConfig.DEEPSEEK;
+        }
+        if ("Custom".equals(label)) {
+            return AiConfig.CUSTOM;
+        }
+        return AiConfig.LOCAL;
+    }
+
+    private String providerLabel(String key) {
+        if (AiConfig.GROQ.equals(key)) {
+            return "Groq";
+        }
+        if (AiConfig.GEMINI.equals(key)) {
+            return "Gemini";
+        }
+        if (AiConfig.DEEPSEEK.equals(key)) {
+            return "DeepSeek";
+        }
+        if (AiConfig.CUSTOM.equals(key)) {
+            return "Custom";
+        }
+        return "Local Ollama";
+    }
+
+    private AiConfig configFromFields() {
+        AiConfig config = AiConfig.load();
+        config.setProvider(providerKey((String) providerBox.getSelectedItem()));
+        config.setBaseUrl(baseUrlField.getText().trim());
+        config.setModel(modelField.getText().trim());
+        config.setApiKey(new String(apiKeyField.getPassword()).trim());
+        return config;
+    }
+
+    private void saveAiSettings() {
+        try {
+            AiConfig config = configFromFields();
+            config.setDemoMode(demoToggle != null && demoToggle.isOn());
+            config.save();
+            aiStatusLabel.setText(config.isDemoMode() ? "Saved with demo mode on." : "Saved.");
+        } catch (IOException exception) {
+            aiStatusLabel.setText("Could not save: " + exception.getMessage());
+        }
+    }
+
+    private void testAiConnection() {
+        testButton.setEnabled(false);
+        aiStatusLabel.setText("Checking " + baseUrlField.getText().trim() + "...");
+        new SwingWorker<Boolean, Void>() {
+            @Override
+            protected Boolean doInBackground() {
+                return new AiClient(configFromFields()).isAvailable();
+            }
+
+            @Override
+            protected void done() {
+                testButton.setEnabled(true);
+                try {
+                    boolean reachable = get();
+                    aiStatusLabel.setText(reachable
+                            ? "Reachable. The AI features are ready."
+                            : "Not reachable. Start the local model or check the address and key.");
+                } catch (Exception exception) {
+                    aiStatusLabel.setText("Could not test: " + exception.getMessage());
+                }
+            }
+        }.execute();
     }
 
     private JPanel helpCard() {
@@ -466,6 +658,25 @@ public class SettingsPage extends JPanel {
 
         JPanel header = new RoundedTopPanel(Theme.PRIMARY);
         header.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 6));
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(Theme.HEADING);
+        titleLabel.setForeground(Color.WHITE);
+        header.add(titleLabel);
+
+        card.add(header, BorderLayout.NORTH);
+        return card;
+    }
+
+    private JPanel card(String title, Color headerColor, Icon icon) {
+        JPanel card = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS, Theme.BORDER);
+        card.setLayout(new BorderLayout());
+        card.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
+
+        JPanel header = new RoundedTopPanel(headerColor);
+        header.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 6));
+        if (icon != null) {
+            header.add(new JLabel(icon));
+        }
         JLabel titleLabel = new JLabel(title);
         titleLabel.setFont(Theme.HEADING);
         titleLabel.setForeground(Color.WHITE);
