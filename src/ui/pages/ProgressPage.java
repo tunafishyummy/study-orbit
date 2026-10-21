@@ -141,7 +141,13 @@ public class ProgressPage extends JPanel {
         monthTitle.setFont(Theme.HEADING);
         monthTitle.setForeground(Theme.TEXT);
         card.add(monthTitle, BorderLayout.NORTH);
-        card.add(monthGrid, BorderLayout.CENTER);
+
+        monthGrid.setPreferredSize(new Dimension(0, 150));
+        monthGrid.setMinimumSize(new Dimension(0, 150));
+        JPanel holder = new JPanel(new BorderLayout());
+        holder.setOpaque(false);
+        holder.add(monthGrid, BorderLayout.NORTH);
+        card.add(holder, BorderLayout.CENTER);
         return card;
     }
 
