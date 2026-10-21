@@ -186,4 +186,30 @@ public class DataStore {
         }
     }
 
+    public Map<String, String> loadSettings() throws IOException {
+        Map<String, String> settings = new LinkedHashMap<String, String>();
+        try (Connection conn = connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT key, value FROM settings")) {
+            while (rs.next()) {
+                settings.put(rs.getString("key"), rs.getString("value"));
+            }
+        } catch (SQLException e) {
+            throw new IOException("Error loading settings", e);
+        }
+        return settings;
+    }
+
+    public void saveSetting(String key, String value) throws IOException {
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(
+                     "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)")) {
+            pstmt.setString(1, key);
+            pstmt.setString(2, value);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new IOException("Error saving a setting", e);
+        }
+    }
+
 }
