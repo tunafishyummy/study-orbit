@@ -16,6 +16,18 @@ public class ProfileManager {
         this.store = store;
         this.settings = settings;
         profiles.addAll(store.loadProfiles());
+        if (profiles.isEmpty() == false) {
+            String activeId = settings.get(SettingsManager.ACTIVE_PROFILE, "");
+            boolean valid = false;
+            for (int index = 0; index < profiles.size(); index++) {
+                if (profiles.get(index).getId().equals(activeId)) {
+                    valid = true;
+                }
+            }
+            if (valid == false) {
+                setActiveProfile(profiles.get(0));
+            }
+        }
     }
 
     public List<Profile> getProfiles() {
@@ -29,7 +41,10 @@ public class ProfileManager {
                 return profiles.get(index);
             }
         }
-        return null;
+        if (profiles.isEmpty()) {
+            return null;
+        }
+        return profiles.get(0);
     }
 
     public void setActiveProfile(Profile profile) throws IOException {
@@ -44,6 +59,10 @@ public class ProfileManager {
         Profile profile = new Profile(name, avatarColor);
         profiles.add(profile);
         store.saveProfiles(profiles);
+        String activeId = settings.get(SettingsManager.ACTIVE_PROFILE, "");
+        if (activeId.isBlank()) {
+            setActiveProfile(profile);
+        }
         return profile;
     }
 
@@ -56,12 +75,12 @@ public class ProfileManager {
     public void deleteProfile(Profile profile) throws IOException {
         profiles.remove(profile);
         store.saveProfiles(profiles);
-        Profile active = getActiveProfile();
-        if (active == null) {
-            settings.set(SettingsManager.ACTIVE_PROFILE, "");
-        }
+        String activeId = settings.get(SettingsManager.ACTIVE_PROFILE, "");
         if (profiles.isEmpty()) {
+            settings.set(SettingsManager.ACTIVE_PROFILE, "");
             settings.setBoolean(SettingsManager.FIRST_RUN_DONE, false);
+        } else if (profile.getId().equals(activeId) || activeId.isBlank()) {
+            setActiveProfile(profiles.get(0));
         }
     }
 
