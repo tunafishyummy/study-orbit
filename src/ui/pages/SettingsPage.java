@@ -329,6 +329,13 @@ public class SettingsPage extends JPanel {
         f.gridwidth = 3;
         form.add(apiKeyField, f);
 
+        f.gridx = 0;
+        f.gridy = 3;
+        f.gridwidth = 4;
+        f.weightx = 1;
+        f.insets = new Insets(0, 0, 0, 0);
+        form.add(Theme.muted("Image OCR needs a vision model, for example qwen2.5vl:7b on Local Ollama."), f);
+
         JPanel center = new JPanel(new BorderLayout(0, 8));
         center.setOpaque(false);
         center.add(form, BorderLayout.NORTH);
