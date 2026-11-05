@@ -28,6 +28,9 @@ import ui.components.RoundedTextField;
 public class NotesPage extends JPanel {
     private static final String ALL = "All courses";
     private static final String NONE = "No course";
+    private static final String OCR_PROMPT =
+            "Extract all readable text from this image accurately and format it cleanly as structured notes.";
+    private static final String OCR_SYSTEM = "You read text from images and return only the text.";
 
     private final NoteManager manager;
     private final JComboBox<String> filterBox = new RoundedComboBox<>();
@@ -134,7 +137,7 @@ public class NotesPage extends JPanel {
         toolbar.add(importButton);
 
         JButton ocrButton = Theme.button("Upload Image (OCR)");
-        ocrButton.setToolTipText("Read text from an image with Gemini");
+        ocrButton.setToolTipText("Read text from an image. Needs a vision model such as qwen2.5vl:7b");
         ocrButton.addActionListener(e -> uploadAndExtractImageText(ocrButton));
         toolbar.add(Box.createHorizontalStrut(8));
         toolbar.add(ocrButton);
@@ -200,6 +203,36 @@ public class NotesPage extends JPanel {
     }
 
     private void uploadAndExtractImageText(JButton source) {
+        AiConfig config = AiConfig.load();
+        boolean gemini = AiConfig.GEMINI.equals(config.getProvider());
+
+        if (config.isDemoMode()) {
+            JOptionPane.showMessageDialog(this,
+                    "Demo mode is on, so image reading is off.\n"
+                    + "Turn demo mode off and use a vision model, or switch to Gemini.",
+                    "AI OCR", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        if (gemini) {
+            if (ocrKey().isBlank()) {
+                JOptionPane.showMessageDialog(this,
+                        "Image text extraction needs a Gemini API key.\n"
+                        + "Open Settings, then AI Assistant, choose Gemini and paste your key.",
+                        "AI OCR", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        } else if (config.supportsVision() == false) {
+            int choice = JOptionPane.showConfirmDialog(this,
+                    "The current model (" + config.getModel() + ") cannot read images.\n\n"
+                    + config.visionHint() + "\n\n"
+                    + "Do you still want to try?",
+                    "Vision model needed", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (choice != JOptionPane.YES_OPTION) {
+                return;
+            }
+        }
+
         Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
         NativeFileDialog fileDialog = new NativeFileDialog();
         File selectedFile = fileDialog.open("Select an image for AI text extraction",
@@ -208,18 +241,9 @@ public class NotesPage extends JPanel {
             return;
         }
 
-        String key = ocrKey();
-        if (key.isBlank()) {
-            JOptionPane.showMessageDialog(this,
-                    "Image text extraction needs a Gemini API key.\n"
-                    + "Open Settings, then AI Assistant, choose Gemini and paste your key.",
-                    "AI OCR", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
         source.setEnabled(false);
         JDialog loadingDialog = new JDialog(parentFrame, "Processing", false);
-        JLabel message = new JLabel("  Extracting text with Gemini AI...", JLabel.CENTER);
+        JLabel message = new JLabel("  Extracting text with AI...", JLabel.CENTER);
         loadingDialog.add(message);
         loadingDialog.setSize(300, 90);
         loadingDialog.setLocationRelativeTo(this);
@@ -228,13 +252,29 @@ public class NotesPage extends JPanel {
         new Thread(() -> {
             try {
                 byte[] fileBytes = Files.readAllBytes(selectedFile.toPath());
-                AIFlashcardService service = new AIFlashcardService(key);
-                String extractedText = service.extractTextFromImage(fileBytes, mimeTypeFor(selectedFile));
+                String mimeType = mimeTypeFor(selectedFile);
+                String extractedText;
+                if (gemini) {
+                    AIFlashcardService service = new AIFlashcardService(ocrKey());
+                    extractedText = service.extractTextFromImage(fileBytes, mimeType);
+                } else {
+                    AiClient client = new AiClient(config);
+                    if (client.isAvailable() == false) {
+                        if (config.isLocal()) {
+                            throw new IOException("The local AI is not running. Start Ollama first with \"ollama run "
+                                    + config.getModel() + "\" and try again.");
+                        }
+                        throw new IOException("Could not reach " + config.getBaseUrl()
+                                + ". Check the internet connection and the key in Settings.");
+                    }
+                    extractedText = client.completeWithImage(OCR_SYSTEM, OCR_PROMPT, fileBytes, mimeType);
+                }
+                final String text = extractedText;
                 SwingUtilities.invokeLater(() -> {
                     loadingDialog.dispose();
                     source.setEnabled(true);
-                    if (extractedText.isEmpty() == false) {
-                        insertExtractedText(extractedText);
+                    if (text.isEmpty() == false) {
+                        insertExtractedText(text);
                         JOptionPane.showMessageDialog(this, "Text extracted successfully!",
                                 "AI OCR Success", JOptionPane.INFORMATION_MESSAGE);
                     } else {
