@@ -41,6 +41,8 @@ public final class Theme {
     private static final Font KUMBH_SANS = Assets.font("KumbhSans.ttf", Font.PLAIN, 14);
     private static boolean largeText;
     private static boolean time24;
+    private static final DateTimeFormatter TIME_24 = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter TIME_12 = DateTimeFormatter.ofPattern("h:mm a");
     public static Font TITLE = font(Font.BOLD, 26);
     public static Font HEADING = font(Font.BOLD, 16);
     public static Font BODY = font(Font.PLAIN, 14);
@@ -109,9 +111,13 @@ public final class Theme {
 
     public static String formatTime(LocalTime time) {
         if (time24) {
-            return time.format(DateTimeFormatter.ofPattern("HH:mm"));
+            return time.format(TIME_24);
         }
-        return time.format(DateTimeFormatter.ofPattern("h:mm a"));
+        return time.format(TIME_12);
+    }
+
+    public static String formatTime12(LocalTime time) {
+        return time.format(TIME_12);
     }
 
     public static JPanel card() {
