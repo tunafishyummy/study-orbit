@@ -6,19 +6,17 @@ import model.Profile;
 import ui.Theme;
 import ui.components.RoundedComboBox;
 import ui.components.RoundedTextField;
+import ui.components.TimePicker;
 
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 // the one time setup shown for a brand new profile
 public class SetupWizard extends JDialog {
-
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("H:mm");
 
     private boolean finished;
 
@@ -32,13 +30,13 @@ public class SetupWizard extends JDialog {
     private final JComboBox<String> courseBox = new RoundedComboBox<>();
     private final JComboBox<String> dayBox = new RoundedComboBox<>(
             new String[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" });
-    private final JTextField startField = new RoundedTextField();
-    private final JTextField endField = new RoundedTextField();
+    private final TimePicker startPicker = new TimePicker(LocalTime.of(9, 0));
+    private final TimePicker endPicker = new TimePicker(LocalTime.of(10, 30));
     private final JTextField roomField = new RoundedTextField();
     private final DefaultListModel<String> classModel = new DefaultListModel<String>();
     private final JTextField deadlineTitle = new RoundedTextField();
     private final JTextField deadlineDate = new RoundedTextField();
-    private final JTextField deadlineTime = new RoundedTextField();
+    private final TimePicker deadlinePicker = new TimePicker(LocalTime.of(23, 59));
     private final DefaultListModel<String> deadlineModel = new DefaultListModel<String>();
 
     public SetupWizard() {
@@ -145,17 +143,15 @@ public class SetupWizard extends JDialog {
         classRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         classRow.add(courseBox);
         classRow.add(dayBox);
-        startField.setText("9:00");
-        endField.setText("10:30");
-        classRow.add(startField);
-        classRow.add(endField);
+        classRow.add(startPicker);
+        classRow.add(endPicker);
         classRow.add(roomField);
         JButton addClassButton = Theme.button("Add class");
         addClassButton.addActionListener(e -> addClassToList());
         classRow.add(addClassButton);
         panel.add(classRow);
         panel.add(Box.createVerticalStrut(6));
-        JLabel timeHint = Theme.muted("Times look like 9:00 and 10:30, room is optional");
+        JLabel timeHint = Theme.muted("Pick the start and end time, room is optional");
         timeHint.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(timeHint);
         panel.add(Box.createVerticalStrut(8));
@@ -163,17 +159,16 @@ public class SetupWizard extends JDialog {
         panel.add(Box.createVerticalStrut(14));
 
         panel.add(label("Deadline"));
-        JLabel deadlineHint = Theme.muted("Title, date (2026-10-30) and time (23:59)");
+        JLabel deadlineHint = Theme.muted("Title, date (2026-10-30) and time");
         deadlineHint.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(deadlineHint);
         JPanel deadlineRow = new JPanel(new GridLayout(0, 2, 8, 8));
         deadlineRow.setOpaque(false);
         deadlineRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         deadlineDate.setText(LocalDate.now().plusDays(7).toString());
-        deadlineTime.setText("23:59");
         deadlineRow.add(deadlineTitle);
         deadlineRow.add(deadlineDate);
-        deadlineRow.add(deadlineTime);
+        deadlineRow.add(deadlinePicker);
         JButton addDeadlineButton = Theme.button("Add deadline");
         addDeadlineButton.addActionListener(e -> addDeadlineToList());
         deadlineRow.add(addDeadlineButton);
@@ -247,17 +242,21 @@ public class SetupWizard extends JDialog {
             JOptionPane.showMessageDialog(this, "Add a course first.");
             return;
         }
+        LocalTime startTime = startPicker.getTime();
+        LocalTime endTime = endPicker.getTime();
+        if (endTime.isAfter(startTime) == false) {
+            JOptionPane.showMessageDialog(this, "The end time must be after the start time.");
+            return;
+        }
         try {
-            LocalTime startTime = LocalTime.parse(startField.getText().trim(), TIME_FORMAT);
-            LocalTime endTime = LocalTime.parse(endField.getText().trim(), TIME_FORMAT);
             AppData.schedule().addClass(course, (String) dayBox.getSelectedItem(),
                     startTime, endTime, roomField.getText().trim());
             classModel.addElement(course + "  " + dayBox.getSelectedItem() + "  "
-                    + startField.getText().trim() + " - " + endField.getText().trim()
+                    + Theme.formatTime12(startTime) + " - " + Theme.formatTime12(endTime)
                     + "  " + roomField.getText().trim());
             roomField.setText("");
         } catch (Exception exception) {
-            JOptionPane.showMessageDialog(this, "Use a time like 9:00 or 10:30.");
+            JOptionPane.showMessageDialog(this, exception.getMessage());
         }
     }
 
@@ -273,12 +272,12 @@ public class SetupWizard extends JDialog {
         }
         try {
             LocalDate dueDate = LocalDate.parse(deadlineDate.getText().trim());
-            LocalTime dueTime = LocalTime.parse(deadlineTime.getText().trim(), TIME_FORMAT);
+            LocalTime dueTime = deadlinePicker.getTime();
             AppData.schedule().addDeadline(course, title, dueDate, dueTime);
-            deadlineModel.addElement(title + "  " + dueDate + "  " + deadlineTime.getText().trim());
+            deadlineModel.addElement(title + "  " + dueDate + "  " + Theme.formatTime12(dueTime));
             deadlineTitle.setText("");
         } catch (Exception exception) {
-            JOptionPane.showMessageDialog(this, "Use a date like 2026-10-30 and a time like 23:59.");
+            JOptionPane.showMessageDialog(this, "Use a date like 2026-10-30.");
         }
     }
 
