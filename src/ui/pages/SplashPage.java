@@ -7,6 +7,8 @@ import ui.Theme;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
+import java.util.List;
 
 // Screen 1, the welcome page
 public class SplashPage extends JPanel {
@@ -41,15 +43,14 @@ public class SplashPage extends JPanel {
         motto.setFont(Theme.font(Font.PLAIN, 16));
         motto.setForeground(Theme.MUTED);
 
+        List<Profile> profiles = AppData.profiles().getProfiles();
         Profile activeProfile = AppData.profiles().getActiveProfile();
-        String profileName = "No selected profile";
-        if (activeProfile != null) {
-            profileName = activeProfile.getName();
-        }
-        JLabel profile = new JLabel(profileName);
+        JLabel profile = new JLabel(activeProfile == null ? "No selected profile" : activeProfile.getName());
         profile.setFont(Theme.font(Font.BOLD, 18));
         profile.setForeground(Theme.TEXT);
         Chevron chevron = new Chevron();
+        chevron.setEnabled(!profiles.isEmpty());
+        chevron.addActionListener(e -> showProfileMenu(chevron, profile));
         JButton continueButton = new JButton("Continue");
         continueButton.setFont(Theme.font(Font.PLAIN, 20));
         continueButton.setForeground(new Color(0x606060));
@@ -101,6 +102,31 @@ public class SplashPage extends JPanel {
         return row;
     }
 
+    private void showProfileMenu(Chevron chevron, JLabel profileLabel) {
+        JPopupMenu menu = new JPopupMenu();
+        menu.setBackground(Theme.SURFACE);
+        menu.setBorder(BorderFactory.createLineBorder(Theme.BORDER));
+        for (Profile profile : AppData.profiles().getProfiles()) {
+            JMenuItem item = new JMenuItem(profile.getName());
+            item.setFont(Theme.BODY);
+            item.setOpaque(true);
+            item.setBackground(Theme.SURFACE);
+            item.setForeground(Theme.TEXT);
+            item.setBorder(BorderFactory.createEmptyBorder(6, 14, 6, 14));
+            item.addActionListener(e -> {
+                try {
+                    AppData.profiles().setActiveProfile(profile);
+                    profileLabel.setText(profile.getName());
+                } catch (IOException exception) {
+                    JOptionPane.showMessageDialog(this, "Could not switch profiles: " + exception.getMessage(),
+                            "Profile switch failed", JOptionPane.ERROR_MESSAGE);
+                }
+            });
+            menu.add(item);
+        }
+        menu.show(chevron, 0, chevron.getHeight() + 4);
+    }
+
     // paints the logo at the bottom right so the page edge crops its bottom
     private static class WelcomeLogo extends JComponent {
         private static final int WIDTH = 720;
@@ -129,20 +155,27 @@ public class SplashPage extends JPanel {
         }
     }
 
-    // the small dropdown indicator under the profile line
-    private static class Chevron extends JComponent {
+    private static class Chevron extends JButton {
         Chevron() {
+            setContentAreaFilled(false);
+            setBorderPainted(false);
+            setFocusPainted(false);
+            setFocusable(false);
+            setOpaque(false);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setToolTipText("Switch profile");
             setPreferredSize(new Dimension(14, 9));
         }
 
         @Override
         protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g;
+            Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(Theme.TEXT);
             g2.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             g2.drawLine(1, 1, 7, 7);
             g2.drawLine(7, 7, 13, 1);
+            g2.dispose();
         }
     }
 }
