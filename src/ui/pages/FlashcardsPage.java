@@ -31,25 +31,25 @@ public class FlashcardsPage extends JPanel {
 
     public FlashcardsPage(Runnable onNavigateToCreate) {
         this.onNavigateToCreate = onNavigateToCreate;
-        setLayout(new BorderLayout());
+        setLayout(new BorderLayout(0, 8));
         setBackground(Theme.BG);
-        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
+        setBorder(BorderFactory.createEmptyBorder(0, 24, 24, 24));
 
         JLabel header = Theme.header("Review Flashcards");
         add(header, BorderLayout.NORTH);
 
-        JPanel content = new JPanel(new BorderLayout(24, 0));
+        JPanel content = new JPanel(new BorderLayout(16, 0));
         content.setOpaque(false);
 
-        deckListPanel = new JPanel();
+        deckListPanel = new DeckColumnPanel();
         deckListPanel.setLayout(new BoxLayout(deckListPanel, BoxLayout.Y_AXIS));
         deckListPanel.setOpaque(false);
-        deckListPanel.setPreferredSize(new Dimension(240, 0));
 
         JScrollPane deckScroll = new JScrollPane(deckListPanel);
         deckScroll.setOpaque(false);
         deckScroll.getViewport().setOpaque(false);
         deckScroll.setBorder(null);
+        deckScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         content.add(deckScroll, BorderLayout.WEST);
 
         // Custom animated card container panel overriding paintComponent for scaling
@@ -173,13 +173,16 @@ public class FlashcardsPage extends JPanel {
             deckListPanel.add(Box.createVerticalStrut(10));
         }
 
-        JButton addBtn = Theme.primaryButton("ADD FLASHCARD");
-        addBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        addBtn.setMaximumSize(new Dimension(220, 40));
+        JButton addBtn = new AddFlashcardButton();
         addBtn.addActionListener(e -> onNavigateToCreate.run());
-        
-        deckListPanel.add(Box.createVerticalStrut(20));
-        deckListPanel.add(addBtn);
+        RoundedPanel addFlashcardContainer = new RoundedPanel(Theme.STUDY_CELL, 16);
+        addFlashcardContainer.setLayout(new GridBagLayout());
+        addFlashcardContainer.setPreferredSize(new Dimension(220, 64));
+        addFlashcardContainer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
+        addFlashcardContainer.setAlignmentX(Component.CENTER_ALIGNMENT);
+        addFlashcardContainer.add(addBtn);
+        deckListPanel.add(Box.createVerticalStrut(10));
+        deckListPanel.add(addFlashcardContainer);
         deckListPanel.revalidate();
         deckListPanel.repaint();
 
@@ -280,5 +283,58 @@ public class FlashcardsPage extends JPanel {
             displayCurrentCard();
             flashcardCard.repaint();
         }
+    }
+
+    private static class AddFlashcardButton extends ui.components.RoundedButton {
+        AddFlashcardButton() {
+            super("");
+            setToolTipText("Add flashcard");
+            setBackground(new Color(0x3B3B3B));
+            setForeground(Color.WHITE);
+            setPreferredSize(new Dimension(40, 40));
+            setMaximumSize(new Dimension(40, 40));
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setBorder(BorderFactory.createEmptyBorder());
+        }
+
+        @Override
+        protected void paintComponent(Graphics graphics) {
+            super.paintComponent(graphics);
+            Graphics2D g2 = (Graphics2D) graphics.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(Color.WHITE);
+            g2.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            int centerX = getWidth() / 2;
+            int centerY = getHeight() / 2;
+            g2.drawLine(centerX - 8, centerY, centerX + 8, centerY);
+            g2.drawLine(centerX, centerY - 8, centerX, centerY + 8);
+            g2.dispose();
+        }
+    }
+
+    private static class DeckColumnPanel extends JPanel implements Scrollable {
+        @Override
+        public Dimension getPreferredScrollableViewportSize() {
+            return new Dimension(240, getPreferredSize().height);
+        }
+
+        @Override
+        public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 16;
+        }
+
+        @Override
+        public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 64;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return true;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportHeight() { return false; }
     }
 }
