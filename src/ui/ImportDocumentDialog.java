@@ -3,6 +3,7 @@ package ui;
 import ai.PdfTextExtractor;
 import data.DocumentTextReader;
 import ui.components.NativeFileDialog;
+import ui.components.RoundedTextArea;
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,7 +20,7 @@ public final class ImportDocumentDialog {
         Window owner = parent == null ? null : SwingUtilities.getWindowAncestor(parent);
         JDialog dialog = new JDialog(owner, "Import a document", Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setSize(660, 500);
-        dialog.setLocationRelativeTo(parent);
+        dialog.setLocationRelativeTo(owner != null ? owner : parent);
 
         JPanel root = new JPanel(new BorderLayout(0, 10));
         root.setBackground(Theme.BG);
@@ -28,16 +29,12 @@ public final class ImportDocumentDialog {
         JLabel hint = Theme.muted("Paste your notes or readings below, or load a .txt, .md, .pdf or .docx file. The AI reads this document in the next step.");
         root.add(hint, BorderLayout.NORTH);
 
-        JTextArea area = new JTextArea();
+        RoundedTextArea area = new RoundedTextArea();
         area.setFont(Theme.BODY);
         area.setLineWrap(true);
         area.setWrapStyleWord(true);
-        area.setMargin(new Insets(8, 8, 8, 8));
-        area.setBackground(Theme.SURFACE);
-        area.setForeground(Theme.TEXT);
         area.setCaretColor(Theme.TEXT);
-        JScrollPane scroll = new JScrollPane(area);
-        scroll.setBorder(BorderFactory.createLineBorder(Theme.BORDER));
+        JScrollPane scroll = Theme.inputScrollPane(area);
         root.add(scroll, BorderLayout.CENTER);
 
         final String[] result = { null };
