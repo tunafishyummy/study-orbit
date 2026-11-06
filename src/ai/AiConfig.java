@@ -101,7 +101,7 @@ public class AiConfig {
     public static String defaultModel(String provider) {
         switch (provider) {
             case GROQ:
-                return "llama-3.3-70b-versatile";
+                return "openai/gpt-oss-120b";
             case GEMINI:
                 return "gemini-2.0-flash";
             case DEEPSEEK:
