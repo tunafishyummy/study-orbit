@@ -510,26 +510,53 @@ public class SettingsPage extends JPanel {
         body.setOpaque(false);
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
 
-        body.add(row("Export backup", "Save all data to a json file"));
-        body.add(Box.createVerticalStrut(10));
-
         JButton export = Theme.primaryButton("Export all data");
-        export.setAlignmentX(Component.LEFT_ALIGNMENT);
         export.addActionListener(e -> exportBackup());
-        body.add(export);
-
-        body.add(Box.createVerticalStrut(14));
-        body.add(row("Restore backup", "Replace all data with a json backup"));
-        body.add(Box.createVerticalStrut(10));
 
         JButton restore = Theme.button("Restore from file");
-        restore.setAlignmentX(Component.LEFT_ALIGNMENT);
         restore.addActionListener(e -> restoreBackup());
-        body.add(restore);
+
+        int width = Math.max(export.getPreferredSize().width, restore.getPreferredSize().width);
+        int height = Math.max(export.getPreferredSize().height, restore.getPreferredSize().height);
+        Dimension buttonSize = new Dimension(width, height);
+        export.setPreferredSize(buttonSize);
+        export.setMaximumSize(buttonSize);
+        restore.setPreferredSize(buttonSize);
+        restore.setMaximumSize(buttonSize);
+
+        body.add(dataAction("Export backup", "Save all data to a json file", export));
+        body.add(Box.createVerticalStrut(16));
+        body.add(dataAction("Restore backup", "Replace all data with a json backup", restore));
         body.add(Box.createVerticalGlue());
 
         card.add(body, BorderLayout.CENTER);
         return card;
+    }
+
+    private JPanel dataAction(String title, String caption, JButton button) {
+        JPanel block = new JPanel();
+        block.setOpaque(false);
+        block.setLayout(new BoxLayout(block, BoxLayout.Y_AXIS));
+        block.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel name = new JLabel(title);
+        name.setFont(Theme.HEADING);
+        name.setForeground(Theme.TEXT);
+        name.setAlignmentX(Component.LEFT_ALIGNMENT);
+        block.add(name);
+
+        JLabel description = Theme.muted(caption);
+        description.setAlignmentX(Component.LEFT_ALIGNMENT);
+        block.add(description);
+
+        block.add(Box.createVerticalStrut(8));
+
+        JPanel holder = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        holder.setOpaque(false);
+        holder.setAlignmentX(Component.LEFT_ALIGNMENT);
+        holder.add(button);
+        block.add(holder);
+        return block;
     }
 
     private void exportBackup() {
