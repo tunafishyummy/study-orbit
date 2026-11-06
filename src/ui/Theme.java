@@ -76,6 +76,12 @@ public final class Theme {
         UIManager.put("TextArea.caretForeground", TEXT);
         UIManager.put("ComboBox.background", SURFACE);
         UIManager.put("ComboBox.foreground", TEXT);
+        UIManager.put("ComboBox.disabledBackground", SURFACE);
+        UIManager.put("ComboBox.disabledForeground", TEXT);
+        UIManager.put("ComboBox.selectionBackground", SURFACE);
+        UIManager.put("ComboBox.selectionForeground", TEXT);
+        UIManager.put("List.selectionBackground", SELECT);
+        UIManager.put("List.selectionForeground", Color.WHITE);
         UIManager.put("List.background", SURFACE);
         UIManager.put("List.foreground", TEXT);
         UIManager.put("ScrollPane.background", BG);
