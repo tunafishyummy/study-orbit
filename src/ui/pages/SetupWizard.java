@@ -303,6 +303,8 @@ public class SetupWizard extends JDialog {
             Profile profile = AppData.profiles().addProfile(
                     nameField.getText().trim(), Theme.toHex(Theme.nextCourseColor(usedColors())));
             AppData.profiles().setActiveProfile(profile);
+            AppData.store().adoptOrphanData(profile.getId());
+            AppData.reloadForProfile();
             AppData.profiles().finishFirstRun();
             finished = true;
             dispose();
