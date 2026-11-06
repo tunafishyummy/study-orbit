@@ -14,13 +14,15 @@ import java.util.List;
 public class ScheduleManager {
 
     private final DataStore store;
+    private final String profileId;
     private final List<ScheduleClass> classes = new ArrayList<ScheduleClass>();
     private final List<Deadline> deadlines = new ArrayList<Deadline>();
 
-    public ScheduleManager(DataStore store) throws IOException {
+    public ScheduleManager(DataStore store, String profileId) throws IOException {
         this.store = store;
-        classes.addAll(store.loadClasses());
-        deadlines.addAll(store.loadDeadlines());
+        this.profileId = profileId == null ? "" : profileId;
+        classes.addAll(store.loadClasses(this.profileId));
+        deadlines.addAll(store.loadDeadlines(this.profileId));
     }
 
     public List<ScheduleClass> getClasses() {
@@ -75,39 +77,39 @@ public class ScheduleManager {
 
     public void addClass(String courseCode, String day, LocalTime start, LocalTime end, String room) throws IOException {
         classes.add(new ScheduleClass(courseCode, day, start, end, room));
-        store.saveClasses(classes);
+        store.saveClasses(profileId, classes);
     }
 
     public void deleteClass(ScheduleClass item) throws IOException {
         classes.remove(item);
-        store.saveClasses(classes);
+        store.saveClasses(profileId, classes);
     }
 
     public void saveClasses() throws IOException {
-        store.saveClasses(classes);
+        store.saveClasses(profileId, classes);
     }
 
     public void saveDeadlines() throws IOException {
-        store.saveDeadlines(deadlines);
+        store.saveDeadlines(profileId, deadlines);
     }
 
     public void addDeadline(String courseCode, String title, LocalDate dueDate) throws IOException {
         deadlines.add(new Deadline(courseCode, title, dueDate));
-        store.saveDeadlines(deadlines);
+        store.saveDeadlines(profileId, deadlines);
     }
 
     public void addDeadline(String courseCode, String title, LocalDate dueDate, LocalTime dueTime) throws IOException {
         deadlines.add(new Deadline(courseCode, title, dueDate, dueTime));
-        store.saveDeadlines(deadlines);
+        store.saveDeadlines(profileId, deadlines);
     }
 
     public void updateDeadline(Deadline deadline) throws IOException {
-        store.saveDeadlines(deadlines);
+        store.saveDeadlines(profileId, deadlines);
     }
 
     public void deleteDeadline(Deadline deadline) throws IOException {
         deadlines.remove(deadline);
-        store.saveDeadlines(deadlines);
+        store.saveDeadlines(profileId, deadlines);
     }
 
     public void renameCourse(String oldCode, String newCode) throws IOException {
@@ -124,8 +126,8 @@ public class ScheduleManager {
                 deadlines.get(index).setCourseCode(newCode);
             }
         }
-        store.saveClasses(classes);
-        store.saveDeadlines(deadlines);
+        store.saveClasses(profileId, classes);
+        store.saveDeadlines(profileId, deadlines);
     }
 
     public void deleteCourseData(String code) throws IOException {
@@ -142,7 +144,7 @@ public class ScheduleManager {
                 deadlines.get(index).setCourseCode("");
             }
         }
-        store.saveClasses(classes);
-        store.saveDeadlines(deadlines);
+        store.saveClasses(profileId, classes);
+        store.saveDeadlines(profileId, deadlines);
     }
 }

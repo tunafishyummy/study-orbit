@@ -75,6 +75,7 @@ public class ProfileManager {
     public void deleteProfile(Profile profile) throws IOException {
         profiles.remove(profile);
         store.saveProfiles(profiles);
+        store.deleteProfileData(profile.getId());
         String activeId = settings.get(SettingsManager.ACTIVE_PROFILE, "");
         if (profiles.isEmpty()) {
             settings.set(SettingsManager.ACTIVE_PROFILE, "");

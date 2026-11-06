@@ -24,7 +24,7 @@ public final class AppData {
     public static synchronized NoteManager get() {
         if (noteManager == null) {
             try {
-                noteManager = new NoteManager(store());
+                noteManager = new NoteManager(store(), activeProfileId());
             } catch (IOException exception) {
                 throw new RuntimeException("Could not load the note manager", exception);
             }
@@ -68,11 +68,29 @@ public final class AppData {
     public static synchronized ScheduleManager schedule() {
         if (scheduleManager == null) {
             try {
-                scheduleManager = new ScheduleManager(store());
+                scheduleManager = new ScheduleManager(store(), activeProfileId());
             } catch (IOException exception) {
                 throw new RuntimeException("Could not load the schedule", exception);
             }
         }
         return scheduleManager;
+    }
+
+    public static synchronized void reloadForProfile() {
+        noteManager = null;
+        scheduleManager = null;
+        activityManager = null;
+    }
+
+    public static synchronized void reloadAll() {
+        noteManager = null;
+        scheduleManager = null;
+        activityManager = null;
+        settingsManager = null;
+        profileManager = null;
+    }
+
+    private static String activeProfileId() {
+        return settings().get(SettingsManager.ACTIVE_PROFILE, "");
     }
 }
