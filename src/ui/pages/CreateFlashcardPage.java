@@ -106,10 +106,6 @@ public class CreateFlashcardPage extends JPanel {
         splitContent.setOpaque(false);
         splitContent.setBorder(BorderFactory.createEmptyBorder(16, 0, 0, 0));
 
-        RoundedPanel leftPanel = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS);
-        leftPanel.setLayout(new BorderLayout(0, 10));
-        leftPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
         JPanel noteTopBar = new JPanel();
         noteTopBar.setOpaque(false);
         noteTopBar.setLayout(new BoxLayout(noteTopBar, BoxLayout.Y_AXIS));
@@ -129,7 +125,6 @@ public class CreateFlashcardPage extends JPanel {
         List<Note> notes = AppData.get().getAllNotes();
         noteSelector = new RoundedComboBox<>(notes.toArray(new Note[0]));
         noteSelector.setFont(Theme.BODY);
-        leftPanel.add(noteTopBar, BorderLayout.NORTH);
 
         noteBodyArea = new RoundedTextArea();
         noteBodyArea.setFont(Theme.BODY);
@@ -144,9 +139,17 @@ public class CreateFlashcardPage extends JPanel {
         notePreviewContainer.setOpaque(false);
         notePreviewContainer.add(noteScroll, BorderLayout.CENTER);
         plusButton.addActionListener(e -> showNotePicker());
-        leftPanel.add(notePreviewContainer, BorderLayout.CENTER);
+
+        JPanel notePreviewCard = Theme.card();
+        notePreviewCard.setLayout(new BorderLayout());
+        notePreviewCard.add(notePreviewContainer, BorderLayout.CENTER);
+
+        JPanel leftColumn = new JPanel(new BorderLayout(0, 14));
+        leftColumn.setOpaque(false);
+        leftColumn.add(noteTopBar, BorderLayout.NORTH);
+        leftColumn.add(notePreviewCard, BorderLayout.CENTER);
         refreshNoteSelection();
-        splitContent.add(leftPanel);
+        splitContent.add(leftColumn);
 
         RoundedPanel rightPanel = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS);
         rightPanel.setLayout(new BorderLayout());
