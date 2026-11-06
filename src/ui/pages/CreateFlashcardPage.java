@@ -24,9 +24,16 @@ import ui.components.RoundedTextField;
 
 public class CreateFlashcardPage extends JPanel {
     private static final String NEW_DECK_OPTION = "+ Create New Deck";
+    private static final Color PILL_LABEL = new Color(0xC62F37);
+    private static final Color PILL_NOTE = new Color(0xE26B6B);
 
     private JComboBox<Note> noteSelector;
     private JTextArea noteBodyArea;
+    private JScrollPane noteScroll;
+    private JPanel notePreviewContainer;
+    private final List<Note> selectedNotes = new ArrayList<>();
+    private final JPanel chipRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+    private final PlusButton plusButton = new PlusButton();
     private JComboBox<String> deckSelector;
     private JTextField newDeckField;
     private JTextArea frontArea;
@@ -37,6 +44,7 @@ public class CreateFlashcardPage extends JPanel {
     private JLabel aiStatusLabel;
     private JButton generateButton;
     private JButton importButton;
+    private JButton leftImportButton;
     private ProcessingCard processingCard;
     private final List<Flashcard> activeSuggestions = new ArrayList<Flashcard>();
     private final Runnable onBackCallback;
@@ -102,21 +110,25 @@ public class CreateFlashcardPage extends JPanel {
         leftPanel.setLayout(new BorderLayout(0, 10));
         leftPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JPanel noteTopBar = new JPanel(new BorderLayout(10, 0));
+        JPanel noteTopBar = new JPanel();
         noteTopBar.setOpaque(false);
-        JLabel noteLabel = new JLabel("Reference Note:");
-        noteLabel.setFont(Theme.HEADING);
-        noteLabel.setForeground(Theme.TEXT);
-        noteTopBar.add(noteLabel, BorderLayout.WEST);
+        noteTopBar.setLayout(new BoxLayout(noteTopBar, BoxLayout.Y_AXIS));
+        chipRow.setOpaque(false);
+        chipRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        JLabel noteHint = Theme.muted("Select notes to include in flashcard generation");
+        noteHint.setAlignmentX(Component.LEFT_ALIGNMENT);
+        leftImportButton = Theme.button("Import Document");
+        leftImportButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        leftImportButton.addActionListener(e -> generateFromDocument());
+        noteTopBar.add(chipRow);
+        noteTopBar.add(Box.createVerticalStrut(6));
+        noteTopBar.add(noteHint);
+        noteTopBar.add(Box.createVerticalStrut(6));
+        noteTopBar.add(leftImportButton);
 
         List<Note> notes = AppData.get().getAllNotes();
         noteSelector = new RoundedComboBox<>(notes.toArray(new Note[0]));
         noteSelector.setFont(Theme.BODY);
-        noteSelector.addActionListener(e -> {
-            clearSuggestions();
-            updateNoteContent();
-        });
-        noteTopBar.add(noteSelector, BorderLayout.CENTER);
         leftPanel.add(noteTopBar, BorderLayout.NORTH);
 
         noteBodyArea = new RoundedTextArea();
@@ -127,8 +139,13 @@ public class CreateFlashcardPage extends JPanel {
         noteBodyArea.setEditable(false);
         noteBodyArea.setOpaque(false);
 
-        JScrollPane noteScroll = Theme.inputScrollPane(noteBodyArea);
-        leftPanel.add(noteScroll, BorderLayout.CENTER);
+        noteScroll = Theme.inputScrollPane(noteBodyArea);
+        notePreviewContainer = new JPanel(new BorderLayout());
+        notePreviewContainer.setOpaque(false);
+        notePreviewContainer.add(noteScroll, BorderLayout.CENTER);
+        plusButton.addActionListener(e -> showNotePicker());
+        leftPanel.add(notePreviewContainer, BorderLayout.CENTER);
+        refreshNoteSelection();
         splitContent.add(leftPanel);
 
         RoundedPanel rightPanel = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS);
@@ -256,13 +273,6 @@ public class CreateFlashcardPage extends JPanel {
         add(splitContent, BorderLayout.CENTER);
 
         refreshDecksDropdown();
-
-        if (notes.isEmpty() == false) {
-            noteSelector.setSelectedIndex(0);
-            updateNoteContent();
-        } else {
-            noteBodyArea.setText("No notes available. Create a note first in the Notes tab!");
-        }
     }
 
     private JLabel label(String text) {
@@ -294,17 +304,25 @@ public class CreateFlashcardPage extends JPanel {
                     "No note selected", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        if (selected.getBody() == null || selected.getBody().isBlank()) {
-            JOptionPane.showMessageDialog(this, "This note still has no text inside.",
+        StringBuilder selectedText = new StringBuilder();
+        for (Note note : selectedNotes) {
+            if (note.getBody() != null && !note.getBody().isBlank()) {
+                if (selectedText.length() > 0) selectedText.append("\n\n");
+                selectedText.append(note.getTitle()).append("\n").append(note.getBody());
+            }
+        }
+        if (selectedText.length() == 0) {
+            JOptionPane.showMessageDialog(this, "The selected notes still have no text inside.",
                     "Empty note", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        generateSuggestions(selected.getBody());
+        generateSuggestions(selectedText.toString());
     }
 
     private void generateSuggestions(String document) {
         generateButton.setEnabled(false);
         importButton.setEnabled(false);
+        leftImportButton.setEnabled(false);
         processingCard.start("Reading your document...");
         activeSuggestions.clear();
         renderSuggestions();
@@ -335,6 +353,7 @@ public class CreateFlashcardPage extends JPanel {
             protected void done() {
                 generateButton.setEnabled(true);
                 importButton.setEnabled(true);
+                leftImportButton.setEnabled(true);
                 processingCard.stop();
                 try {
                     List<Flashcard> result = get();
@@ -457,26 +476,106 @@ public class CreateFlashcardPage extends JPanel {
     public void refreshNotes() {
         clearSuggestions();
         List<Note> notes = AppData.get().getAllNotes();
+        java.util.Map<String, Note> byId = new java.util.HashMap<>();
+        for (Note note : notes) byId.put(note.getId(), note);
+        List<Note> refreshedSelection = new ArrayList<>();
+        for (Note note : selectedNotes) {
+            Note refreshed = byId.get(note.getId());
+            if (refreshed != null) refreshedSelection.add(refreshed);
+        }
+        selectedNotes.clear();
+        selectedNotes.addAll(refreshedSelection);
         noteSelector.removeAllItems();
         for (int index = 0; index < notes.size(); index++) {
             noteSelector.addItem(notes.get(index));
         }
 
         refreshDecksDropdown();
-
-        if (notes.isEmpty() == false) {
-            noteSelector.setSelectedIndex(0);
-            updateNoteContent();
-        } else {
-            noteBodyArea.setText("No notes available. Create a note first in the Notes tab!");
-        }
+        refreshNoteSelection();
     }
 
-    private void updateNoteContent() {
-        Note selected = (Note) noteSelector.getSelectedItem();
-        if (selected != null) {
-            noteBodyArea.setText(selected.getBody());
+    private void refreshNoteSelection() {
+        chipRow.removeAll();
+        chipRow.add(new Pill("Orbiting Note:", PILL_LABEL, false));
+        for (Note note : selectedNotes) {
+            Pill chip = new Pill(note.getTitle() + "  \u00D7", PILL_NOTE, true);
+            chip.setToolTipText("Click to remove");
+            chip.addActionListener(e -> {
+                selectedNotes.remove(note);
+                clearSuggestions();
+                refreshNoteSelection();
+            });
+            chipRow.add(chip);
         }
+        chipRow.add(plusButton);
+        chipRow.revalidate();
+        chipRow.repaint();
+
+        Note selected = selectedNotes.isEmpty() ? null : selectedNotes.get(0);
+        noteSelector.setSelectedItem(selected);
+        notePreviewContainer.removeAll();
+        if (selectedNotes.isEmpty()) {
+            JButton addNotesButton = Theme.button("Press + to add notes...");
+            addNotesButton.addActionListener(e -> showNotePicker());
+            JPanel emptyState = new JPanel(new GridBagLayout());
+            emptyState.setOpaque(false);
+            emptyState.add(addNotesButton);
+            notePreviewContainer.add(emptyState, BorderLayout.CENTER);
+        } else {
+            StringBuilder preview = new StringBuilder();
+            for (Note note : selectedNotes) {
+                if (preview.length() > 0) preview.append("\n\n");
+                preview.append(note.getTitle()).append("\n").append(note.getBody());
+            }
+            noteBodyArea.setText(preview.toString());
+            noteBodyArea.setCaretPosition(0);
+            notePreviewContainer.add(noteScroll, BorderLayout.CENTER);
+        }
+        notePreviewContainer.revalidate();
+        notePreviewContainer.repaint();
+    }
+
+    private boolean isNoteSelected(Note note) {
+        for (Note selected : selectedNotes) {
+            if (selected.getId().equals(note.getId())) return true;
+        }
+        return false;
+    }
+
+    private void showNotePicker() {
+        JPopupMenu menu = new JPopupMenu();
+        menu.setBackground(Theme.SURFACE);
+        menu.setBorder(BorderFactory.createLineBorder(Theme.BORDER));
+
+        List<Note> allNotes = AppData.get().getAllNotes();
+        List<Note> available = new ArrayList<>();
+        for (Note note : allNotes) {
+            if (!isNoteSelected(note)) available.add(note);
+        }
+        if (available.isEmpty()) {
+            JMenuItem none = new JMenuItem(allNotes.isEmpty()
+                    ? "No notes yet. Create one in the Notes tab." : "All notes are added");
+            none.setEnabled(false);
+            menu.add(none);
+        } else {
+            for (Note note : available) {
+                String label = note.getTitle()
+                        + (note.getCourseCode().isEmpty() ? "" : "  (" + note.getCourseCode() + ")");
+                JMenuItem item = new JMenuItem(label);
+                item.setFont(Theme.BODY);
+                item.setOpaque(true);
+                item.setBackground(Theme.SURFACE);
+                item.setForeground(Theme.TEXT);
+                item.setBorder(BorderFactory.createEmptyBorder(6, 14, 6, 14));
+                item.addActionListener(e -> {
+                    selectedNotes.add(note);
+                    clearSuggestions();
+                    refreshNoteSelection();
+                });
+                menu.add(item);
+            }
+        }
+        menu.show(plusButton, 0, plusButton.getHeight() + 4);
     }
 
     private void saveFlashcard() {
@@ -509,6 +608,7 @@ public class CreateFlashcardPage extends JPanel {
                         tags.add(parts[index].trim());
                     }
                 }
+
             }
             Note source = (Note) noteSelector.getSelectedItem();
             String courseCode = "";
@@ -526,6 +626,70 @@ public class CreateFlashcardPage extends JPanel {
         } catch (Exception exception) {
             JOptionPane.showMessageDialog(this, "Error saving: " + exception.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private static class Pill extends JButton {
+        private final Color fill;
+
+        Pill(String text, Color fill, boolean clickable) {
+            super(text);
+            this.fill = fill;
+            setFont(Theme.font(Font.PLAIN, 13));
+            setForeground(Color.WHITE);
+            setContentAreaFilled(false);
+            setBorderPainted(false);
+            setFocusPainted(false);
+            setFocusable(false);
+            setOpaque(false);
+            if (clickable) setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            FontMetrics metrics = getFontMetrics(getFont());
+            return new Dimension(metrics.stringWidth(getText()) + 28, metrics.getHeight() + 10);
+        }
+
+        @Override
+        protected void paintComponent(Graphics graphics) {
+            Graphics2D g2 = (Graphics2D) graphics.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g2.setColor(fill);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), getHeight(), getHeight());
+            g2.setFont(getFont());
+            FontMetrics metrics = g2.getFontMetrics();
+            g2.setColor(Color.WHITE);
+            g2.drawString(getText(), (getWidth() - metrics.stringWidth(getText())) / 2,
+                    (getHeight() - metrics.getHeight()) / 2 + metrics.getAscent());
+            g2.dispose();
+        }
+    }
+
+    private static class PlusButton extends JButton {
+        PlusButton() {
+            setContentAreaFilled(false);
+            setBorderPainted(false);
+            setFocusPainted(false);
+            setFocusable(false);
+            setOpaque(false);
+            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            setToolTipText("Add a note");
+            setPreferredSize(new Dimension(30, 30));
+        }
+
+        @Override
+        protected void paintComponent(Graphics graphics) {
+            Graphics2D g2 = (Graphics2D) graphics.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(Color.WHITE);
+            g2.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            int centerX = getWidth() / 2;
+            int centerY = getHeight() / 2;
+            g2.drawLine(centerX - 8, centerY, centerX + 8, centerY);
+            g2.drawLine(centerX, centerY - 8, centerX, centerY + 8);
+            g2.dispose();
         }
     }
 }
