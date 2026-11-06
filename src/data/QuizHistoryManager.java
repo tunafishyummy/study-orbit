@@ -26,6 +26,18 @@ public class QuizHistoryManager {
         return new ArrayList<QuizAttempt>(attempts);
     }
 
+    public String loadDraft() throws IOException {
+        return store.loadQuizDraft(profileId);
+    }
+
+    public void saveDraft(String state) throws IOException {
+        store.saveQuizDraft(profileId, state);
+    }
+
+    public void clearDraft() throws IOException {
+        store.deleteQuizDraft(profileId);
+    }
+
     public void record(String source, List<QuizQuestion> questions, boolean[] correct,
                        int[] picks, String[] given) throws IOException {
         int correctCount = 0;
