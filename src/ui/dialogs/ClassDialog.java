@@ -33,10 +33,15 @@ public final class ClassDialog {
             return null;
         }
 
+        courseBox.setPreferredSize(new Dimension(340, 34));
         RoundedComboBox<String> dayBox = new RoundedComboBox<>(DAYS);
+        dayBox.setPreferredSize(new Dimension(340, 34));
         TimePicker startPicker = new TimePicker(existing == null ? LocalTime.of(9, 0) : existing.getStart());
+        startPicker.setPreferredSize(new Dimension(340, 40));
         TimePicker endPicker = new TimePicker(existing == null ? LocalTime.of(10, 30) : existing.getEnd());
+        endPicker.setPreferredSize(new Dimension(340, 40));
         RoundedTextField roomField = new RoundedTextField();
+        roomField.setPreferredSize(new Dimension(340, 34));
 
         if (existing != null) {
             if (locked == false) {
@@ -70,10 +75,9 @@ public final class ClassDialog {
         form.add(roomField);
 
         while (true) {
-            int result = JOptionPane.showConfirmDialog(parent, form,
-                    existing == null ? "Add class" : "Edit class",
-                    JOptionPane.OK_CANCEL_OPTION);
-            if (result != JOptionPane.OK_OPTION) {
+            boolean accepted = FormDialog.show(parent,
+                    existing == null ? "Add class" : "Edit class", form);
+            if (accepted == false) {
                 return null;
             }
 

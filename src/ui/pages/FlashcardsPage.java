@@ -103,6 +103,10 @@ public class FlashcardsPage extends JPanel {
         flashcardCard.addMouseListener(flipClickListener);
         centerPanel.addMouseListener(flipClickListener);
         cardLabel.addMouseListener(flipClickListener);
+        Cursor flipCursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+        flashcardCard.setCursor(flipCursor);
+        centerPanel.setCursor(flipCursor);
+        cardLabel.setCursor(flipCursor);
 
         JPanel cardNav = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         cardNav.setOpaque(false);

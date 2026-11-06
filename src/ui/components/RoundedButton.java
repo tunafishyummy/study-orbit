@@ -8,6 +8,7 @@ public class RoundedButton extends JButton {
         super(text);
         setOpaque(false);
         setContentAreaFilled(false);
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     }
 
     @Override

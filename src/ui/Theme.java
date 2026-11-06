@@ -82,6 +82,13 @@ public final class Theme {
         UIManager.put("ComboBox.selectionForeground", TEXT);
         UIManager.put("List.selectionBackground", SELECT);
         UIManager.put("List.selectionForeground", Color.WHITE);
+        UIManager.put("Button.background", SURFACE);
+        UIManager.put("Button.foreground", TEXT);
+        UIManager.put("Button.select", SELECT);
+        UIManager.put("TextField.disabledBackground", SURFACE);
+        UIManager.put("TextField.disabledForeground", MUTED);
+        UIManager.put("PasswordField.disabledBackground", SURFACE);
+        UIManager.put("PasswordField.disabledForeground", MUTED);
         UIManager.put("List.background", SURFACE);
         UIManager.put("List.foreground", TEXT);
         UIManager.put("ScrollPane.background", BG);

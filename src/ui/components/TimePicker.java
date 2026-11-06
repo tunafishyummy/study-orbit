@@ -24,9 +24,12 @@ public class TimePicker extends JPanel {
             minuteBox.addItem(String.format("%02d", minute));
         }
 
-        hourBox.setPreferredSize(new Dimension(62, 34));
-        minuteBox.setPreferredSize(new Dimension(62, 34));
-        ampmBox.setPreferredSize(new Dimension(72, 34));
+        hourBox.setBorder(BorderFactory.createEmptyBorder(5, 9, 5, 4));
+        minuteBox.setBorder(BorderFactory.createEmptyBorder(5, 9, 5, 4));
+        ampmBox.setBorder(BorderFactory.createEmptyBorder(5, 9, 5, 4));
+        hourBox.setPreferredSize(new Dimension(78, 34));
+        minuteBox.setPreferredSize(new Dimension(78, 34));
+        ampmBox.setPreferredSize(new Dimension(88, 34));
 
         JLabel colon = new JLabel(":");
         colon.setFont(Theme.BODY);
@@ -36,6 +39,8 @@ public class TimePicker extends JPanel {
         add(colon);
         add(minuteBox);
         add(ampmBox);
+        setPreferredSize(new Dimension(270, 40));
+        setMinimumSize(new Dimension(270, 40));
 
         setTime(initial == null ? LocalTime.of(9, 0) : initial);
     }

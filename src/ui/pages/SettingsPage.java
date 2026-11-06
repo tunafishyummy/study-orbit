@@ -11,8 +11,10 @@ import ui.Theme;
 import ui.components.Avatar;
 import ui.components.NativeFileDialog;
 import ui.components.RoundedComboBox;
+import ui.components.RoundedPasswordField;
 import ui.components.RoundedTextField;
 import ui.components.ToggleSwitch;
+import ui.dialogs.FormDialog;
 
 import javax.swing.*;
 import java.awt.*;
@@ -27,7 +29,7 @@ public class SettingsPage extends JPanel {
     private JComboBox<String> providerBox;
     private JTextField baseUrlField;
     private JTextField modelField;
-    private JPasswordField apiKeyField;
+    private RoundedPasswordField apiKeyField;
     private ToggleSwitch demoToggle;
     private JButton testButton;
     private JLabel aiStatusLabel;
@@ -267,14 +269,9 @@ public class SettingsPage extends JPanel {
         modelField.setText(config.getModel());
         modelField.setFont(Theme.BODY);
 
-        apiKeyField = new JPasswordField(config.getApiKey());
+        apiKeyField = new RoundedPasswordField();
+        apiKeyField.setText(config.getApiKey());
         apiKeyField.setFont(Theme.BODY);
-        apiKeyField.setForeground(Theme.TEXT);
-        apiKeyField.setBackground(Theme.SURFACE);
-        apiKeyField.setCaretColor(Theme.TEXT);
-        apiKeyField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Theme.BORDER),
-                BorderFactory.createEmptyBorder(6, 10, 6, 10)));
         apiKeyField.setEnabled(config.isLocal() == false);
 
         loadingAiFields = true;
@@ -547,6 +544,7 @@ public class SettingsPage extends JPanel {
         }
 
         JTextField nameField = new RoundedTextField();
+        nameField.setPreferredSize(new Dimension(340, 34));
         nameField.setText(profile.getName());
 
         final Color[] chosen = { Theme.parse(profile.getAvatarColor()) };
@@ -568,8 +566,7 @@ public class SettingsPage extends JPanel {
         form.add(new JLabel("Avatar color"));
         form.add(colorButton);
 
-        int result = JOptionPane.showConfirmDialog(this, form, "Edit profile", JOptionPane.OK_CANCEL_OPTION);
-        if (result != JOptionPane.OK_OPTION) {
+        if (FormDialog.show(this, "Edit profile", form) == false) {
             return;
         }
         if (nameField.getText().trim().isEmpty()) {
@@ -622,8 +619,17 @@ public class SettingsPage extends JPanel {
             names[index] = profile.getName() + "  (" + suffix + ")";
         }
 
-        String choice = (String) JOptionPane.showInputDialog(this, "Choose a profile", "Switch profile",
-                JOptionPane.QUESTION_MESSAGE, null, names, names[0]);
+        RoundedComboBox<String> profileBox = new RoundedComboBox<>(names);
+        profileBox.setPreferredSize(new Dimension(340, 34));
+        JPanel form = new JPanel(new GridLayout(0, 1, 6, 6));
+        form.setOpaque(false);
+        form.add(new JLabel("Profile"));
+        form.add(profileBox);
+        if (FormDialog.show(this, "Switch profile", form) == false) {
+            return;
+        }
+
+        String choice = (String) profileBox.getSelectedItem();
         if (choice == null) {
             return;
         }
@@ -646,8 +652,19 @@ public class SettingsPage extends JPanel {
     }
 
     private void newProfile() {
-        String name = JOptionPane.showInputDialog(this, "Profile name");
-        if (name == null || name.trim().isEmpty()) {
+        RoundedTextField nameField = new RoundedTextField();
+        nameField.setPreferredSize(new Dimension(340, 34));
+        JPanel form = new JPanel(new GridLayout(0, 1, 6, 6));
+        form.setOpaque(false);
+        form.add(new JLabel("Name"));
+        form.add(nameField);
+        if (FormDialog.show(this, "New profile", form) == false) {
+            return;
+        }
+        String name = nameField.getText().trim();
+        if (name.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "The profile name cannot be empty.",
+                    "Check the name", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -659,7 +676,7 @@ public class SettingsPage extends JPanel {
         Color color = Theme.nextCourseColor(usedColors);
 
         try {
-            Profile profile = AppData.profiles().addProfile(name.trim(), Theme.toHex(color));
+            Profile profile = AppData.profiles().addProfile(name, Theme.toHex(color));
             AppData.profiles().setActiveProfile(profile);
             rebuild();
         } catch (IOException exception) {

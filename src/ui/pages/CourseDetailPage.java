@@ -21,6 +21,7 @@ import ui.components.RoundedPanel;
 import ui.components.RoundedTextField;
 import ui.dialogs.ClassDialog;
 import ui.dialogs.DeadlineDialog;
+import ui.dialogs.FormDialog;
 
 // one course with its notes, deadlines and class meetings
 public class CourseDetailPage extends JPanel {
@@ -556,8 +557,10 @@ public class CourseDetailPage extends JPanel {
             return;
         }
         RoundedTextField codeField = new RoundedTextField();
+        codeField.setPreferredSize(new Dimension(340, 34));
         codeField.setText(course.getCode());
         RoundedTextField titleField = new RoundedTextField();
+        titleField.setPreferredSize(new Dimension(340, 34));
         titleField.setText(course.getTitle());
 
         JPanel form = new JPanel(new GridLayout(0, 1, 6, 6));
@@ -568,9 +571,7 @@ public class CourseDetailPage extends JPanel {
         form.add(titleField);
 
         while (true) {
-            int result = JOptionPane.showConfirmDialog(this, form, "Edit course",
-                    JOptionPane.OK_CANCEL_OPTION);
-            if (result != JOptionPane.OK_OPTION) {
+            if (FormDialog.show(this, "Edit course", form) == false) {
                 return;
             }
             String newCode = codeField.getText().trim();
@@ -650,6 +651,7 @@ public class CourseDetailPage extends JPanel {
         button.setFont(Theme.BODY);
         button.setFocusPainted(false);
         button.setOpaque(true);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return button;
     }
 

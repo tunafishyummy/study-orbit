@@ -1,6 +1,7 @@
 @echo off
 cd /d "%~dp0"
-if not exist out mkdir out
+if exist out rmdir /s /q out
+mkdir out
 if exist sources.txt del sources.txt
 for /f "delims=" %%f in ('dir /s /b src\*.java') do call :writeSource "%%f"
 javac -encoding UTF-8 -cp "lib/*" -d out @sources.txt

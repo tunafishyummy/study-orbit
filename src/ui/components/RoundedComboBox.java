@@ -16,6 +16,7 @@ public class RoundedComboBox<E> extends JComboBox<E> {
 
     private void prepare() {
         RoundedInputPainter.prepare(this, new Insets(5, 12, 5, 12));
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     }
 
     @Override
