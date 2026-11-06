@@ -30,8 +30,12 @@ public final class DeadlineDialog {
         }
 
         RoundedTextField titleField = new RoundedTextField();
+        titleField.setPreferredSize(new Dimension(340, 34));
         RoundedTextField dateField = new RoundedTextField(12);
+        dateField.setPreferredSize(new Dimension(340, 34));
         TimePicker timePicker = new TimePicker(LocalTime.of(23, 59));
+        timePicker.setPreferredSize(new Dimension(340, 40));
+        courseBox.setPreferredSize(new Dimension(340, 34));
 
         if (existing != null) {
             titleField.setText(existing.getTitle());
@@ -66,10 +70,9 @@ public final class DeadlineDialog {
         form.add(courseBox);
 
         while (true) {
-            int result = JOptionPane.showConfirmDialog(parent, form,
-                    existing == null ? "Add deadline" : "Edit deadline",
-                    JOptionPane.OK_CANCEL_OPTION);
-            if (result != JOptionPane.OK_OPTION) {
+            boolean accepted = FormDialog.show(parent,
+                    existing == null ? "Add deadline" : "Edit deadline", form);
+            if (accepted == false) {
                 return null;
             }
 
