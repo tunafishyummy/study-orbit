@@ -103,7 +103,7 @@ public class AiConfig {
             case GROQ:
                 return "openai/gpt-oss-120b";
             case GEMINI:
-                return "gemini-2.0-flash";
+                return "gemini-3.8-flash";
             case DEEPSEEK:
                 return "deepseek-chat";
             case LOCAL:
