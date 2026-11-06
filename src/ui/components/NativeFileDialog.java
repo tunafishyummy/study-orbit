@@ -135,6 +135,7 @@ public class NativeFileDialog {
 
     private String run(String[] command) throws Exception {
         ProcessBuilder builder = new ProcessBuilder(command);
+        builder.redirectError(ProcessBuilder.Redirect.DISCARD);
         Process process = builder.start();
 
         BufferedReader reader = new BufferedReader(
