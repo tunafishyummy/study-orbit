@@ -1,5 +1,6 @@
 package data;
 
+import ai.AiConfig;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -11,58 +12,18 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.List;
 
 // reads text from an image with the gemini vision endpoint
 public class AIFlashcardService {
-    private static final String MODEL = "gemini-3.8-flash";
     private static final String OCR_PROMPT =
             "Extract all readable text from this image accurately and format it cleanly as structured notes.";
     private final String apiKey;
+    private final String model;
 
-    public static class SuggestedCard {
-        public String front;
-        public String back;
-
-        public SuggestedCard(String front, String back) {
-            this.front = front;
-            this.back = back;
-        }
-    }
-
-    public AIFlashcardService(String apiKey) {
+    public AIFlashcardService(String apiKey, String model) {
         this.apiKey = apiKey;
-    }
-
-    public List<SuggestedCard> generateSuggestions(String noteTitle, String noteBody) throws Exception {
-        if (apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException("API key is missing.");
-        }
-
-        String prompt = "Extract 3 to 5 key flashcard questions and answers from the following note titled '"
-                + noteTitle.replace("\"", "'") + "'.\n\n"
-                + "Note Content:\n" + noteBody.replace("\"", "'") + "\n\n"
-                + "Respond STRICTLY with a raw JSON array of objects. Do not include Markdown formatting or code blocks. "
-                + "Each object must have 'front' (question/prompt) and 'back' (definition/answer) keys.";
-
-        String rawText = stripCodeFence(send(prompt, null, null));
-        JsonArray cardsArray = JsonParser.parseString(rawText).getAsJsonArray();
-
-        List<SuggestedCard> suggestions = new ArrayList<SuggestedCard>();
-        for (int index = 0; index < cardsArray.size(); index++) {
-            JsonObject object = cardsArray.get(index).getAsJsonObject();
-            if (object.has("front") && object.has("back")) {
-                suggestions.add(new SuggestedCard(
-                        object.get("front").getAsString(),
-                        object.get("back").getAsString()));
-            }
-        }
-        if (suggestions.isEmpty()) {
-            throw new IOException("The AI returned no suggestions. Check the API key and try again.");
-        }
-        return suggestions;
+        this.model = model == null || model.isBlank() ? AiConfig.defaultModel(AiConfig.GEMINI) : model.trim();
     }
 
     public String extractTextFromImage(byte[] imageBytes, String mimeType) throws Exception {
@@ -77,7 +38,7 @@ public class AIFlashcardService {
     }
 
     private String send(String prompt, byte[] imageBytes, String mimeType) throws Exception {
-        String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL
+        String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/" + model
                 + ":generateContent?key=" + apiKey;
 
         JsonArray partsArray = new JsonArray();
@@ -149,20 +110,6 @@ public class AIFlashcardService {
             throw new IOException("The AI returned no text. Check the API key and try again.");
         }
         return text;
-    }
-
-    private String stripCodeFence(String rawText) {
-        String text = rawText == null ? "" : rawText.trim();
-        if (text.startsWith("```json")) {
-            text = text.substring(7);
-        }
-        if (text.startsWith("```")) {
-            text = text.substring(3);
-        }
-        if (text.endsWith("```")) {
-            text = text.substring(0, text.length() - 3);
-        }
-        return text.trim();
     }
 
     private String shorten(String body) {
