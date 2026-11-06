@@ -1,5 +1,6 @@
 package ai;
 
+import data.PlainText;
 import model.Flashcard;
 import model.QuizQuestion;
 
@@ -191,6 +192,8 @@ public class StudyGenerator {
         if (body.isEmpty()) {
             body = answer.trim();
         }
+        title = PlainText.clean(title).replace('\n', ' ').trim();
+        body = PlainText.clean(body);
         if (title.isEmpty()) {
             title = "Imported note";
         }
