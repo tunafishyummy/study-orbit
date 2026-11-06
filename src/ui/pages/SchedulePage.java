@@ -7,10 +7,9 @@ import model.Course;
 import model.Deadline;
 import model.ScheduleClass;
 import ui.Theme;
-import ui.components.RoundedComboBox;
 import ui.components.RoundedPanel;
-import ui.components.RoundedTextField;
-import ui.components.TimePicker;
+import ui.dialogs.ClassDialog;
+import ui.dialogs.DeadlineDialog;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -533,64 +532,15 @@ public class SchedulePage extends JPanel {
     }
 
     private void showClassDialog(ScheduleClass existing) {
-        JComboBox<String> courseBox = new RoundedComboBox<>();
-        List<Course> courses = notes.getCourses();
-        for (int index = 0; index < courses.size(); index++) {
-            courseBox.addItem(courses.get(index).getCode());
-        }
-        if (courseBox.getItemCount() == 0) {
-            JOptionPane.showMessageDialog(this, "Add a course first, then add its class time.");
+        ScheduleClass result = ClassDialog.show(this, null, existing);
+        if (result == null) {
             return;
         }
-
-        JComboBox<String> dayBox = new RoundedComboBox<>(
-                new String[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" });
-        TimePicker startPicker = new TimePicker(existing == null ? LocalTime.of(9, 0) : existing.getStart());
-        TimePicker endPicker = new TimePicker(existing == null ? LocalTime.of(10, 30) : existing.getEnd());
-        JTextField roomField = new RoundedTextField();
-        if (existing != null) {
-            courseBox.setSelectedItem(existing.getCourseCode());
-            dayBox.setSelectedItem(existing.getDay());
-            roomField.setText(existing.getRoom());
-        }
-
-        JPanel form = new JPanel(new GridLayout(0, 1, 6, 6));
-        form.setOpaque(false);
-        form.add(new JLabel("Course"));
-        form.add(courseBox);
-        form.add(new JLabel("Day"));
-        form.add(dayBox);
-        form.add(new JLabel("Start time"));
-        form.add(startPicker);
-        form.add(new JLabel("End time"));
-        form.add(endPicker);
-        form.add(new JLabel("Room"));
-        form.add(roomField);
-
-        String title = existing == null ? "Add class" : "Edit class";
-        int result = JOptionPane.showConfirmDialog(this, form, title, JOptionPane.OK_CANCEL_OPTION);
-        if (result != JOptionPane.OK_OPTION) {
-            return;
-        }
-
-        LocalTime start = startPicker.getTime();
-        LocalTime end = endPicker.getTime();
-        if (end.isAfter(start) == false) {
-            JOptionPane.showMessageDialog(this, "The end time must be after the start time.",
-                    "Check the time", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
         try {
             if (existing == null) {
-                schedule.addClass((String) courseBox.getSelectedItem(), (String) dayBox.getSelectedItem(),
-                        start, end, roomField.getText().trim());
+                schedule.addClass(result.getCourseCode(), result.getDay(), result.getStart(),
+                        result.getEnd(), result.getRoom());
             } else {
-                existing.setCourseCode((String) courseBox.getSelectedItem());
-                existing.setDay((String) dayBox.getSelectedItem());
-                existing.setStart(start);
-                existing.setEnd(end);
-                existing.setRoom(roomField.getText().trim());
                 markClassesChanged();
             }
             refresh();
@@ -617,45 +567,18 @@ public class SchedulePage extends JPanel {
     }
 
     private void addDeadline() {
-        JTextField titleField = new RoundedTextField();
-        JTextField dateField = new RoundedTextField();
-        TimePicker timePicker = new TimePicker(LocalTime.of(23, 59));
-        dateField.setText(weekStart.toString());
-
-        JComboBox<String> courseBox = new RoundedComboBox<>();
-        courseBox.addItem("");
-        List<Course> courses = notes.getCourses();
-        for (int index = 0; index < courses.size(); index++) {
-            courseBox.addItem(courses.get(index).getCode());
-        }
-
-        JPanel form = new JPanel(new GridLayout(0, 1, 6, 6));
-        form.setOpaque(false);
-        form.add(new JLabel("Title"));
-        form.add(titleField);
-        form.add(new JLabel("Due date (2026-10-30)"));
-        form.add(dateField);
-        form.add(new JLabel("Due time"));
-        form.add(timePicker);
-        form.add(new JLabel("Course (optional)"));
-        form.add(courseBox);
-
-        int result = JOptionPane.showConfirmDialog(this, form, "Add deadline", JOptionPane.OK_CANCEL_OPTION);
-        if (result != JOptionPane.OK_OPTION) {
-            return;
-        }
-        if (titleField.getText().trim().isEmpty()) {
+        Deadline result = DeadlineDialog.show(this, null, null);
+        if (result == null) {
             return;
         }
         try {
-            LocalDate dueDate = LocalDate.parse(dateField.getText().trim());
-            LocalTime dueTime = timePicker.getTime();
-            schedule.addDeadline((String) courseBox.getSelectedItem(), titleField.getText().trim(),
-                    dueDate, dueTime);
-            weekStart = startOfWeek(dueDate);
+            schedule.addDeadline(result.getCourseCode(), result.getTitle(),
+                    result.getDueDate(), result.getDueTime());
+            weekStart = startOfWeek(result.getDueDate());
             refreshDeadlines();
         } catch (Exception exception) {
-            JOptionPane.showMessageDialog(this, "Use a date like 2026-10-30.");
+            JOptionPane.showMessageDialog(this, "Could not save the deadline: " + exception.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
