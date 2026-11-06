@@ -15,6 +15,7 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import model.Note;
+import model.QuizAttempt;
 import model.QuizQuestion;
 import ui.ImportDocumentDialog;
 import ui.Theme;
@@ -67,10 +68,13 @@ public class QuizzesPage extends JPanel {
     private int maxAttempts = 1;
     private int[] attemptsUsed = new int[0];
     private boolean[] correct = new boolean[0];
+    private int[] picks = new int[0];
+    private String[] given = new String[0];
     private boolean resolved;
 
     // ----- results view -----
     private final JPanel resultsHolder = new JPanel(new BorderLayout());
+    private final JPanel historyList = new JPanel();
 
     public QuizzesPage() {
         setBackground(Theme.BG);
@@ -90,6 +94,7 @@ public class QuizzesPage extends JPanel {
             @Override
             public void componentShown(ComponentEvent e) {
                 reconcileNotes();
+                refreshHistory();
             }
         });
         refreshSetup();
@@ -126,7 +131,59 @@ public class QuizzesPage extends JPanel {
         grid.add(previewCard());
         grid.add(settingsCard());
         panel.add(grid, BorderLayout.CENTER);
+        panel.add(historyCard(), BorderLayout.SOUTH);
         return panel;
+    }
+
+    private JPanel historyCard() {
+        JPanel card = Theme.card();
+        card.setLayout(new BorderLayout(0, 6));
+        JLabel title = new JLabel("Recent quizzes");
+        title.setFont(Theme.BODY);
+        title.setForeground(Theme.TEXT);
+        card.add(title, BorderLayout.NORTH);
+        historyList.setOpaque(false);
+        historyList.setLayout(new BoxLayout(historyList, BoxLayout.Y_AXIS));
+        card.add(historyList, BorderLayout.CENTER);
+        refreshHistory();
+        return card;
+    }
+
+    private void refreshHistory() {
+        historyList.removeAll();
+        List<QuizAttempt> attempts = AppData.quizHistory().getAttempts();
+        if (attempts.isEmpty()) {
+            JLabel empty = Theme.muted("Finish a quiz to keep it here.");
+            empty.setAlignmentX(Component.LEFT_ALIGNMENT);
+            historyList.add(empty);
+        } else {
+            int shown = Math.min(5, attempts.size());
+            for (int index = 0; index < shown; index++) {
+                QuizAttempt attempt = attempts.get(index);
+                String source = attempt.getSource().isEmpty() ? "Quiz" : attempt.getSource();
+                JLabel row = Theme.muted(attempt.getCreated().format(
+                        java.time.format.DateTimeFormatter.ofPattern("MMM d, h:mm a"))
+                        + "   " + source + "   " + attempt.getCorrectCount() + "/" + attempt.getQuestionCount());
+                row.setAlignmentX(Component.LEFT_ALIGNMENT);
+                historyList.add(row);
+            }
+        }
+        historyList.revalidate();
+        historyList.repaint();
+    }
+
+    private String quizSource() {
+        if (selected.isEmpty() && importedDocument != null) {
+            return "Imported document";
+        }
+        StringBuilder source = new StringBuilder();
+        for (Note note : selected) {
+            if (source.length() > 0) {
+                source.append(", ");
+            }
+            source.append(note.getTitle());
+        }
+        return source.toString();
     }
 
     private JPanel previewCard() {
@@ -404,6 +461,11 @@ public class QuizzesPage extends JPanel {
         current = 0;
         attemptsUsed = new int[list.size()];
         correct = new boolean[list.size()];
+        picks = new int[list.size()];
+        given = new String[list.size()];
+        for (int index = 0; index < picks.length; index++) {
+            picks[index] = -1;
+        }
         views.show(viewHolder, "quiz");
         showQuestion();
     }
@@ -470,6 +532,8 @@ public class QuizzesPage extends JPanel {
                 showFeedback("Pick an answer first.", Theme.MUTED);
                 return;
             }
+            picks[current] = pick;
+            given[current] = q.getChoices().get(pick);
             ok = q.isCorrectChoice(pick);
         } else {
             String text = answerField.getText().trim();
@@ -477,6 +541,8 @@ public class QuizzesPage extends JPanel {
                 showFeedback("Type your answer first.", Theme.MUTED);
                 return;
             }
+            given[current] = text;
+            picks[current] = -1;
             ok = q.isCorrectText(text);
         }
         attemptsUsed[current]++;
@@ -539,6 +605,17 @@ public class QuizzesPage extends JPanel {
         int score = 0;
         for (boolean b : correct) if (b) score++;
         int percent = Math.round(100f * score / total);
+        try {
+            AppData.activity().recordQuiz(total);
+        } catch (java.io.IOException exception) {
+            System.out.println("Could not record the quiz: " + exception.getMessage());
+        }
+        try {
+            AppData.quizHistory().record(quizSource(), questions, correct, picks, given);
+        } catch (java.io.IOException exception) {
+            System.out.println("Could not save the quiz attempt: " + exception.getMessage());
+        }
+        refreshHistory();
 
         JPanel card = Theme.card();
         card.setLayout(new BorderLayout(0, 14));
@@ -574,7 +651,10 @@ public class QuizzesPage extends JPanel {
         buttons.setOpaque(false);
         JButton newQuiz = Theme.button("New quiz");
         JButton retake = Theme.primaryButton("Retake quiz");
-        newQuiz.addActionListener(e -> views.show(viewHolder, "setup"));
+        newQuiz.addActionListener(e -> {
+            refreshHistory();
+            views.show(viewHolder, "setup");
+        });
         retake.addActionListener(e -> startQuiz(questions));
         buttons.add(newQuiz);
         buttons.add(retake);

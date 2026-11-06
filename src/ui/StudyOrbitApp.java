@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import javax.swing.*;
+import data.AppData;
 import model.Course;
 import model.Flashcard;
 import model.Note;
@@ -44,6 +45,7 @@ public class StudyOrbitApp extends JFrame {
     }
 
     public void rebuild() {
+        AppData.reloadForProfile();
         Theme.apply();
         setContentPane(buildContent(false));
         revalidate();
@@ -172,9 +174,7 @@ public class StudyOrbitApp extends JFrame {
         splash.add(new SplashPage(() -> {
             currentPage = "Dashboard";
             currentNavName = "Dashboard";
-            appLayout.show(app, "Dashboard");
-            pageLayout.show(pages, "Dashboard");
-            navBar.select("Dashboard");
+            rebuild();
         }), BorderLayout.CENTER);
         app.add(splash, "Splash");
         app.add(dashboard, "Dashboard");

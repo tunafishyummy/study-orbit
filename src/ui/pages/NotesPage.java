@@ -962,7 +962,7 @@ public class NotesPage extends JPanel {
                 String mimeType = mimeTypeFor(selectedFile);
                 String extractedText;
                 if (gemini) {
-                    AIFlashcardService service = new AIFlashcardService(ocrKey());
+                    AIFlashcardService service = new AIFlashcardService(ocrKey(), config.getModel());
                     extractedText = service.extractTextFromImage(fileBytes, mimeType);
                 } else {
                     AiClient client = new AiClient(config);

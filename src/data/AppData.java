@@ -11,6 +11,7 @@ public final class AppData {
     private static ProfileManager profileManager;
     private static ActivityManager activityManager;
     private static ScheduleManager scheduleManager;
+    private static QuizHistoryManager quizHistoryManager;
 
     private AppData() {}
 
@@ -24,7 +25,7 @@ public final class AppData {
     public static synchronized NoteManager get() {
         if (noteManager == null) {
             try {
-                noteManager = new NoteManager(store());
+                noteManager = new NoteManager(store(), activeProfileId());
             } catch (IOException exception) {
                 throw new RuntimeException("Could not load the note manager", exception);
             }
@@ -68,11 +69,42 @@ public final class AppData {
     public static synchronized ScheduleManager schedule() {
         if (scheduleManager == null) {
             try {
-                scheduleManager = new ScheduleManager(store());
+                scheduleManager = new ScheduleManager(store(), activeProfileId());
             } catch (IOException exception) {
                 throw new RuntimeException("Could not load the schedule", exception);
             }
         }
         return scheduleManager;
+    }
+
+    public static synchronized QuizHistoryManager quizHistory() {
+        if (quizHistoryManager == null) {
+            try {
+                quizHistoryManager = new QuizHistoryManager(store(), activeProfileId());
+            } catch (IOException exception) {
+                throw new RuntimeException("Could not load the quiz history", exception);
+            }
+        }
+        return quizHistoryManager;
+    }
+
+    public static synchronized void reloadForProfile() {
+        noteManager = null;
+        scheduleManager = null;
+        activityManager = null;
+        quizHistoryManager = null;
+    }
+
+    public static synchronized void reloadAll() {
+        noteManager = null;
+        scheduleManager = null;
+        activityManager = null;
+        quizHistoryManager = null;
+        settingsManager = null;
+        profileManager = null;
+    }
+
+    private static String activeProfileId() {
+        return settings().get(SettingsManager.ACTIVE_PROFILE, "");
     }
 }

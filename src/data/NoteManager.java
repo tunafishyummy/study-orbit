@@ -16,10 +16,12 @@ public class NoteManager {
     private final List<Note> notes = new ArrayList<>();
     private final List<Flashcard> flashcards = new ArrayList<>();
     private final DataStore store;
+    private final String profileId;
 
-    public NoteManager(DataStore store) throws IOException {
+    public NoteManager(DataStore store, String profileId) throws IOException {
         this.store = store;
-        store.load(courses, notes, flashcards);
+        this.profileId = profileId == null ? "" : profileId;
+        store.load(this.profileId, courses, notes, flashcards);
     }
 
     public List<Course> getCourses() { return new ArrayList<>(courses); }
@@ -117,5 +119,5 @@ public class NoteManager {
 
     public DataStore getStoreReference() { return store; }
     public List<Flashcard> getFlashcards() { return flashcards; }
-    public void save() throws IOException { store.save(courses, notes, flashcards); }
+    public void save() throws IOException { store.save(profileId, courses, notes, flashcards); }
 }

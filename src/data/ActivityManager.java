@@ -48,6 +48,11 @@ public class ActivityManager {
         store.saveActivity(activity);
     }
 
+    public void recordCards(int count) throws IOException {
+        findOrCreate(LocalDate.now()).addCardsReviewed(count);
+        store.saveActivity(activity);
+    }
+
     public java.util.List<StudyActivity> getAll() {
         return new ArrayList<StudyActivity>(activity);
     }

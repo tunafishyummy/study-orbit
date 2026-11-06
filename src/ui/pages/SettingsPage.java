@@ -409,7 +409,7 @@ public class SettingsPage extends JPanel {
     private AiConfig configFromFields() {
         AiConfig config = AiConfig.load();
         config.setProvider(providerKey((String) providerBox.getSelectedItem()));
-        config.setBaseUrl(baseUrlField.getText().trim());
+        config.setBaseUrl(AiConfig.normalizeBaseUrl(config.getProvider(), baseUrlField.getText()));
         config.setModel(modelField.getText().trim());
         config.setApiKey(new String(apiKeyField.getPassword()).trim());
         return config;
@@ -429,22 +429,24 @@ public class SettingsPage extends JPanel {
     private void testAiConnection() {
         testButton.setEnabled(false);
         aiStatusLabel.setText("Checking " + baseUrlField.getText().trim() + "...");
-        new SwingWorker<Boolean, Void>() {
+        new SwingWorker<Void, Void>() {
             @Override
-            protected Boolean doInBackground() {
-                return new AiClient(configFromFields()).isAvailable();
+            protected Void doInBackground() throws Exception {
+                new AiClient(configFromFields()).checkConnection();
+                return null;
             }
 
             @Override
             protected void done() {
                 testButton.setEnabled(true);
                 try {
-                    boolean reachable = get();
-                    aiStatusLabel.setText(reachable
-                            ? "Reachable. The AI features are ready."
-                            : "Not reachable. Start the local model or check the address and key.");
+                    get();
+                    aiStatusLabel.setText("Connected. The provider accepted the key and the model.");
                 } catch (Exception exception) {
-                    aiStatusLabel.setText("Could not test: " + exception.getMessage());
+                    Throwable cause = exception.getCause() != null ? exception.getCause() : exception;
+                    aiStatusLabel.setText("Connection failed.");
+                    JOptionPane.showMessageDialog(SettingsPage.this, cause.getMessage(),
+                            "Connection failed", JOptionPane.ERROR_MESSAGE);
                 }
             }
         }.execute();
@@ -508,17 +510,53 @@ public class SettingsPage extends JPanel {
         body.setOpaque(false);
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
 
-        body.add(row("Export backup", "Save all data to a json file"));
-        body.add(Box.createVerticalStrut(10));
-
         JButton export = Theme.primaryButton("Export all data");
-        export.setAlignmentX(Component.LEFT_ALIGNMENT);
         export.addActionListener(e -> exportBackup());
-        body.add(export);
+
+        JButton restore = Theme.button("Restore from file");
+        restore.addActionListener(e -> restoreBackup());
+
+        int width = Math.max(export.getPreferredSize().width, restore.getPreferredSize().width);
+        int height = Math.max(export.getPreferredSize().height, restore.getPreferredSize().height);
+        Dimension buttonSize = new Dimension(width, height);
+        export.setPreferredSize(buttonSize);
+        export.setMaximumSize(buttonSize);
+        restore.setPreferredSize(buttonSize);
+        restore.setMaximumSize(buttonSize);
+
+        body.add(dataAction("Export backup", "Save all data to a json file", export));
+        body.add(Box.createVerticalStrut(16));
+        body.add(dataAction("Restore backup", "Replace all data with a json backup", restore));
         body.add(Box.createVerticalGlue());
 
         card.add(body, BorderLayout.CENTER);
         return card;
+    }
+
+    private JPanel dataAction(String title, String caption, JButton button) {
+        JPanel block = new JPanel();
+        block.setOpaque(false);
+        block.setLayout(new BoxLayout(block, BoxLayout.Y_AXIS));
+        block.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel name = new JLabel(title);
+        name.setFont(Theme.HEADING);
+        name.setForeground(Theme.TEXT);
+        name.setAlignmentX(Component.LEFT_ALIGNMENT);
+        block.add(name);
+
+        JLabel description = Theme.muted(caption);
+        description.setAlignmentX(Component.LEFT_ALIGNMENT);
+        block.add(description);
+
+        block.add(Box.createVerticalStrut(8));
+
+        JPanel holder = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        holder.setOpaque(false);
+        holder.setAlignmentX(Component.LEFT_ALIGNMENT);
+        holder.add(button);
+        block.add(holder);
+        return block;
     }
 
     private void exportBackup() {
@@ -531,6 +569,30 @@ public class SettingsPage extends JPanel {
         try {
             new BackupService().export(file);
             JOptionPane.showMessageDialog(this, "Backup saved to " + file.getName());
+        } catch (IOException exception) {
+            showError(exception);
+        }
+    }
+
+    private void restoreBackup() {
+        NativeFileDialog fileDialog = new NativeFileDialog();
+        File file = fileDialog.open("Restore backup", "JSON file", new String[] { "json" });
+        if (file == null) {
+            return;
+        }
+        int choice = JOptionPane.showConfirmDialog(this,
+                "Restoring replaces every profile, course, note, card, class, deadline and setting with the backup.\n\nContinue?",
+                "Restore backup", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (choice != JOptionPane.YES_OPTION) {
+            return;
+        }
+        try {
+            new BackupService().restore(file);
+            AppData.reloadAll();
+            Theme.setLargeText(AppData.settings().getBoolean(SettingsManager.LARGE_TEXT, false));
+            Theme.setTime24("24".equals(AppData.settings().get(SettingsManager.TIME_FORMAT, "12")));
+            JOptionPane.showMessageDialog(this, "Backup restored from " + file.getName());
+            rebuild();
         } catch (IOException exception) {
             showError(exception);
         }

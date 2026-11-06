@@ -91,6 +91,42 @@ public class AiClient {
         return content;
     }
 
+    public void checkConnection() throws IOException {
+        String base = trimmedBaseUrl();
+        if (base.isEmpty()) {
+            throw new IOException("No AI provider is set. Open Settings and choose one first.");
+        }
+        String body = "{"
+                + "\"model\":\"" + escape(config.getModel()) + "\","
+                + "\"temperature\":0,"
+                + "\"max_tokens\":1,"
+                + "\"stream\":false,"
+                + "\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}]"
+                + "}";
+        HttpRequest.Builder request = HttpRequest.newBuilder()
+                .uri(URI.create(base + "/chat/completions"))
+                .timeout(Duration.ofSeconds(60))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body));
+        if (config.getApiKey() != null && config.getApiKey().isBlank() == false) {
+            request.header("Authorization", "Bearer " + config.getApiKey());
+        }
+
+        HttpResponse<String> response;
+        try {
+            response = http.send(request.build(), HttpResponse.BodyHandlers.ofString());
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IOException("The AI request was interrupted.", exception);
+        } catch (IOException exception) {
+            throw new IOException("Could not reach the AI provider at " + base + ".", exception);
+        }
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new IOException("The AI provider answered with status " + response.statusCode()
+                    + ".\n" + shorten(response.body()));
+        }
+    }
+
     public boolean isAvailable() {
         String base = trimmedBaseUrl();
         if (base.isEmpty()) {
