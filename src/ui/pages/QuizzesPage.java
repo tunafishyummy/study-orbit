@@ -539,6 +539,11 @@ public class QuizzesPage extends JPanel {
         int score = 0;
         for (boolean b : correct) if (b) score++;
         int percent = Math.round(100f * score / total);
+        try {
+            AppData.activity().recordQuiz(total);
+        } catch (java.io.IOException exception) {
+            System.out.println("Could not record the quiz: " + exception.getMessage());
+        }
 
         JPanel card = Theme.card();
         card.setLayout(new BorderLayout(0, 14));

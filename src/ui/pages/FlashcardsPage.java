@@ -198,6 +198,13 @@ public class FlashcardsPage extends JPanel {
 
         isFlipping = true;
         flippingToBack = showingFront;
+        if (flippingToBack) {
+            try {
+                AppData.activity().recordCards(1);
+            } catch (java.io.IOException exception) {
+                System.out.println("Could not record the card review: " + exception.getMessage());
+            }
+        }
 
         flipTimer = new Timer(15, e -> {
             if (flippingToBack == showingFront) {
