@@ -429,22 +429,24 @@ public class SettingsPage extends JPanel {
     private void testAiConnection() {
         testButton.setEnabled(false);
         aiStatusLabel.setText("Checking " + baseUrlField.getText().trim() + "...");
-        new SwingWorker<Boolean, Void>() {
+        new SwingWorker<Void, Void>() {
             @Override
-            protected Boolean doInBackground() {
-                return new AiClient(configFromFields()).isAvailable();
+            protected Void doInBackground() throws Exception {
+                new AiClient(configFromFields()).checkConnection();
+                return null;
             }
 
             @Override
             protected void done() {
                 testButton.setEnabled(true);
                 try {
-                    boolean reachable = get();
-                    aiStatusLabel.setText(reachable
-                            ? "Reachable. The AI features are ready."
-                            : "Not reachable. Start the local model or check the address and key.");
+                    get();
+                    aiStatusLabel.setText("Connected. The provider accepted the key and the model.");
                 } catch (Exception exception) {
-                    aiStatusLabel.setText("Could not test: " + exception.getMessage());
+                    Throwable cause = exception.getCause() != null ? exception.getCause() : exception;
+                    aiStatusLabel.setText("Connection failed.");
+                    JOptionPane.showMessageDialog(SettingsPage.this, cause.getMessage(),
+                            "Connection failed", JOptionPane.ERROR_MESSAGE);
                 }
             }
         }.execute();
