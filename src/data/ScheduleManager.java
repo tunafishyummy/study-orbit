@@ -109,4 +109,40 @@ public class ScheduleManager {
         deadlines.remove(deadline);
         store.saveDeadlines(deadlines);
     }
+
+    public void renameCourse(String oldCode, String newCode) throws IOException {
+        if (oldCode == null || newCode == null || oldCode.equals(newCode)) {
+            return;
+        }
+        for (int index = 0; index < classes.size(); index++) {
+            if (classes.get(index).getCourseCode().equalsIgnoreCase(oldCode)) {
+                classes.get(index).setCourseCode(newCode);
+            }
+        }
+        for (int index = 0; index < deadlines.size(); index++) {
+            if (deadlines.get(index).getCourseCode().equalsIgnoreCase(oldCode)) {
+                deadlines.get(index).setCourseCode(newCode);
+            }
+        }
+        store.saveClasses(classes);
+        store.saveDeadlines(deadlines);
+    }
+
+    public void deleteCourseData(String code) throws IOException {
+        if (code == null) {
+            return;
+        }
+        for (int index = classes.size() - 1; index >= 0; index--) {
+            if (classes.get(index).getCourseCode().equalsIgnoreCase(code)) {
+                classes.remove(index);
+            }
+        }
+        for (int index = 0; index < deadlines.size(); index++) {
+            if (deadlines.get(index).getCourseCode().equalsIgnoreCase(code)) {
+                deadlines.get(index).setCourseCode("");
+            }
+        }
+        store.saveClasses(classes);
+        store.saveDeadlines(deadlines);
+    }
 }
