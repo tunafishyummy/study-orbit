@@ -1,5 +1,6 @@
 #!/bin/sh
 cd "$(dirname "$0")" || exit 1
+rm -rf out
 mkdir -p out
 find src -name "*.java" > sources.txt
 javac -encoding UTF-8 -cp "lib/*" -d out @sources.txt
