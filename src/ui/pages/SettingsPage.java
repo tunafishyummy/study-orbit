@@ -138,8 +138,8 @@ public class SettingsPage extends JPanel {
         switchButton.addActionListener(e -> switchProfile());
         JButton newButton = Theme.button("New profile");
         newButton.addActionListener(e -> newProfile());
-        JButton renameButton = Theme.button("Rename");
-        renameButton.addActionListener(e -> renameProfile());
+        JButton renameButton = Theme.button("Edit profile");
+        renameButton.addActionListener(e -> editProfile());
         JButton deleteButton = Theme.button("Delete");
         deleteButton.addActionListener(e -> deleteProfile());
         buttons.add(switchButton);
@@ -322,6 +322,13 @@ public class SettingsPage extends JPanel {
         f.gridx = 1;
         f.gridwidth = 3;
         form.add(apiKeyField, f);
+
+        f.gridx = 0;
+        f.gridy = 3;
+        f.gridwidth = 4;
+        f.weightx = 1;
+        f.insets = new Insets(0, 0, 0, 0);
+        form.add(Theme.muted("Image OCR needs a vision model, for example qwen2.5vl:7b on Local Ollama."), f);
 
         JPanel center = new JPanel(new BorderLayout(0, 8));
         center.setOpaque(false);
@@ -532,18 +539,46 @@ public class SettingsPage extends JPanel {
         }
     }
 
-    private void renameProfile() {
+    private void editProfile() {
         Profile profile = AppData.profiles().getActiveProfile();
         if (profile == null) {
             newProfile();
             return;
         }
-        String name = JOptionPane.showInputDialog(this, "Profile name", profile.getName());
-        if (name == null || name.trim().isEmpty()) {
+
+        JTextField nameField = new RoundedTextField();
+        nameField.setText(profile.getName());
+
+        final Color[] chosen = { Theme.parse(profile.getAvatarColor()) };
+        JButton colorButton = Theme.button("Choose avatar color");
+        colorButton.setBackground(chosen[0]);
+        colorButton.setForeground(Color.WHITE);
+        colorButton.addActionListener(e -> {
+            Color color = JColorChooser.showDialog(this, "Avatar color", chosen[0]);
+            if (color != null) {
+                chosen[0] = color;
+                colorButton.setBackground(color);
+            }
+        });
+
+        JPanel form = new JPanel(new GridLayout(0, 1, 6, 6));
+        form.setOpaque(false);
+        form.add(new JLabel("Name"));
+        form.add(nameField);
+        form.add(new JLabel("Avatar color"));
+        form.add(colorButton);
+
+        int result = JOptionPane.showConfirmDialog(this, form, "Edit profile", JOptionPane.OK_CANCEL_OPTION);
+        if (result != JOptionPane.OK_OPTION) {
+            return;
+        }
+        if (nameField.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "The profile name cannot be empty.",
+                    "Check the name", JOptionPane.WARNING_MESSAGE);
             return;
         }
         try {
-            AppData.profiles().updateProfile(profile, name.trim(), profile.getAvatarColor());
+            AppData.profiles().updateProfile(profile, nameField.getText().trim(), Theme.toHex(chosen[0]));
             rebuild();
         } catch (IOException exception) {
             showError(exception);
@@ -562,6 +597,10 @@ public class SettingsPage extends JPanel {
         }
         try {
             AppData.profiles().deleteProfile(profile);
+            if (AppData.profiles().isFirstRun()) {
+                SetupWizard wizard = new SetupWizard();
+                wizard.setVisible(true);
+            }
             rebuild();
         } catch (IOException exception) {
             showError(exception);
@@ -577,7 +616,10 @@ public class SettingsPage extends JPanel {
 
         String[] names = new String[profiles.size()];
         for (int index = 0; index < profiles.size(); index++) {
-            names[index] = profiles.get(index).getName();
+            Profile profile = profiles.get(index);
+            String id = profile.getId();
+            String suffix = id.length() > 4 ? id.substring(0, 4) : id;
+            names[index] = profile.getName() + "  (" + suffix + ")";
         }
 
         String choice = (String) JOptionPane.showInputDialog(this, "Choose a profile", "Switch profile",
@@ -586,17 +628,20 @@ public class SettingsPage extends JPanel {
             return;
         }
 
-        for (int index = 0; index < profiles.size(); index++) {
-            Profile profile = profiles.get(index);
-            if (profile.getName().equals(choice)) {
-                try {
-                    AppData.profiles().setActiveProfile(profile);
-                    rebuild();
-                } catch (IOException exception) {
-                    showError(exception);
-                }
-                return;
+        int chosen = -1;
+        for (int index = 0; index < names.length; index++) {
+            if (names[index].equals(choice)) {
+                chosen = index;
             }
+        }
+        if (chosen < 0) {
+            return;
+        }
+        try {
+            AppData.profiles().setActiveProfile(profiles.get(chosen));
+            rebuild();
+        } catch (IOException exception) {
+            showError(exception);
         }
     }
 

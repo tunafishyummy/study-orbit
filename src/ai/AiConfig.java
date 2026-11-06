@@ -97,6 +97,53 @@ public class AiConfig {
         }
     }
 
+    public boolean supportsVision() {
+        if (demoMode) {
+            return false;
+        }
+        String current = model == null ? "" : model.toLowerCase();
+        if (GEMINI.equals(provider)) {
+            return true;
+        }
+        if (DEEPSEEK.equals(provider)) {
+            return false;
+        }
+        if (LOCAL.equals(provider)) {
+            return current.contains("vision")
+                    || current.contains("vl")
+                    || current.contains("llava")
+                    || current.contains("minicpm-v")
+                    || current.contains("moondream")
+                    || current.contains("gemma3")
+                    || current.contains("llama4")
+                    || current.contains("llama-4");
+        }
+        if (GROQ.equals(provider)) {
+            return current.contains("vision")
+                    || current.contains("llama-4")
+                    || current.contains("llama4")
+                    || current.contains("scout")
+                    || current.contains("maverick");
+        }
+        return CUSTOM.equals(provider);
+    }
+
+    public String visionHint() {
+        if (GEMINI.equals(provider)) {
+            return "Gemini can read images.";
+        }
+        if (DEEPSEEK.equals(provider)) {
+            return "DeepSeek chat cannot read images. Use Local Ollama with qwen2.5vl:7b or Gemini.";
+        }
+        if (LOCAL.equals(provider)) {
+            return "Pull a vision model first: ollama pull qwen2.5vl:7b, then set the model above.";
+        }
+        if (GROQ.equals(provider)) {
+            return "Use a vision model that Groq offers in your account.";
+        }
+        return "Use a model that accepts image input.";
+    }
+
     public boolean isLocal() {
         return LOCAL.equals(provider);
     }

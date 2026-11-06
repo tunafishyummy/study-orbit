@@ -6,6 +6,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Base64;
 
 // talks to any OpenAI compatible chat endpoint, using only the JDK
 public class AiClient {
@@ -18,11 +19,6 @@ public class AiClient {
     }
 
     public String complete(String systemPrompt, String userPrompt) throws IOException {
-        String base = trimmedBaseUrl();
-        if (base.isEmpty()) {
-            throw new IOException("No AI provider is set. Open Settings and choose one first.");
-        }
-
         String body = "{"
                 + "\"model\":\"" + escape(config.getModel()) + "\","
                 + "\"temperature\":0.1,"
@@ -31,6 +27,36 @@ public class AiClient {
                 + "{\"role\":\"system\",\"content\":\"" + escape(systemPrompt) + "\"},"
                 + "{\"role\":\"user\",\"content\":\"" + escape(userPrompt) + "\"}"
                 + "]}";
+        return send(body);
+    }
+
+    public String completeWithImage(String systemPrompt, String userPrompt, byte[] imageBytes, String mimeType)
+            throws IOException {
+        if (imageBytes == null || imageBytes.length == 0) {
+            throw new IOException("The image is empty.");
+        }
+        String type = mimeType == null || mimeType.isBlank() ? "image/jpeg" : mimeType;
+        String data = Base64.getEncoder().encodeToString(imageBytes);
+        String body = "{"
+                + "\"model\":\"" + escape(config.getModel()) + "\","
+                + "\"temperature\":0.1,"
+                + "\"stream\":false,"
+                + "\"messages\":["
+                + "{\"role\":\"system\",\"content\":\"" + escape(systemPrompt) + "\"},"
+                + "{\"role\":\"user\",\"content\":["
+                + "{\"type\":\"text\",\"text\":\"" + escape(userPrompt) + "\"},"
+                + "{\"type\":\"image_url\",\"image_url\":{\"url\":\"data:" + escape(type)
+                + ";base64," + data + "\"}}"
+                + "]}"
+                + "]}";
+        return send(body);
+    }
+
+    private String send(String body) throws IOException {
+        String base = trimmedBaseUrl();
+        if (base.isEmpty()) {
+            throw new IOException("No AI provider is set. Open Settings and choose one first.");
+        }
 
         HttpRequest.Builder request = HttpRequest.newBuilder()
                 .uri(URI.create(base + "/chat/completions"))
