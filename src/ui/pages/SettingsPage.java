@@ -9,10 +9,8 @@ import model.Profile;
 import ui.StudyOrbitApp;
 import ui.Theme;
 import ui.components.Avatar;
-import ui.components.CardIcons;
 import ui.components.NativeFileDialog;
 import ui.components.RoundedComboBox;
-import ui.components.RoundedPanel;
 import ui.components.RoundedTextField;
 import ui.components.ToggleSwitch;
 
@@ -116,7 +114,6 @@ public class SettingsPage extends JPanel {
 
         JPanel body = new JPanel(new BorderLayout(0, 14));
         body.setOpaque(false);
-        body.setBorder(BorderFactory.createEmptyBorder(14, 20, 14, 20));
 
         JPanel who = new JPanel(new FlowLayout(FlowLayout.LEFT, 18, 0));
         who.setOpaque(false);
@@ -163,7 +160,6 @@ public class SettingsPage extends JPanel {
         JPanel body = new JPanel();
         body.setOpaque(false);
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-        body.setBorder(BorderFactory.createEmptyBorder(14, 20, 14, 20));
 
         ToggleSwitch largeToggle = new ToggleSwitch(
                 AppData.settings().getBoolean(SettingsManager.LARGE_TEXT, false));
@@ -220,7 +216,6 @@ public class SettingsPage extends JPanel {
         JPanel body = new JPanel();
         body.setOpaque(false);
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-        body.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
 
         ToggleSwitch deadlineToggle = new ToggleSwitch(
                 AppData.settings().getBoolean(SettingsManager.DEADLINE_REMINDERS, true));
@@ -247,11 +242,10 @@ public class SettingsPage extends JPanel {
     }
 
     private JPanel aiAssistantCard() {
-        JPanel card = card("AI Assistant", Theme.HEADER_BLUE, CardIcons.spark());
+        JPanel card = card("AI Assistant");
 
         JPanel body = new JPanel(new BorderLayout(0, 10));
         body.setOpaque(false);
-        body.setBorder(BorderFactory.createEmptyBorder(14, 24, 12, 24));
 
         AiConfig config = AiConfig.load();
 
@@ -458,7 +452,6 @@ public class SettingsPage extends JPanel {
         JPanel body = new JPanel();
         body.setOpaque(false);
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-        body.setBorder(BorderFactory.createEmptyBorder(12, 20, 12, 20));
 
         body.add(Theme.muted("1. Add your courses in Courses."));
         body.add(Box.createVerticalStrut(6));
@@ -478,7 +471,6 @@ public class SettingsPage extends JPanel {
         JPanel body = new JPanel();
         body.setOpaque(false);
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-        body.setBorder(BorderFactory.createEmptyBorder(14, 20, 14, 20));
 
         body.add(row("Weekly goal", "Days you want to study each week"));
         body.add(Box.createVerticalStrut(8));
@@ -511,7 +503,6 @@ public class SettingsPage extends JPanel {
         JPanel body = new JPanel();
         body.setOpaque(false);
         body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
-        body.setBorder(BorderFactory.createEmptyBorder(14, 20, 14, 20));
 
         body.add(row("Export backup", "Save all data to a json file"));
         body.add(Box.createVerticalStrut(10));
@@ -652,60 +643,14 @@ public class SettingsPage extends JPanel {
     }
 
     private JPanel card(String title) {
-        JPanel card = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS, Theme.BORDER);
-        card.setLayout(new BorderLayout());
-        card.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        JPanel card = Theme.card();
+        card.setLayout(new BorderLayout(0, 8));
 
-        JPanel header = new RoundedTopPanel(Theme.PRIMARY);
-        header.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 6));
         JLabel titleLabel = new JLabel(title);
         titleLabel.setFont(Theme.HEADING);
-        titleLabel.setForeground(Color.WHITE);
-        header.add(titleLabel);
-
-        card.add(header, BorderLayout.NORTH);
+        titleLabel.setForeground(Theme.TEXT);
+        card.add(titleLabel, BorderLayout.NORTH);
         return card;
-    }
-
-    private JPanel card(String title, Color headerColor, Icon icon) {
-        JPanel card = new RoundedPanel(Theme.SURFACE, Theme.CORNER_RADIUS, Theme.BORDER);
-        card.setLayout(new BorderLayout());
-        card.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
-
-        JPanel header = new RoundedTopPanel(headerColor);
-        header.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 6));
-        if (icon != null) {
-            header.add(new JLabel(icon));
-        }
-        JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(Theme.HEADING);
-        titleLabel.setForeground(Color.WHITE);
-        header.add(titleLabel);
-
-        card.add(header, BorderLayout.NORTH);
-        return card;
-    }
-
-    private static class RoundedTopPanel extends JPanel {
-        private final Color fill;
-
-        RoundedTopPanel(Color fill) {
-            this.fill = fill;
-            setOpaque(false);
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(fill);
-            int corner = Theme.CORNER_RADIUS / 2;
-            g2.fillRoundRect(0, 0, getWidth(), getHeight() + Theme.CORNER_RADIUS,
-                    Theme.CORNER_RADIUS, Theme.CORNER_RADIUS);
-            g2.fillRect(0, corner, getWidth(), getHeight() - corner);
-            g2.dispose();
-            super.paintComponent(g);
-        }
     }
 
     private JPanel row(String title, String caption) {
