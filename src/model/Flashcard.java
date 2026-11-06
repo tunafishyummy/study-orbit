@@ -43,6 +43,15 @@ public class Flashcard {
     public String getBack() { return back; }
     public String getCourseCode() { return courseCode; }
     public void setCourseCode(String courseCode) { this.courseCode = courseCode == null ? "" : courseCode; }
+    public void setDeckTitle(String deckTitle) {
+        this.deckTitle = deckTitle == null || deckTitle.isBlank() ? "General" : deckTitle;
+    }
+    public void update(String deckTitle, String front, String back, List<String> tags) {
+        this.deckTitle = deckTitle == null || deckTitle.isBlank() ? "General" : deckTitle;
+        this.front = front == null ? "" : front;
+        this.back = back == null ? "" : back;
+        this.tags = tags == null ? new ArrayList<>() : new ArrayList<>(tags);
+    }
     public List<String> getTags() { return new ArrayList<>(tags); }
     public LocalDateTime getCreated() { return created; }
 

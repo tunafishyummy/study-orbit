@@ -27,7 +27,9 @@ public class StudyOrbitApp extends JFrame {
     private NotesPage notesPage;
     private CoursesPage coursesPage;
     private CourseDetailPage courseDetailPage;
+    private DeckDetailPage deckDetailPage;
     private Course currentCourse;
+    private String currentDeck;
     private final java.util.List<WindowControlButton> maximizeButtons = new ArrayList<>();
     private Rectangle restoreBounds;
     private boolean maximized;
@@ -67,8 +69,9 @@ public class StudyOrbitApp extends JFrame {
 
             @Override
             public void openFlashcard(Flashcard card) {
-                goTo("Flashcards");
-                flashcardsPage.showCard(card);
+                currentDeck = card.getDeckTitle();
+                deckDetailPage.showCard(card);
+                showPage("DeckDetail", "Flashcards");
             }
         };
     }
@@ -94,6 +97,12 @@ public class StudyOrbitApp extends JFrame {
         showPage("CourseDetail", "Courses");
     }
 
+    private void openDeck(String deck) {
+        currentDeck = deck;
+        deckDetailPage.showDeck(deck);
+        showPage("DeckDetail", "Flashcards");
+    }
+
     private boolean canLeaveCurrentPage() {
         if (currentPage.equals("CourseDetail")) {
             return courseDetailPage.canLeave();
@@ -115,9 +124,14 @@ public class StudyOrbitApp extends JFrame {
             showPage("Flashcards", "Flashcards");
         });
 
-        flashcardsPage = new FlashcardsPage(() -> {
+        flashcardsPage = new FlashcardsPage(deck -> openDeck(deck), () -> {
             createFlashcardPage.refreshNotes();
             showPage("CreateFlashcard", "Flashcards");
+        });
+
+        deckDetailPage = new DeckDetailPage(() -> {
+            flashcardsPage.refresh();
+            goTo("Flashcards");
         });
 
         pages.add(new DashboardPage(), "Dashboard");
@@ -136,6 +150,10 @@ public class StudyOrbitApp extends JFrame {
         }
         pages.add(flashcardsPage, "Flashcards");
         pages.add(createFlashcardPage, "CreateFlashcard");
+        pages.add(deckDetailPage, "DeckDetail");
+        if (currentDeck != null) {
+            deckDetailPage.restoreDeck(currentDeck);
+        }
         pages.add(new QuizzesPage(), "Quizzes");
         pages.add(new SchedulePage(), "Schedule");
         pages.add(new SearchPage(searchOpener()), "Search");

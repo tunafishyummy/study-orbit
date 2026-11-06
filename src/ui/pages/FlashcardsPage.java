@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import javax.swing.*;
 import model.Flashcard;
 import ui.Theme;
@@ -22,6 +23,7 @@ public class FlashcardsPage extends JPanel {
     private int currentIndex = 0;
     private boolean showingFront = true;
     private final Runnable onNavigateToCreate;
+    private final Consumer<String> openDeck;
 
     // Animation state variables
     private Timer flipTimer;
@@ -29,7 +31,8 @@ public class FlashcardsPage extends JPanel {
     private float scaleX = 1.0f; 
     private boolean flippingToBack = false;
 
-    public FlashcardsPage(Runnable onNavigateToCreate) {
+    public FlashcardsPage(Consumer<String> openDeck, Runnable onNavigateToCreate) {
+        this.openDeck = openDeck;
         this.onNavigateToCreate = onNavigateToCreate;
         setLayout(new BorderLayout(0, 8));
         setBackground(Theme.BG);
@@ -155,23 +158,25 @@ public class FlashcardsPage extends JPanel {
         }
 
         for (String deck : decks) {
-            JButton deckBtn = new JButton(deck.toUpperCase());
+            String label = "<html><div style='width:170px; text-align:center;'>"
+                    + escapeDeck(deck.toUpperCase(java.util.Locale.ROOT)) + "</div></html>";
+            JButton deckBtn;
+            if (deck.equalsIgnoreCase(selectedDeck)) {
+                deckBtn = Theme.primaryButton(label);
+            } else {
+                deckBtn = Theme.button(label);
+            }
+            Dimension preferred = deckBtn.getPreferredSize();
+            deckBtn.setPreferredSize(new Dimension(220, preferred.height));
+            deckBtn.setMaximumSize(new Dimension(220, preferred.height));
             deckBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-            deckBtn.setMaximumSize(new Dimension(220, 45));
             deckBtn.setFocusPainted(false);
             deckBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            
-            if (deck.equalsIgnoreCase(selectedDeck)) {
-                deckBtn.setBackground(Theme.PRIMARY);
-                deckBtn.setForeground(Color.WHITE);
-            } else {
-                deckBtn.setBackground(Theme.SURFACE);
-                deckBtn.setForeground(Theme.TEXT);
-            }
+            deckBtn.setToolTipText(deck);
             deckBtn.addActionListener(e -> {
                 selectedDeck = deck;
-                updateCardDisplay(allCards);
                 refresh();
+                openDeck.accept(deck);
             });
             deckListPanel.add(deckBtn);
             deckListPanel.add(Box.createVerticalStrut(10));
@@ -191,6 +196,10 @@ public class FlashcardsPage extends JPanel {
         deckListPanel.repaint();
 
         updateCardDisplay(allCards);
+    }
+
+    private static String escapeDeck(String text) {
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
     private void startFlipAnimation() {
@@ -230,22 +239,6 @@ public class FlashcardsPage extends JPanel {
     private void setCardText(String text) {
         String escaped = text != null ? text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br/>") : "";
         cardLabel.setText("<html><div style='text-align: center; padding: 20px;'>" + escaped + "</div></html>");
-    }
-
-    // opens the deck of this card and shows the card, used when a search result is clicked
-    public void showCard(Flashcard card) {
-        selectedDeck = card.getDeckTitle().trim();
-        refresh();   // rebuilds the deck list and loads this deck's cards
-        for (int i = 0; i < currentDeckCards.size(); i++) {
-            if (currentDeckCards.get(i).getId().equals(card.getId())) {
-                currentIndex = i;
-                break;
-            }
-        }
-        showingFront = true;   // always start on the question side
-        scaleX = 1.0f;
-        displayCurrentCard();
-        flashcardCard.repaint();
     }
 
     private void updateCardDisplay(List<Flashcard> allCards) {

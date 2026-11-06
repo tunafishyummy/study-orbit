@@ -66,6 +66,7 @@ public class DataStore {
         String createClasses = "CREATE TABLE IF NOT EXISTS schedule_class (id TEXT PRIMARY KEY, profile_id TEXT, course_code TEXT, day TEXT, start_time TEXT, end_time TEXT, room TEXT)";
         String createDeadlines = "CREATE TABLE IF NOT EXISTS deadline (id TEXT PRIMARY KEY, profile_id TEXT, course_code TEXT, title TEXT, due_date TEXT, due_time TEXT, done INTEGER, reminder_on INTEGER)";
         String createQuizAttempts = "CREATE TABLE IF NOT EXISTS quiz_attempt (id TEXT PRIMARY KEY, profile_id TEXT, created TEXT, source TEXT, type TEXT, question_count INTEGER, correct_count INTEGER, details TEXT)";
+        String createQuizDraft = "CREATE TABLE IF NOT EXISTS quiz_draft (profile_id TEXT PRIMARY KEY, created TEXT, state TEXT)";
 
         try (Connection conn = connect(); Statement stmt = conn.createStatement()) {
             stmt.execute(createCourses);
@@ -77,6 +78,7 @@ public class DataStore {
             stmt.execute(createClasses);
             stmt.execute(createDeadlines);
             stmt.execute(createQuizAttempts);
+            stmt.execute(createQuizDraft);
 
             // older databases were shared by every profile, so give their rows to the first profile
             String owner = firstProfileId(conn);
@@ -152,7 +154,7 @@ public class DataStore {
         if (profileId == null || profileId.isBlank()) {
             return;
         }
-        String[] tables = { "courses", "notes", "flashcards", "schedule_class", "deadline", "activity", "quiz_attempt" };
+        String[] tables = { "courses", "notes", "flashcards", "schedule_class", "deadline", "activity", "quiz_attempt", "quiz_draft" };
         try (Connection conn = connect()) {
             conn.setAutoCommit(false);
             for (String table : tables) {
@@ -172,7 +174,7 @@ public class DataStore {
         if (profileId == null || profileId.isBlank()) {
             return;
         }
-        String[] tables = { "courses", "notes", "flashcards", "schedule_class", "deadline", "activity", "quiz_attempt" };
+        String[] tables = { "courses", "notes", "flashcards", "schedule_class", "deadline", "activity", "quiz_attempt", "quiz_draft" };
         try (Connection conn = connect()) {
             conn.setAutoCommit(false);
             for (String table : tables) {
@@ -575,6 +577,43 @@ public class DataStore {
         }
     }
 
+    public String loadQuizDraft(String profileId) throws IOException {
+        try (Connection conn = connect();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "SELECT state FROM quiz_draft WHERE profile_id = ?")) {
+            stmt.setString(1, profileId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next() ? rs.getString("state") : null;
+            }
+        } catch (SQLException e) {
+            throw new IOException("Error loading the quiz draft", e);
+        }
+    }
+
+    public void saveQuizDraft(String profileId, String state) throws IOException {
+        try (Connection conn = connect();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "INSERT OR REPLACE INTO quiz_draft (profile_id, created, state) VALUES (?, ?, ?)")) {
+            stmt.setString(1, profileId);
+            stmt.setString(2, LocalDateTime.now().toString());
+            stmt.setString(3, state);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new IOException("Error saving the quiz draft", e);
+        }
+    }
+
+    public void deleteQuizDraft(String profileId) throws IOException {
+        try (Connection conn = connect();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "DELETE FROM quiz_draft WHERE profile_id = ?")) {
+            stmt.setString(1, profileId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new IOException("Error clearing the quiz draft", e);
+        }
+    }
+
     public JsonObject exportAll() throws IOException {
         JsonObject root = new JsonObject();
         try (Connection conn = connect()) {
@@ -590,6 +629,8 @@ public class DataStore {
                     "SELECT log_date, profile_id, notes_made, cards_reviewed, quizzes_taken FROM activity"));
             root.add("quiz_attempts", readRows(conn,
                     "SELECT profile_id, id, created, source, type, question_count, correct_count, details FROM quiz_attempt"));
+            root.add("quiz_drafts", readRows(conn,
+                    "SELECT profile_id, created, state FROM quiz_draft"));
             root.add("classes", readRows(conn,
                     "SELECT profile_id, id, course_code, day, start_time, end_time, room FROM schedule_class"));
             root.add("deadlines", readRows(conn,
@@ -645,6 +686,7 @@ public class DataStore {
                     stmt.execute("DELETE FROM settings");
                     stmt.execute("DELETE FROM activity");
                     stmt.execute("DELETE FROM quiz_attempt");
+                    stmt.execute("DELETE FROM quiz_draft");
                     stmt.execute("DELETE FROM schedule_class");
                     stmt.execute("DELETE FROM deadline");
                 }
@@ -655,6 +697,7 @@ public class DataStore {
                 insertFlashcards(conn, array(root, "flashcards"), fallback);
                 insertActivity(conn, array(root, "activity"), fallback);
                 insertQuizAttempts(conn, array(root, "quiz_attempts"), fallback);
+                insertQuizDrafts(conn, array(root, "quiz_drafts"), fallback);
                 insertClasses(conn, array(root, "classes"), fallback);
                 insertDeadlines(conn, array(root, "deadlines"), fallback);
                 conn.commit();
@@ -785,6 +828,19 @@ public class DataStore {
                 pstmt.setInt(6, number(row, "question_count", 0));
                 pstmt.setInt(7, number(row, "correct_count", 0));
                 pstmt.setString(8, text(row, "details", ""));
+                pstmt.executeUpdate();
+            }
+        }
+    }
+
+    private void insertQuizDrafts(Connection conn, JsonArray rows, String fallback) throws SQLException {
+        try (PreparedStatement pstmt = conn.prepareStatement(
+                "INSERT INTO quiz_draft (profile_id, created, state) VALUES (?, ?, ?)")) {
+            for (int index = 0; index < rows.size(); index++) {
+                JsonObject row = rows.get(index).getAsJsonObject();
+                pstmt.setString(1, text(row, "profile_id", fallback));
+                pstmt.setString(2, text(row, "created", LocalDateTime.now().toString()));
+                pstmt.setString(3, text(row, "state", ""));
                 pstmt.executeUpdate();
             }
         }

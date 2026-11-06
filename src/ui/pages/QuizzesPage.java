@@ -3,6 +3,10 @@ package ui.pages;
 import data.AppData;
 import data.NoteManager;
 import data.QuizService;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -70,6 +74,8 @@ public class QuizzesPage extends JPanel {
     private boolean[] correct = new boolean[0];
     private int[] picks = new int[0];
     private String[] given = new String[0];
+    private String attemptSource = "";
+    private boolean quizActive;
     private boolean resolved;
 
     // ----- results view -----
@@ -95,6 +101,7 @@ public class QuizzesPage extends JPanel {
             public void componentShown(ComponentEvent e) {
                 reconcileNotes();
                 refreshHistory();
+                maybeResumeDraft();
             }
         });
         refreshSetup();
@@ -184,6 +191,197 @@ public class QuizzesPage extends JPanel {
             source.append(note.getTitle());
         }
         return source.toString();
+    }
+
+    private void saveDraft() {
+        if (quizActive == false) {
+            return;
+        }
+        try {
+            AppData.quizHistory().saveDraft(draftState());
+        } catch (java.io.IOException exception) {
+            System.out.println("Could not save the quiz draft: " + exception.getMessage());
+        }
+    }
+
+    private String draftState() {
+        JsonObject state = new JsonObject();
+        state.addProperty("source", attemptSource);
+        state.addProperty("maxAttempts", maxAttempts);
+        state.addProperty("current", current);
+        JsonArray items = new JsonArray();
+        for (QuizQuestion question : questions) {
+            JsonObject item = new JsonObject();
+            item.addProperty("type", question.getType());
+            item.addProperty("question", question.getPrompt());
+            JsonArray choices = new JsonArray();
+            for (String choice : question.getChoices()) {
+                choices.add(choice);
+            }
+            item.add("choices", choices);
+            item.addProperty("correctIndex", question.getCorrectIndex());
+            item.addProperty("answer", question.getAnswer());
+            item.addProperty("explanation", question.getExplanation());
+            items.add(item);
+        }
+        state.add("questions", items);
+        state.add("attemptsUsed", intArray(attemptsUsed));
+        state.add("correct", booleanArray(correct));
+        state.add("picks", intArray(picks));
+        state.add("given", stringArray(given));
+        return state.toString();
+    }
+
+    private void maybeResumeDraft() {
+        if (quizActive) {
+            return;
+        }
+        String state;
+        try {
+            state = AppData.quizHistory().loadDraft();
+        } catch (java.io.IOException exception) {
+            return;
+        }
+        if (state == null || state.isBlank()) {
+            return;
+        }
+        int choice = JOptionPane.showConfirmDialog(this,
+                "You have an unfinished quiz. Resume it?",
+                "Resume quiz", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (choice != JOptionPane.YES_OPTION) {
+            try {
+                AppData.quizHistory().clearDraft();
+            } catch (java.io.IOException exception) {
+                System.out.println("Could not clear the quiz draft: " + exception.getMessage());
+            }
+            return;
+        }
+        restoreDraft(state);
+    }
+
+    private void restoreDraft(String text) {
+        try {
+            JsonObject state = JsonParser.parseString(text).getAsJsonObject();
+            attemptSource = textValue(state, "source", "");
+            maxAttempts = numberValue(state, "maxAttempts", 1);
+            current = numberValue(state, "current", 0);
+            questions = new ArrayList<QuizQuestion>();
+            JsonArray items = state.getAsJsonArray("questions");
+            for (int index = 0; index < items.size(); index++) {
+                JsonObject item = items.get(index).getAsJsonObject();
+                List<String> choices = new ArrayList<String>();
+                JsonArray choiceArray = item.getAsJsonArray("choices");
+                for (int choice = 0; choice < choiceArray.size(); choice++) {
+                    choices.add(choiceArray.get(choice).getAsString());
+                }
+                questions.add(new QuizQuestion(
+                        textValue(item, "type", QuizQuestion.MULTIPLE_CHOICE),
+                        textValue(item, "question", ""),
+                        choices,
+                        numberValue(item, "correctIndex", -1),
+                        textValue(item, "answer", ""),
+                        textValue(item, "explanation", "")));
+            }
+            attemptsUsed = intValues(state, "attemptsUsed", questions.size(), 0);
+            correct = booleanValues(state, "correct", questions.size());
+            picks = intValues(state, "picks", questions.size(), -1);
+            given = stringValues(state, "given", questions.size());
+            if (current < 0 || current >= questions.size()) {
+                current = 0;
+            }
+            quizActive = true;
+            views.show(viewHolder, "quiz");
+            showQuestion();
+            refreshHistory();
+        } catch (RuntimeException exception) {
+            quizActive = false;
+            JOptionPane.showMessageDialog(this, "Could not resume the quiz, so it was cleared.",
+                    "Resume quiz", JOptionPane.ERROR_MESSAGE);
+            try {
+                AppData.quizHistory().clearDraft();
+            } catch (java.io.IOException ignored) {
+            }
+        }
+    }
+
+    private static String textValue(JsonObject object, String key, String fallback) {
+        if (object.has(key) == false || object.get(key).isJsonNull()) {
+            return fallback;
+        }
+        return object.get(key).getAsString();
+    }
+
+    private static int numberValue(JsonObject object, String key, int fallback) {
+        if (object.has(key) == false || object.get(key).isJsonNull()) {
+            return fallback;
+        }
+        return object.get(key).getAsInt();
+    }
+
+    private static JsonArray intArray(int[] values) {
+        JsonArray array = new JsonArray();
+        for (int index = 0; index < values.length; index++) {
+            array.add(values[index]);
+        }
+        return array;
+    }
+
+    private static JsonArray booleanArray(boolean[] values) {
+        JsonArray array = new JsonArray();
+        for (int index = 0; index < values.length; index++) {
+            array.add(values[index]);
+        }
+        return array;
+    }
+
+    private static JsonArray stringArray(String[] values) {
+        JsonArray array = new JsonArray();
+        for (int index = 0; index < values.length; index++) {
+            array.add(values[index] == null ? "" : values[index]);
+        }
+        return array;
+    }
+
+    private static int[] intValues(JsonObject state, String key, int size, int fallback) {
+        int[] values = new int[size];
+        for (int index = 0; index < size; index++) {
+            values[index] = fallback;
+        }
+        if (state.has(key) == false || state.get(key).isJsonArray() == false) {
+            return values;
+        }
+        JsonArray array = state.getAsJsonArray(key);
+        for (int index = 0; index < size && index < array.size(); index++) {
+            values[index] = array.get(index).getAsInt();
+        }
+        return values;
+    }
+
+    private static boolean[] booleanValues(JsonObject state, String key, int size) {
+        boolean[] values = new boolean[size];
+        if (state.has(key) == false || state.get(key).isJsonArray() == false) {
+            return values;
+        }
+        JsonArray array = state.getAsJsonArray(key);
+        for (int index = 0; index < size && index < array.size(); index++) {
+            values[index] = array.get(index).getAsBoolean();
+        }
+        return values;
+    }
+
+    private static String[] stringValues(JsonObject state, String key, int size) {
+        String[] values = new String[size];
+        for (int index = 0; index < size; index++) {
+            values[index] = "";
+        }
+        if (state.has(key) == false || state.get(key).isJsonArray() == false) {
+            return values;
+        }
+        JsonArray array = state.getAsJsonArray(key);
+        for (int index = 0; index < size && index < array.size(); index++) {
+            values[index] = array.get(index).getAsString();
+        }
+        return values;
     }
 
     private JPanel previewCard() {
@@ -343,6 +541,7 @@ public class QuizzesPage extends JPanel {
 
     private void generate() {
         if ((selected.isEmpty() && importedDocument == null) || generating) return;
+        attemptSource = "";
         final List<Note> notes = new ArrayList<>(selected);
         final String document = importedDocument;
         final int count = Integer.parseInt(lengthStepper.value().split(" ")[0]);
@@ -438,9 +637,14 @@ public class QuizzesPage extends JPanel {
 
         actionButton.addActionListener(e -> onAction());
         quitButton.addActionListener(e -> {
-            int ok = JOptionPane.showConfirmDialog(this, "Quit this quiz? Your progress will be lost.",
+            int ok = JOptionPane.showConfirmDialog(this,
+                    "Quit this quiz? It stays saved so you can resume it later.",
                     "Quit quiz", JOptionPane.YES_NO_OPTION);
-            if (ok == JOptionPane.YES_OPTION) views.show(viewHolder, "setup");
+            if (ok == JOptionPane.YES_OPTION) {
+                saveDraft();
+                quizActive = false;
+                views.show(viewHolder, "setup");
+            }
         });
         return card;
     }
@@ -466,8 +670,13 @@ public class QuizzesPage extends JPanel {
         for (int index = 0; index < picks.length; index++) {
             picks[index] = -1;
         }
+        if (attemptSource == null || attemptSource.isEmpty()) {
+            attemptSource = quizSource();
+        }
+        quizActive = true;
         views.show(viewHolder, "quiz");
         showQuestion();
+        saveDraft();
     }
 
     private void showQuestion() {
@@ -565,6 +774,7 @@ public class QuizzesPage extends JPanel {
             String extra = q.getExplanation().isEmpty() ? "" : " " + q.getExplanation();
             finishQuestion("Out of attempts. The answer is: " + q.getAnswer() + "." + extra, BAD, pick);
         }
+        saveDraft();
     }
 
     // locks the question and shows the right answer
@@ -596,6 +806,7 @@ public class QuizzesPage extends JPanel {
         }
         current++;
         showQuestion();
+        saveDraft();
     }
 
     // ================= results =================
@@ -611,10 +822,12 @@ public class QuizzesPage extends JPanel {
             System.out.println("Could not record the quiz: " + exception.getMessage());
         }
         try {
-            AppData.quizHistory().record(quizSource(), questions, correct, picks, given);
+            AppData.quizHistory().record(attemptSource, questions, correct, picks, given);
+            AppData.quizHistory().clearDraft();
         } catch (java.io.IOException exception) {
             System.out.println("Could not save the quiz attempt: " + exception.getMessage());
         }
+        quizActive = false;
         refreshHistory();
 
         JPanel card = Theme.card();
