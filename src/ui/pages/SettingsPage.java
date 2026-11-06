@@ -409,7 +409,7 @@ public class SettingsPage extends JPanel {
     private AiConfig configFromFields() {
         AiConfig config = AiConfig.load();
         config.setProvider(providerKey((String) providerBox.getSelectedItem()));
-        config.setBaseUrl(baseUrlField.getText().trim());
+        config.setBaseUrl(AiConfig.normalizeBaseUrl(config.getProvider(), baseUrlField.getText()));
         config.setModel(modelField.getText().trim());
         config.setApiKey(new String(apiKeyField.getPassword()).trim());
         return config;

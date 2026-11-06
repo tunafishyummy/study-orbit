@@ -38,10 +38,7 @@ public class AiConfig {
         if (providerValue != null && providerValue.isBlank() == false) {
             config.provider = providerValue.trim();
         }
-        String baseValue = props.getProperty("baseUrl");
-        if (baseValue != null && baseValue.isBlank() == false) {
-            config.baseUrl = baseValue.trim();
-        }
+        config.baseUrl = normalizeBaseUrl(config.provider, props.getProperty("baseUrl"));
         String modelValue = props.getProperty("model");
         if (modelValue != null && modelValue.isBlank() == false) {
             config.model = modelValue.trim();
@@ -80,6 +77,25 @@ public class AiConfig {
             default:
                 return "";
         }
+    }
+
+    public static String normalizeBaseUrl(String provider, String url) {
+        String value = url == null ? "" : url.trim();
+        while (value.endsWith("/")) {
+            value = value.substring(0, value.length() - 1);
+        }
+        if (value.isEmpty()) {
+            return defaultBaseUrl(provider);
+        }
+        if (CUSTOM.equals(provider)) {
+            return value;
+        }
+        int scheme = value.indexOf("://");
+        int firstSlash = value.indexOf('/', scheme < 0 ? 0 : scheme + 3);
+        if (firstSlash < 0) {
+            return defaultBaseUrl(provider);
+        }
+        return value;
     }
 
     public static String defaultModel(String provider) {
