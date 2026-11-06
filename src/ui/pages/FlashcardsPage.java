@@ -155,19 +155,21 @@ public class FlashcardsPage extends JPanel {
         }
 
         for (String deck : decks) {
-            JButton deckBtn = new JButton(deck.toUpperCase());
+            String label = "<html><div style='width:170px; text-align:center;'>"
+                    + escapeDeck(deck.toUpperCase(java.util.Locale.ROOT)) + "</div></html>";
+            JButton deckBtn;
+            if (deck.equalsIgnoreCase(selectedDeck)) {
+                deckBtn = Theme.primaryButton(label);
+            } else {
+                deckBtn = Theme.button(label);
+            }
+            Dimension preferred = deckBtn.getPreferredSize();
+            deckBtn.setPreferredSize(new Dimension(220, preferred.height));
+            deckBtn.setMaximumSize(new Dimension(220, preferred.height));
             deckBtn.setAlignmentX(Component.CENTER_ALIGNMENT);
-            deckBtn.setMaximumSize(new Dimension(220, 45));
             deckBtn.setFocusPainted(false);
             deckBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            
-            if (deck.equalsIgnoreCase(selectedDeck)) {
-                deckBtn.setBackground(Theme.PRIMARY);
-                deckBtn.setForeground(Color.WHITE);
-            } else {
-                deckBtn.setBackground(Theme.SURFACE);
-                deckBtn.setForeground(Theme.TEXT);
-            }
+            deckBtn.setToolTipText(deck);
             deckBtn.addActionListener(e -> {
                 selectedDeck = deck;
                 updateCardDisplay(allCards);
@@ -191,6 +193,10 @@ public class FlashcardsPage extends JPanel {
         deckListPanel.repaint();
 
         updateCardDisplay(allCards);
+    }
+
+    private static String escapeDeck(String text) {
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
     private void startFlipAnimation() {
