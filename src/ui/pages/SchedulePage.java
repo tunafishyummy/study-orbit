@@ -133,6 +133,7 @@ public class SchedulePage extends JPanel {
         button.setFont(Theme.BODY);
         button.setFocusPainted(false);
         button.setOpaque(true);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return button;
     }
 
