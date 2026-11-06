@@ -144,6 +144,7 @@ public class BackupService {
             item.addProperty("course_code", deadline.getCourseCode());
             item.addProperty("title", deadline.getTitle());
             item.addProperty("due_date", deadline.getDueDate().toString());
+            item.addProperty("due_time", deadline.getDueTime().toString());
             item.addProperty("done", deadline.isDone());
             item.addProperty("reminder_on", deadline.isReminderOn());
             array.add(item);
