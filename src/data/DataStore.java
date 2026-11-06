@@ -77,7 +77,7 @@ public class DataStore {
                 // column exists already: nothing to do
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Could not prepare the database tables", e);
         }
     }
 
