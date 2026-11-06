@@ -18,12 +18,15 @@ public class StudyOrbitApp extends JFrame {
     private CardLayout appLayout;
     private JPanel app;
     private String currentPage = "Dashboard";
+    private String currentNavName = "Dashboard";
     private CreateFlashcardPage createFlashcardPage;
     private FlashcardsPage flashcardsPage;
     // kept as fields so a search result can reach these later
     private NavBar navBar;
     private NotesPage notesPage;
     private CoursesPage coursesPage;
+    private CourseDetailPage courseDetailPage;
+    private Course currentCourse;
     private final java.util.List<WindowControlButton> maximizeButtons = new ArrayList<>();
     private Rectangle restoreBounds;
     private boolean maximized;
@@ -51,8 +54,7 @@ public class StudyOrbitApp extends JFrame {
         return new SearchPage.Opener() {
             @Override
             public void openCourse(Course course) {
-                goTo("Courses");
-                coursesPage.showCourse(course);
+                openCourseDetail(course);
             }
 
             @Override
@@ -71,9 +73,33 @@ public class StudyOrbitApp extends JFrame {
 
     // switches page and moves the navbar highlight with it
     private void goTo(String name) {
-        currentPage = name;
-        navBar.select(name);
-        pageLayout.show(pages, name);
+        showPage(name, name);
+    }
+
+    private void showPage(String view, String navName) {
+        currentPage = view;
+        currentNavName = navName;
+        navBar.select(navName);
+        pageLayout.show(pages, view);
+    }
+
+    private void openCourseDetail(Course course) {
+        if (course == null) {
+            return;
+        }
+        currentCourse = course;
+        courseDetailPage.showCourse(course);
+        showPage("CourseDetail", "Courses");
+    }
+
+    private boolean canLeaveCurrentPage() {
+        if (currentPage.equals("CourseDetail")) {
+            return courseDetailPage.canLeave();
+        }
+        if (currentPage.equals("Notes")) {
+            return notesPage.canLeave();
+        }
+        return true;
     }
 
     private JPanel buildContent(boolean showSplashInitially) {
@@ -84,20 +110,28 @@ public class StudyOrbitApp extends JFrame {
 
         createFlashcardPage = new CreateFlashcardPage(() -> {
             flashcardsPage.refresh();
-            pageLayout.show(pages, "Flashcards");
+            showPage("Flashcards", "Flashcards");
         });
 
         flashcardsPage = new FlashcardsPage(() -> {
             createFlashcardPage.refreshNotes();
-            pageLayout.show(pages, "CreateFlashcard");
+            showPage("CreateFlashcard", "Flashcards");
         });
 
         pages.add(new DashboardPage(), "Dashboard");
-        // create these two first and save them, so we can call showCourse / showNote on them
-        coursesPage = new CoursesPage();
+        // create these first and save them, so we can call showCourse / showNote on them
         notesPage = new NotesPage();
+        coursesPage = new CoursesPage(course -> openCourseDetail(course));
+        courseDetailPage = new CourseDetailPage(() -> {
+            coursesPage.refresh();
+            goTo("Courses");
+        });
         pages.add(coursesPage, "Courses");
         pages.add(notesPage, "Notes");
+        pages.add(courseDetailPage, "CourseDetail");
+        if (currentCourse != null) {
+            courseDetailPage.restoreCourse(currentCourse);
+        }
         pages.add(flashcardsPage, "Flashcards");
         pages.add(createFlashcardPage, "CreateFlashcard");
         pages.add(new QuizzesPage(), "Quizzes");
@@ -110,14 +144,17 @@ public class StudyOrbitApp extends JFrame {
         dashboard.setBackground(Theme.BG);
         // saved in navBar so goTo() can move the highlight
         navBar = new NavBar(name -> {
-            currentPage = name;
+            if (canLeaveCurrentPage() == false) {
+                navBar.select(currentNavName);
+                return;
+            }
             if (name.equals("CreateFlashcard")) {
                 createFlashcardPage.refreshNotes();
             } else if (name.equals("Flashcards")) {
                 flashcardsPage.refresh();
             }
-            pageLayout.show(pages, name);
-        }, currentPage, () -> appLayout.show(app, "Splash"));
+            showPage(name, name);
+        }, currentNavName, () -> appLayout.show(app, "Splash"));
         dashboard.add(navBar, BorderLayout.WEST);
 
         JPanel dashboardContent = new JPanel(new BorderLayout());
@@ -134,8 +171,10 @@ public class StudyOrbitApp extends JFrame {
         splash.add(buildWindowBar(), BorderLayout.NORTH);
         splash.add(new SplashPage(() -> {
             currentPage = "Dashboard";
+            currentNavName = "Dashboard";
             appLayout.show(app, "Dashboard");
             pageLayout.show(pages, "Dashboard");
+            navBar.select("Dashboard");
         }), BorderLayout.CENTER);
         app.add(splash, "Splash");
         app.add(dashboard, "Dashboard");
