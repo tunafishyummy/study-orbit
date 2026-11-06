@@ -517,6 +517,15 @@ public class SettingsPage extends JPanel {
         export.setAlignmentX(Component.LEFT_ALIGNMENT);
         export.addActionListener(e -> exportBackup());
         body.add(export);
+
+        body.add(Box.createVerticalStrut(14));
+        body.add(row("Restore backup", "Replace all data with a json backup"));
+        body.add(Box.createVerticalStrut(10));
+
+        JButton restore = Theme.button("Restore from file");
+        restore.setAlignmentX(Component.LEFT_ALIGNMENT);
+        restore.addActionListener(e -> restoreBackup());
+        body.add(restore);
         body.add(Box.createVerticalGlue());
 
         card.add(body, BorderLayout.CENTER);
@@ -533,6 +542,30 @@ public class SettingsPage extends JPanel {
         try {
             new BackupService().export(file);
             JOptionPane.showMessageDialog(this, "Backup saved to " + file.getName());
+        } catch (IOException exception) {
+            showError(exception);
+        }
+    }
+
+    private void restoreBackup() {
+        NativeFileDialog fileDialog = new NativeFileDialog();
+        File file = fileDialog.open("Restore backup", "JSON file", new String[] { "json" });
+        if (file == null) {
+            return;
+        }
+        int choice = JOptionPane.showConfirmDialog(this,
+                "Restoring replaces every profile, course, note, card, class, deadline and setting with the backup.\n\nContinue?",
+                "Restore backup", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (choice != JOptionPane.YES_OPTION) {
+            return;
+        }
+        try {
+            new BackupService().restore(file);
+            AppData.reloadAll();
+            Theme.setLargeText(AppData.settings().getBoolean(SettingsManager.LARGE_TEXT, false));
+            Theme.setTime24("24".equals(AppData.settings().get(SettingsManager.TIME_FORMAT, "12")));
+            JOptionPane.showMessageDialog(this, "Backup restored from " + file.getName());
+            rebuild();
         } catch (IOException exception) {
             showError(exception);
         }
